@@ -1,0 +1,6 @@
+ohdevtools
+==========
+
+A collection of tools used by CI servers and developers working with the
+OpenHome projects (ohos, ohwidget). Shared by all the projects, although
+some tools may be specific to just one.
