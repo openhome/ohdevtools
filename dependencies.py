@@ -46,6 +46,30 @@ class Dependency(object):
         self.logfile.write("Done.\n")
         return True
 
+class DependencyCollection(object):
+    def __init__(self, dependencies, logfile):
+        self.dependencies = dependencies
+        self.logfile = logfile
+    def _filter(self, subset):
+        missing_dependencies = [name for name in subset if name not in self.dependencies]
+        if len(missing_dependencies) > 0:
+            raise Exception("No entries in dependency file named: " + ", ".join(missing_dependencies) + ".")
+        return [self.dependencies[name] for name in subset]
+    def get_args(self, subset, env):
+        dependencies = self._filter(subset)
+        configure_args=[d.expand_configure_args(env) for d in dependencies]
+        return configure_args
+    def fetch(self, subset, env):
+        dependencies = self._filter(subset)
+        failed_dependencies = []
+        for d in dependencies:
+            if not d.fetch(env):
+                failed_dependencies.append(name)
+        if failed_dependencies:
+            self.logfile.write("Failed to fetch some dependencies: " + ' '.join(failed_dependencies) + '\n')
+            return False
+        return True
+
 def read_dependencies(dependencyfile, logfile):
     dependencies = {}
     for index, line in enumerate(dependencyfile):
@@ -60,7 +84,7 @@ def read_dependencies(dependencyfile, logfile):
                 localpath=lineelements[2],
                 configureargs=shlex.split(lineelements[3]),
                 logfile=logfile)
-    return dependencies
+    return DependencyCollection(dependencies, logfile)
 
 def read_dependencies_from_filename(filename, logfile):
     dependencyfile = open(filename, "r")

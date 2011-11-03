@@ -10,16 +10,14 @@
 # either placing them in the dependencies folder or specifying their
 # locations elsewhere when you invoke "waf configure".
 
-import hudson_tools
+from ci_build import run
 
 description = "Fetch ohWidget dependencies from a network share."
 command_group = "Developer tools"
 command_synonyms = ["fetch", "fetch-dependencies"]
 
 def main():
-    builder = hudson_tools.HudsonBuild()
-    builder.prebuild()
-    args = builder.copy_dependencies()
+    run("build", ["--fetch-only"])
 
 if __name__ == "__main__":
     main()

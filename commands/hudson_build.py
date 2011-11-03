@@ -9,14 +9,21 @@
 # You can run this on a developer machine, but you may need to help the script find the
 # network share by using the -a argument.
 
-from hudson_tools import HudsonBuild
+#from hudson_tools import HudsonBuild
+from ci_build import run
+import sys
 
 description = "Perform an automated build and test, for use on build agents."
 command_group = "Hudson commands"
+command_synonyms = ["ci-build"]
 
 def hudson_build():
-    builder = HudsonBuild()
-    builder.run()
+    buildname = "build"
+    if len(sys.argv)>=2:
+        if not sys.argv[1].startswith("-"):
+            buildname = sys.argv[1]
+            sys.argv[1:] = sys.argv[2:]
+    run(buildname, sys.argv[1:])
 
 if __name__ == "__main__":
     hudson_build()
