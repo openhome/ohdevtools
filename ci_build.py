@@ -45,12 +45,25 @@ def delete_directory(path, logfile=None):
     logfile.write('\nDone.\n')
 
 class BuildStep(object):
-    def __init__(self, name, conditions, action):
+    def __init__(self, name, action):
         self.name = name
-        self.conditions = conditions
+        self.condition_sets = []
+        self.is_optional = False
+        self.is_enabled_by_default = True
         self.action = action
+    def add_conditions(self, condition_set):
+        self.condition_sets.append(condition_set)
+    def set_default(self, enabled_by_default):
+        self.is_enabled_by_default = enabled_by_default
+    def set_optional(self, optional):
+        self.is_optional = optional
     def test_conditions(self, env):
-        return all(key in env and env[key]==value for (key, value) in self.conditions.items())
+        if len(self.condition_sets) == 0:
+            return True
+        for conditions in self.condition_sets:
+            if all(key in env and env[key]==value for (key, value) in conditions.items()):
+                return True
+        return False
     def run(self, context):
         return self.action(context)
 
@@ -68,17 +81,63 @@ def flatten_string_list(arglist):
         return [arglist]
     return sum([flatten_string_list(x) for x in arglist], [])
 
+def process_kwargs(func_name, kwarg_dict, defaults_dict):
+    result = dict(defaults_dict)
+    for key, value in kwarg_dict.items():
+        if key in result:
+            result[key] = value
+        else:
+            raise TypeError("{0}() got an unexpected keyword argument '{1}'".format(func_name, key))
+    return result
+
 class Builder(object):
     def __init__(self):
         self._steps = []
         self._optionParser = OptionParser()
+        self._enabled_options = set()
+        self._disabled_options = set()
+        self._disable_all_options = False
         #self._context = BuildContext()
-    def build_step(self, **conditions):
+    def build_condition(self, name=None, **conditions):
         """Decorator applied to functions in the build_behaviour file."""
         def decorator_func(f):
-            self._steps.append(BuildStep(f.__name__, conditions, f))
+            if not hasattr(f, "buildstep"):
+                f.buildstep = BuildStep(name or f.__name__, f)
+                self._steps.append(f.buildstep)
+            f.buildstep.add_conditions(conditions)
             return f
         return decorator_func
+    def build_step(self, name=None, optional=False, default=True):
+        def decorator_func(f):
+            if not hasattr(f, "buildstep"):
+                f.buildstep = BuildStep(f.__name__, f)
+                self._steps.append(f.buildstep)
+            if name is not None:
+                f.buildstep.name = name
+            f.buildstep.set_optional(optional)
+            f.buildstep.set_default(default)
+            return f
+        return decorator_func
+    def get_optional_steps(self):
+        return (step.name for step in self._steps if self.is_optional)
+    def select_optional_steps(self, *args, **kwargs):
+        kwargs = process_kwargs(
+            "select_optional_steps",
+            kwargs,
+            {"disable_others":False})
+        if kwargs["disable_others"]:
+            self._enabled_options.clear()
+            self._disable_all_options = True
+        for name in args:
+            if name.startswith("+"):
+                name = name[1:]
+                self._disabled_options.discard(name)
+                self._enabled_options.add(name)
+            elif name.startswith("-"):
+                name = name[1:]
+                self._enabled_options.discard(name)
+                self._disabled_options.add(name)
+
     def run(self, argv=None):
         self._context = BuildContext()
         options, args = self._optionParser.parse_args(argv)
@@ -87,8 +146,18 @@ class Builder(object):
         self._context.env = dict(os.environ)
         for step in self._steps:
             if step.test_conditions(self._context.env):
-                print step.name
-                step.run(self._context)
+                enabled = True
+                if step.is_optional:
+                    enabled = step.is_enabled_by_default
+                    if self._disable_all_options:
+                        enabled = False
+                    if step.name in self._enabled_options:
+                        enabled = True
+                    if step.name in self._disabled_options:
+                        enabled = False
+                if enabled:
+                    print step.name
+                    step.run(self._context)
     def add_bool_option(self, *args, **kwargs):
         kwargs=dict(kwargs)
         kwargs["default"] = False
@@ -109,11 +178,12 @@ class Builder(object):
     def _dependency_collection(self):
         return read_dependencies_from_filename(os.path.join('projectdata', 'dependencies.txt'), logfile=sys.stdout)
     def fetch_dependencies(self, *dependencies, **kwargs):
+        kwargs = process_kwargs(
+            "fetch_dependencies",
+            kwargs,
+            {"platform":None})
         dependencies = flatten_string_list(dependencies)
-        if 'platform' in kwargs:
-            platform = kwargs['platform']
-        else:
-            platform = self._context.env["PLATFORM"]
+        platform = kwargs['platform'] or self._context.env["PLATFORM"]
         dependency_collection = self._dependency_collection()
         delete_directory(os.path.join('dependencies', platform), logfile=sys.stdout)
         if len(dependencies) > 0:
@@ -160,9 +230,11 @@ def run(buildname="build", argv=None):
             'shell':builder.shell,
             'rsync':builder.rsync,
             'build_step':builder.build_step,
+            'build_condition':builder.build_condition,
             'default_platform':default_platform,
             'get_vsvars_environment':get_vsvars_environment,
-            'SshSession':SshSession
+            'SshSession':SshSession,
+            'select_optional_steps':builder.select_optional_steps
         }
     execfile(os.path.join('projectdata', buildname+'_behaviour.py'), behaviour_globals)
     builder.run(argv)

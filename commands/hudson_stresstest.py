@@ -9,17 +9,21 @@
 # You can run this on a developer machine, but you may need to help the script find the
 # network share by using the -a argument.
 
-from hudson_tools import HudsonBuild
+#from hudson_tools import HudsonBuild
+from ci_build import run
 
 description = "Perform an automated stress test, for use on build agents."
 command_group = "Hudson commands"
 
 def hudson_build():
-    builder = HudsonBuild()
-    builder.prebuild()
-    configure_args = builder.copy_dependencies()
-    builder.configure(configure_args)
-    builder.stresstest()
+    run("build", ["--stresstest-only"])
+    # The old script fetched and configured stuff. I don't *think* that's necessary,
+    # but I might be wrong. Possibly depends on what artifacts ohwidget publishes.
+    #builder = HudsonBuild()
+    #builder.prebuild()
+    #configure_args = builder.copy_dependencies()
+    #builder.configure(configure_args)
+    #builder.stresstest()
 
 if __name__ == "__main__":
     hudson_build()
