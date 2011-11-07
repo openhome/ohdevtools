@@ -200,7 +200,7 @@ class SshSession(object):
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.ssh.connect(host, username=username, look_for_keys='True')
     def call(self, *args):
-        stdin, stdout, stderr = self.ssh.exec_command(cmd)
+        stdin, stdout, stderr = self.ssh.exec_command(args)
         def pump_output_thread(source, destination):
             for line in source:
                 destination.write(line)
