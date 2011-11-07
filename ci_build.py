@@ -8,10 +8,12 @@ import subprocess
 import shutil
 import time
 import ctypes
+import datetime
 
 class BaseUserLock(object):
     def __init__(self, filename):
         self.filename = filename
+        self.locktime = None
     def __enter__(self):
         dirname = os.path.split(os.path.abspath(self.filename))[0]
         if not os.path.exists(dirname):
@@ -22,8 +24,13 @@ class BaseUserLock(object):
             print "Lockfile "+self.filename+" not available."
             print "Wait 30s..."
             time.sleep(30.0)
+        self.locktime = datetime.datetime.now()
+        print "Lock acquired at "+str(self.locktime)
     def __exit__(self, etype, einstance, etraceback):
         self.release()
+        unlocktime = datetime.datetime.now()
+        print "Lock released at "+str(unlocktime)
+        print "Lock was held for "+str(unlocktime - self.locktime)
 
 class WindowsUserLock(BaseUserLock):
     def __init__(self, name):
@@ -34,7 +41,7 @@ class WindowsUserLock(BaseUserLock):
     def release(self):
         ctypes.windll.kernel32.CloseHandle(self.handle)
 
-class PosixUserLock(object):
+class PosixUserLock(BaseUserLock):
     def __init__(self, name):
         BaseUserLock.__init__(self, os.environ["HOME"]+"\\.openhome-build\\"+name+".lock")
     def __enter__(self, filename):
