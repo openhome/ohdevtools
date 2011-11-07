@@ -44,7 +44,7 @@ class WindowsUserLock(BaseUserLock):
 class PosixUserLock(BaseUserLock):
     def __init__(self, name):
         BaseUserLock.__init__(self, os.environ["HOME"]+"\\.openhome-build\\"+name+".lock")
-    def __enter__(self, filename):
+    def tryacquire(self, filename):
         import fcntl
         self.f = file(filename, "w")
         try:
