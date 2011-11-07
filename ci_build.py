@@ -6,6 +6,58 @@ import threading
 import sys
 import subprocess
 import shutil
+import time
+import ctypes
+
+class BaseUserLock(object):
+    def __init__(self, filename):
+        self.filename = filename
+    def __enter__(self):
+        dirname = os.path.split(os.path.abspath(self.filename))[0]
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+        while True:
+            if self.tryacquire(self.filename):
+                break
+            print "Lockfile "+self.filename+" not available."
+            print "Wait 30s..."
+            time.sleep(30.0)
+    def __exit__(self, etype, einstance, etraceback):
+        self.release()
+
+class WindowsUserLock(BaseUserLock):
+    def __init__(self, name):
+        BaseUserLock.__init__(self, os.environ["APPDATA"]+"\\openhome-build\\"+name+".lock")
+    def tryacquire(self, filename):
+        self.handle = ctypes.windll.kernel32.CreateFileA(filename,7,0,0,2,0x04000100,0)
+        return self.handle != -1
+    def release(self):
+        ctypes.windll.kernel32.CloseHandle(self.handle)
+
+class PosixUserLock(object):
+    def __init__(self, name):
+        BaseUserLock.__init__(self, os.environ["HOME"]+"\\.openhome-build\\"+name+".lock")
+    def __enter__(self, filename):
+        import fcntl
+        self.f = file(filename, "w")
+        try:
+            fcntl.lockf(f, fcntl.LOCK_EX)
+            return True
+        except IOError:
+            self.f.close()
+            return False
+    def release(self):
+        self.f.close()
+
+def userlock(name):
+    '''
+    Acquire a lock scoped to the local user. Only one build at a time can run
+    with the given name per user per machine. While waiting for the lock, prints
+    a notice to stdout every 30s.
+    '''
+    if platform.system() == 'Windows':
+        return WindowsUserLock(name)
+    return PosixUserLock(name)
 
 def get_vsvars_environment():
     """
@@ -235,7 +287,8 @@ def run(buildname="build", argv=None):
             'default_platform':default_platform,
             'get_vsvars_environment':get_vsvars_environment,
             'SshSession':SshSession,
-            'select_optional_steps':builder.select_optional_steps
+            'select_optional_steps':builder.select_optional_steps,
+            'userlock':userlock
         }
     execfile(os.path.join('projectdata', buildname+'_behaviour.py'), behaviour_globals)
     builder.run(argv)
