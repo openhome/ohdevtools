@@ -64,7 +64,7 @@ class DependencyCollection(object):
         failed_dependencies = []
         for d in dependencies:
             if not d.fetch(env):
-                failed_dependencies.append(name)
+                failed_dependencies.append(d.name)
         if failed_dependencies:
             self.logfile.write("Failed to fetch some dependencies: " + ' '.join(failed_dependencies) + '\n')
             return False
