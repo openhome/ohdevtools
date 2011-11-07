@@ -217,7 +217,7 @@ class SshSession(object):
     def __enter__(self):
         return self
     def __exit__(self, ex_type, ex_value, ex_traceback):
-        self.ssh.slose()
+        self.ssh.close()
 
 def run(buildname="build", argv=None):
     builder = Builder()
