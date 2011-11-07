@@ -2,6 +2,7 @@ from optparse import OptionParser
 from dependencies import read_dependencies_from_filename
 import os
 import platform
+import threading
 import sys
 import subprocess
 import shutil
