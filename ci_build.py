@@ -48,7 +48,7 @@ class PosixUserLock(BaseUserLock):
         import fcntl
         self.f = file(filename, "w")
         try:
-            fcntl.lockf(f, fcntl.LOCK_EX)
+            fcntl.lockf(self.f, fcntl.LOCK_EX)
             return True
         except IOError:
             self.f.close()
