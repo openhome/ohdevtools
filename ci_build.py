@@ -247,7 +247,8 @@ class Builder(object):
         dependency_collection = self._dependency_collection()
         delete_directory(os.path.join('dependencies', platform), logfile=sys.stdout)
         if len(dependencies) > 0:
-            dependency_collection.fetch(dependencies, self._context.env)
+            if not dependency_collection.fetch(dependencies, self._context.env):
+                raise AbortRunException()
     def get_dependency_args(self, *dependencies):
         dependencies = flatten_string_list(dependencies)
         dependency_collection = self._dependency_collection()
@@ -279,6 +280,23 @@ class SshSession(object):
     def __exit__(self, ex_type, ex_value, ex_traceback):
         self.ssh.close()
 
+class AbortRunException(object):
+    def __init__(self, message="Aborted due to error.", exitcode=1):
+        self.message = message
+        self.exitcode = exitcode
+
+def fail(*args, **kwargs):
+    '''
+    fail(message, exitcode=1)
+    Abort the build with an error message.
+    '''
+    raise AbortRunException(*args, **kwargs)
+
+def require_version(required_version):
+    '''Fail if the version of ohDevTools is too old.'''
+    if VERSION<required_version:
+        fail("This build requires a newer version of ohDevTools. You have version {0}, but need version {1}.".format(VERSION, required_version),32)
+
 def run(buildname="build", argv=None):
     builder = Builder()
     behaviour_globals = {
@@ -295,7 +313,13 @@ def run(buildname="build", argv=None):
             'get_vsvars_environment':get_vsvars_environment,
             'SshSession':SshSession,
             'select_optional_steps':builder.select_optional_steps,
-            'userlock':userlock
+            'userlock':userlock,
+            'fail':fail,
+            'require_version':require_version
         }
     execfile(os.path.join('projectdata', buildname+'_behaviour.py'), behaviour_globals)
-    builder.run(argv)
+    try:
+        builder.run(argv)
+    except AbortRunException as e:
+        print e.message
+        sys.exit(e.exitcode)
