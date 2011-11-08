@@ -10,6 +10,8 @@ import time
 import ctypes
 import datetime
 
+VERSION = 2
+
 class BaseUserLock(object):
     def __init__(self, filename):
         self.filename = filename
@@ -280,8 +282,9 @@ class SshSession(object):
     def __exit__(self, ex_type, ex_value, ex_traceback):
         self.ssh.close()
 
-class AbortRunException(object):
+class AbortRunException(Exception):
     def __init__(self, message="Aborted due to error.", exitcode=1):
+        Exception.__init__(self, message)
         self.message = message
         self.exitcode = exitcode
 
@@ -317,8 +320,8 @@ def run(buildname="build", argv=None):
             'fail':fail,
             'require_version':require_version
         }
-    execfile(os.path.join('projectdata', buildname+'_behaviour.py'), behaviour_globals)
     try:
+        execfile(os.path.join('projectdata', buildname+'_behaviour.py'), behaviour_globals)
         builder.run(argv)
     except AbortRunException as e:
         print e.message
