@@ -11,13 +11,14 @@
 # locations elsewhere when you invoke "waf configure".
 
 from ci_build import run
+from sys import argv
 
 description = "Fetch ohWidget dependencies from a network share."
 command_group = "Developer tools"
 command_synonyms = ["fetch", "fetch-dependencies"]
 
 def main():
-    run("build", ["--fetch-only"])
+    run("build", ["--fetch-only"] + argv[1:])
 
 if __name__ == "__main__":
     main()
