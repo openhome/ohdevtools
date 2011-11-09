@@ -10,7 +10,11 @@ import time
 import ctypes
 import datetime
 
-VERSION = 2
+VERSION = 3
+
+DEFAULT_STEPS = "default"
+ALL_STEPS = "all"
+ILLEGAL_STEP_NAMES = [DEFAULT_STEPS, ALL_STEPS]
 
 class BaseUserLock(object):
     def __init__(self, filename):
@@ -108,6 +112,8 @@ def delete_directory(path, logfile=None):
 
 class BuildStep(object):
     def __init__(self, name, action):
+        if name in ILLEGAL_STEP_NAMES:
+            fail("'{0}' is not allowed as a build step name.".format(name))
         self.name = name
         self.condition_sets = []
         self.is_optional = False
@@ -143,6 +149,9 @@ def flatten_string_list(arglist):
         return [arglist]
     return sum([flatten_string_list(x) for x in arglist], [])
 
+def flatten_comma_list(arglist):
+    return sum([s.split(",") for s in arglist], [])
+
 def process_kwargs(func_name, kwarg_dict, defaults_dict):
     result = dict(defaults_dict)
     for key, value in kwarg_dict.items():
@@ -159,6 +168,7 @@ class Builder(object):
         self._enabled_options = set()
         self._disabled_options = set()
         self._disable_all_options = False
+        self._enable_all_options = False
         #self._context = BuildContext()
     def build_condition(self, name=None, **conditions):
         """Decorator applied to functions in the build_behaviour file."""
@@ -182,15 +192,30 @@ class Builder(object):
         return decorator_func
     def get_optional_steps(self):
         return (step.name for step in self._steps if self.is_optional)
-    def select_optional_steps(self, *args, **kwargs):
-        kwargs = process_kwargs(
-            "select_optional_steps",
-            kwargs,
-            {"disable_others":False})
-        if kwargs["disable_others"]:
-            self._enabled_options.clear()
-            self._disable_all_options = True
-        for name in args:
+    def specify_optional_steps(self, *steps):
+        '''
+        Specify which optional steps to include in the build.
+        "default" includes all default steps.
+        "all" includes all steps.
+        "foo" or "+foo" includes step foo.
+        "-foo" excludes step foo, even if "default" or "all" is present.
+        '''
+        steps = flatten_string_list(steps)
+        steps = flatten_comma_list(steps)
+        self._enable_all_options = ALL_STEPS in steps
+        #self._enable_default_options = DEFAULT_STEPS in steps
+        self._disable_all_options = DEFAULT_STEPS not in steps
+        self._disabled_options = set(s[1:] for s in steps if s.startswith("-"))
+        self._enabled_options = set(s[1:] for s in steps if s.startswith("+"))
+        self._enabled_options = self._enabled_options.union(
+                s for s in steps if s[0] not in "+-")
+    def modify_optional_steps(self, *steps):
+        '''
+        Add or remove optional steps in the build.
+        "+foo" include step foo.
+        "-foo" exclude step foo.
+        '''
+        for name in steps:
             if name.startswith("+"):
                 name = name[1:]
                 self._disabled_options.discard(name)
@@ -199,6 +224,22 @@ class Builder(object):
                 name = name[1:]
                 self._enabled_options.discard(name)
                 self._disabled_options.add(name)
+            raise TypeError("Each step must be a string beginning with '+' or '-'.")
+
+    def select_optional_steps(self, *args, **kwargs):
+        '''
+        Deprecated. Use specify_optional_steps or modify_optional_steps instead.
+        '''
+        kwargs = process_kwargs(
+            "select_optional_steps",
+            kwargs,
+            {"disable_others":False})
+        if kwargs["disable_others"]:
+            self._enabled_options.clear()
+            self._disable_all_options = True
+        args = flatten_string_list(args)
+        args = flatten_comma_list(args)
+        self.modify_optional_steps(*args)
 
     def run(self, argv=None):
         self._context = BuildContext()
@@ -316,6 +357,8 @@ def run(buildname="build", argv=None):
             'get_vsvars_environment':get_vsvars_environment,
             'SshSession':SshSession,
             'select_optional_steps':builder.select_optional_steps,
+            'modify_optional_steps':builder.modify_optional_steps,
+            'specify_optional_steps':builder.specify_optional_steps,
             'userlock':userlock,
             'fail':fail,
             'require_version':require_version
