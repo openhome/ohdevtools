@@ -10,7 +10,7 @@ import time
 import ctypes
 import datetime
 
-VERSION = 3
+VERSION = 4
 
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
@@ -249,7 +249,6 @@ class Builder(object):
         self._context.options = options
         self._context.args = args
         self._context.env = dict(os.environ)
-        print "RUN"
         for step in self._steps:
             if step.test_conditions(self._context.env):
                 enabled = True
@@ -274,23 +273,20 @@ class Builder(object):
 
     def _check_call(self, *args, **kwargs):
         if self._context.options.verbose:
-            print "VERBOSE"
             argstring = [", ".join([repr(arg) for arg in args])]
             kwargstring = [", ".join(["%s=%r" % (k,v) for (k,v) in kwargs.items()])]
             print "subprocess.check_call(%s)" % (", ".join(argstring+kwargstring))
-        else:
-            print "NOT VERBOSE"
         subprocess.check_call(*args, **kwargs)
 
-    def python(self, *args):
+    def python(self, *args, **kwargs):
         args = flatten_string_list(args)
-        self._check_call([sys.executable] + args, env=self._context.env)
-    def shell(self, *args):
+        self._check_call([sys.executable] + args, env=self._context.env, **kwargs)
+    def shell(self, *args, **kwargs):
         args = flatten_string_list(args)
-        self._check_call(args, env=self._context.env, shell=True)
-    def rsync(self, *args):
+        self._check_call(args, env=self._context.env, shell=True, **kwargs)
+    def rsync(self, *args, **kwargs):
         args = flatten_string_list(args)
-        self._check_call(["rsync"] + args)
+        self._check_call(["rsync"] + args, **kwargs)
     def _dependency_collection(self):
         return read_dependencies_from_filename(os.path.join('projectdata', 'dependencies.txt'), logfile=sys.stdout)
     def fetch_dependencies(self, *dependencies, **kwargs):
