@@ -224,7 +224,8 @@ class Builder(object):
                 name = name[1:]
                 self._enabled_options.discard(name)
                 self._disabled_options.add(name)
-            raise TypeError("Each step must be a string beginning with '+' or '-'.")
+            else:
+                raise TypeError("Each step must be a string beginning with '+' or '-'.")
 
     def select_optional_steps(self, *args, **kwargs):
         '''
