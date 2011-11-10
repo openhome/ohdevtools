@@ -165,6 +165,7 @@ class Builder(object):
     def __init__(self):
         self._steps = []
         self._optionParser = OptionParser()
+        self.add_bool_option("-v", "--verbose")
         self._enabled_options = set()
         self._disabled_options = set()
         self._disable_all_options = False
@@ -248,6 +249,7 @@ class Builder(object):
         self._context.options = options
         self._context.args = args
         self._context.env = dict(os.environ)
+        print "RUN"
         for step in self._steps:
             if step.test_conditions(self._context.env):
                 enabled = True
@@ -270,15 +272,25 @@ class Builder(object):
     def add_option(self, *args, **kwargs):
         self._optionParser.add_option(*args, **kwargs)
 
+    def _check_call(self, *args, **kwargs):
+        if self._context.options.verbose:
+            print "VERBOSE"
+            argstring = [", ".join([repr(arg) for arg in args])]
+            kwargstring = [", ".join(["%s=%r" % (k,v) for (k,v) in kwargs.items()])]
+            print "subprocess.check_call(%s)" % (", ".join(argstring+kwargstring))
+        else:
+            print "NOT VERBOSE"
+        subprocess.check_call(*args, **kwargs)
+
     def python(self, *args):
         args = flatten_string_list(args)
-        subprocess.check_call([sys.executable] + args, env=self._context.env)
+        self._check_call([sys.executable] + args, env=self._context.env)
     def shell(self, *args):
         args = flatten_string_list(args)
-        subprocess.check_call(args, env=self._context.env, shell=True)
+        self._check_call(args, env=self._context.env, shell=True)
     def rsync(self, *args):
         args = flatten_string_list(args)
-        subprocess.check_call(["rsync"] + args)
+        self._check_call(["rsync"] + args)
     def _dependency_collection(self):
         return read_dependencies_from_filename(os.path.join('projectdata', 'dependencies.txt'), logfile=sys.stdout)
     def fetch_dependencies(self, *dependencies, **kwargs):
