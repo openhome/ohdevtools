@@ -1,8 +1,11 @@
 ﻿import sys
 import uuid
+import optparse
+import os
 
 description = "Create an empty, properly configured .csproj file."
 command_group = "Developer tools"
+command_synonyms = ["mkprj","make-csproj"]
 
 TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="WafBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -33,9 +36,7 @@ TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="./**/*.cs" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -48,21 +49,66 @@ TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
 
 HELP_SYNONYMS = ["--help", "-h", "/h", "/help", "/?", "-?", "h", "help"]
 
+USAGE="""%prog [options] [ASSEMBLY_NAME [ROOT_NAMESPACE [DIRECTORY_NAME]]]
+
+Create a new project called ASSEMBLY_NAME with the given root namespace in
+subdirectory DIRECTORY_NAME under the src directory. If no directory is
+specified, it defaults to the assembly name. If no namespace is specified,
+it defaults to the assembly name. If no assembly name is specified, the
+script runs in interactive mode."""
+
 def main():
+    parser = optparse.OptionParser(usage=USAGE)
+    parser.add_option("--stdout", action="store_true", default=False, help="Print .csproj to stdout.")
+    parser.add_option("--output-type", default="Library", help="Set output type, can be Library, Exe or WinExe.")
+    opts, args = parser.parse_args()
+    if len(args) == 0:
+        print "Creating a .csproj file."
+        assembly_name = raw_input("Assembly name (e.g. WeebleCorps.Widgets.WidgetMaster)? ").strip()
+        if assembly_name=="":
+            return
+        root_namespace = raw_input("Root namespace (default '{0}')?".format(assembly_name)).strip()
+        if root_namespace == "":
+            root_namespace = assembly_name
+            print root_namespace
+        directory_name = raw_input("Directory name (default '{0}')?".format(assembly_name)).strip()
+        if directory_name == "":
+            directory_name = assembly_name
+            print directory_name
+        output_type = None
+        while output_type not in ["Library", "Exe", "WinExe"]:
+            print "Output type (Library, Exe, WinExe: default {0})?".format(opts.output_type),
+            output_type = raw_input().strip()
+            if output_type == "":
+                output_type = opts.output_type
+                print output_type
+            if "LIBRARY".startswith(output_type.upper()):
+                output_type = "Library"
+            elif "EXE".startswith(output_type.upper()):
+                output_type = "Exe"
+            elif "WINEXE".startswith(output_type.upper()):
+                output_type = "WinExe"
+    else:
+        assembly_name = args[0]
+        root_namespace = assembly_name
+        directory_name = assembly_name
+        if len(args)>=2:
+            root_namespace = args[1]
+        if len(args)>=3:
+            directory_name = args[2]
+        output_type = opts.output_type
     UUID = str(uuid.uuid4()).upper()
-    if not (2<=len(sys.argv)<=3) or (len(sys.argv)>=2 and sys.argv[1] in HELP_SYNONYMS):
-        print "Usage:"
-        print "    make_csproj.py <assemblyname> [<rootnamespace>]"
-        print
-        print "Create a new empty csproj with the specified assembly name. If <rootnamespace> is not"
-        print "specified it defaults to <assemblyname>."
-        sys.exit(1)
-    assemblyname = sys.argv[1]
-    rootnamespace = assemblyname if len(sys.argv) < 3 else sys.argv[2]
-    print TEMPLATE.format(
+    if opts.stdout:
+        f=sys.stdout
+    else:
+        if not os.path.isdir(os.path.join("src", directory_name)):
+            os.makedirs(os.path.join("src", directory_name))
+        fname = os.path.join("src", directory_name, assembly_name + ".csproj")
+        f = open(fname, "w")
+    f.write(TEMPLATE.format(
             projectguid=UUID,
-            rootnamespace=rootnamespace,
-            assemblyname=assemblyname)
+            rootnamespace=root_namespace,
+            assemblyname=assembly_name))
 
 if __name__ == "__main__":
     main()
