@@ -10,7 +10,7 @@ import time
 import ctypes
 import datetime
 
-VERSION = 4
+VERSION = 5
 
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
@@ -350,6 +350,24 @@ def require_version(required_version):
     if VERSION<required_version:
         fail("This build requires a newer version of ohDevTools. You have version {0}, but need version {1}.".format(VERSION, required_version),32)
 
+def windows_program_exists(program):
+    return subprocess.call(["where", "/q", program], shell=False)==0
+
+def other_program_exists(program):
+    return subprocess.call(["/bin/sh", "-c", "command -v "+program], shell=False, stdout=open(os.devnull), stderr=open(os.devnull))==0
+
+program_exists = windows_program_exists if platform.platform().startswith("Windows") else other_program_exists
+
+def scp(*args):
+    program = None
+    for p in ["scp", "pscp"]:
+        if program_exists(p):
+            program = p
+            break
+    if program is None:
+        raise "Cannot find scp (or pscp) in the path."
+    subprocess.check_call([program] + list(args))
+
 def run(buildname="build", argv=None):
     builder = Builder()
     behaviour_globals = {
@@ -370,6 +388,7 @@ def run(buildname="build", argv=None):
             'specify_optional_steps':builder.specify_optional_steps,
             'userlock':userlock,
             'fail':fail,
+            'scp':scp,
             'require_version':require_version
         }
     try:
