@@ -371,6 +371,7 @@ def scp(*args):
 
 def run(buildname="build", argv=None):
     builder = Builder()
+    import ci
     behaviour_globals = {
             'fetch_dependencies':builder.fetch_dependencies,
             'get_dependency_args':builder.get_dependency_args,
@@ -392,9 +393,13 @@ def run(buildname="build", argv=None):
             'scp':scp,
             'require_version':require_version
         }
+    for name, value in behaviour_globals.items():
+        setattr(ci, name, value)
     try:
         execfile(os.path.join('projectdata', buildname+'_behaviour.py'), behaviour_globals)
         builder.run(argv)
     except AbortRunException as e:
         print e.message
         sys.exit(e.exitcode)
+    for name in behaviour_globals.keys():
+        delattr(ci, name)
