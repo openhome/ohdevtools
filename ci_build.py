@@ -354,7 +354,8 @@ def windows_program_exists(program):
     return subprocess.call(["where", "/q", program], shell=False)==0
 
 def other_program_exists(program):
-    return subprocess.call(["/bin/sh", "-c", "command -v "+program], shell=False, stdout=open(os.devnull), stderr=open(os.devnull))==0
+    nul = open(os.devnull, "w")
+    return subprocess.call(["/bin/sh", "-c", "command -v "+program], shell=False, stdout=nul, stderr=nul)==0
 
 program_exists = windows_program_exists if platform.platform().startswith("Windows") else other_program_exists
 
