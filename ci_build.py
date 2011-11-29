@@ -396,7 +396,7 @@ def run(buildname="build", argv=None):
     for name, value in behaviour_globals.items():
         setattr(ci, name, value)
     try:
-        execfile(os.path.join('projectdata', buildname+'_behaviour.py'), behaviour_globals)
+        execfile(os.path.join('projectdata', buildname+'_behaviour.py'), dict(behaviour_globals))
         builder.run(argv)
     except AbortRunException as e:
         print e.message
