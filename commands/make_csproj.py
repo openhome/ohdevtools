@@ -49,13 +49,12 @@ TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
 
 HELP_SYNONYMS = ["--help", "-h", "/h", "/help", "/?", "-?", "h", "help"]
 
-USAGE="""%prog [options] [ASSEMBLY_NAME [ROOT_NAMESPACE [DIRECTORY_NAME]]]
+USAGE="""%prog [options] [PROJECT_NAME [ASSEMBLY_NAME [ROOT_NAMESPACE [DIRECTORY_NAME]]]
 
-Create a new project called ASSEMBLY_NAME with the given root namespace in
-subdirectory DIRECTORY_NAME under the src directory. If no directory is
-specified, it defaults to the assembly name. If no namespace is specified,
-it defaults to the assembly name. If no assembly name is specified, the
-script runs in interactive mode."""
+Create a new project called PROJECT_NAME, producing an assembly called
+ASSEMBLY_NAME with the given root namespace in subdirectory DIRECTORY_NAME
+under the src directory. Unspecified elements default to the project name.
+If no project name is specified, the script runs in interactive mode."""
 
 def main():
     parser = optparse.OptionParser(usage=USAGE)
@@ -64,20 +63,42 @@ def main():
     opts, args = parser.parse_args()
     if len(args) == 0:
         print "Creating a .csproj file."
-        assembly_name = raw_input("Assembly name (e.g. WeebleCorps.Widgets.WidgetMaster)? ").strip()
+        print ""
+        print "1. Project name"
+        print "The project name determines the .csproj filename and the"
+        print "appearance in the Solution Explorer."
+        print ""
+        project_name = raw_input("Project name (e.g. WeebleCorps.Widgets)? ").strip()
+        if project_name=="":
+            return
+        print ""
+        print "2. Assembly name"
+        print "The assembly name determines the .dll or .exe filename."
+        print "(This should match the name in the wscript.)"
+        print ""
+        assembly_name = raw_input("Assembly name (default '{0}')? ".format(project_name)).strip()
         if assembly_name=="":
             return
-        root_namespace = raw_input("Root namespace (default '{0}')?".format(assembly_name)).strip()
+        print ""
+        print "3. Root namespace"
+        print "The root namespace is used by Visual Studio and Resharper"
+        print "when automatically generating or fixing namespace blocks."
+        print ""
+        root_namespace = raw_input("Root namespace (default '{0}')? ".format(project_name)).strip()
         if root_namespace == "":
             root_namespace = assembly_name
             print root_namespace
-        directory_name = raw_input("Directory name (default '{0}')?".format(assembly_name)).strip()
+        print ""
+        print "4. Directory name"
+        print "Determines the subdirectory of 'src' to put the .csproj file."
+        print ""
+        directory_name = raw_input("Directory name (default '{0}')? ".format(project_name)).strip()
         if directory_name == "":
             directory_name = assembly_name
             print directory_name
         output_type = None
         while output_type not in ["Library", "Exe", "WinExe"]:
-            print "Output type (Library, Exe, WinExe: default {0})?".format(opts.output_type),
+            print "Output type (Library, Exe, WinExe: default {0})? ".format(opts.output_type),
             output_type = raw_input().strip()
             if output_type == "":
                 output_type = opts.output_type
@@ -89,13 +110,16 @@ def main():
             elif "WINEXE".startswith(output_type.upper()):
                 output_type = "WinExe"
     else:
-        assembly_name = args[0]
-        root_namespace = assembly_name
-        directory_name = assembly_name
+        project_name = args[0]
+        assembly_name = project_name
+        root_namespace = project_name
+        directory_name = project_name
         if len(args)>=2:
-            root_namespace = args[1]
+            assembly_name = args[1]
         if len(args)>=3:
             directory_name = args[2]
+        if len(args)>=4:
+            project_name = args[3]
         output_type = opts.output_type
     UUID = str(uuid.uuid4()).upper()
     if opts.stdout:
