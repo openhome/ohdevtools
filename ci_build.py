@@ -10,7 +10,7 @@ import time
 import ctypes
 import datetime
 
-VERSION = 5
+VERSION = 6
 
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
@@ -298,6 +298,7 @@ class Builder(object):
         platform = kwargs['platform'] or self._context.env["PLATFORM"]
         dependency_collection = self._dependency_collection()
         delete_directory(os.path.join('dependencies', platform), logfile=sys.stdout)
+        delete_directory(os.path.join('dependencies', 'AnyPlatform'), logfile=sys.stdout)
         if len(dependencies) > 0:
             if not dependency_collection.fetch(dependencies, self._context.env):
                 raise AbortRunException()
