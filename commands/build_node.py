@@ -76,16 +76,18 @@ class builder():
     def publish_images(self):
         for image_type in self.image_types:
             copy_mkdir = "sudo /bin/sh -c 'mkdir -p /www/openhome/%s/%s/'" %(self.repository, image_type)
-            copy_kernel = "sudo /bin/sh -c 'cp -Rp oh-linux/uImage /var/www/openhome/%s/%s/'" %(self.repository, image_type)
-            copy_update = "sudo /bin/sh -c 'cp -Rp image-builder/profiles/%s/update /var/www/openhome/%s/%s/'" %(image_type, self.repository, image_type)
-            copy_ubifs = "sudo /bin/sh -c 'cp -Rp image-builder/images/%s/%s.ubi.img /var/www/openhome/%s/%s/ubi.img'" %(image_type,image_type,self.repository,image_type)
-            copy_version = "sudo /bin/sh -c 'cp -Rp image-builder/images/%s/version /var/www/openhome/%s/%s/version'" %(image_type,self.repository,image_type)
-            publish_openhome = "sudo /bin/sh -c 'rsync -avz /var/www/openhome/nightly %s@%s:~/build/nightly/node/%s'" %(self.oh_rsync_user, self.oh_rsync_host,self.repository)
+            copy_kernel = "sudo /bin/sh -c 'cp -p oh-linux/uImage /var/www/openhome/%s/%s/%s.uImage'" %(self.repository, image_type, image_type)
+            copy_update = "sudo /bin/sh -c 'cp -p image-builder/profiles/%s/update /var/www/openhome/%s/%s/'" %(image_type, self.repository, image_type)
+            copy_ubifs = "sudo /bin/sh -c 'cp -p image-builder/images/%s/%s.ubi.img /var/www/openhome/%s/%s/'" %(image_type, image_type, self.repository, image_type)
+            copy_version = "sudo /bin/sh -c 'cp -p image-builder/images/%s/version /var/www/openhome/%s/%s/'" %(image_type, self.repository, image_type)
+            copy_checkum = "sudo /bin/sh -c 'cp -p image-builder/images/%s/checksum /var/www/openhome/%s/%s/'" %(image_type, self.repository, image_type)
+            publish_openhome = "sudo /bin/sh -c 'rsync -avz --del /var/www/openhome/%s/%s %s@%s:~/build/%s/node/'" %(self.repository, image_type, self.oh_rsync_user, self.oh_rsync_host, self.repository)
             self.run_build(copy_mkdir)
             self.run_build(copy_kernel)
             self.run_build(copy_update)
             self.run_build(copy_ubifs)
             self.run_build(copy_version)
+            self.run_build(copy_checkum)
             self.run_build(publish_openhome)
 
 
