@@ -80,7 +80,7 @@ class builder():
             copy_update = "sudo /bin/sh -c 'cp -p image-builder/profiles/%s/update /var/www/openhome/%s/%s/'" %(image_type, self.repository, image_type)
             copy_ubifs = "sudo /bin/sh -c 'cp -p image-builder/images/%s/%s.ubi.img /var/www/openhome/%s/%s/'" %(image_type, image_type, self.repository, image_type)
             copy_version = "sudo /bin/sh -c 'cp -p image-builder/images/%s/version /var/www/openhome/%s/%s/'" %(image_type, self.repository, image_type)
-            copy_checkum = "sudo /bin/sh -c 'cp -p image-builder/images/%s/checksum /var/www/openhome/%s/%s/'" %(image_type, self.repository, image_type)
+            copy_checksum = "sudo /bin/sh -c 'cp -p image-builder/images/%s/checksum /var/www/openhome/%s/%s/'" %(image_type, self.repository, image_type)
             publish_openhome = "sudo /bin/sh -c 'rsync -avz --del /var/www/openhome/%s/%s %s@%s:~/build/%s/node/'" %(self.repository, image_type, self.oh_rsync_user, self.oh_rsync_host, self.repository)
             self.run_build(copy_mkdir)
             self.run_build(copy_kernel)
