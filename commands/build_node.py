@@ -87,7 +87,7 @@ class builder():
             self.run_build(copy_update)
             self.run_build(copy_ubifs)
             self.run_build(copy_version)
-            self.run_build(copy_checkum)
+            self.run_build(copy_checksum)
             self.run_build(publish_openhome)
 
 
