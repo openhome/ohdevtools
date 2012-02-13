@@ -134,7 +134,7 @@ class builder():
             sys.exit(1)
 
         cmd = "sudo /bin/sh -c 'cd /var/www/openhome/apt-repo && reprepro -Vb . include %s incoming/%s/ohwidget_%s_%s.changes'" %(self.repo, self.repo, self.version, self.arch_vars["arch"])
-        publish_openhome = "sudo /bin/sh -c 'rsync -avz /var/www/openhome/apt-repo/ %s@%s:~/build/nightly/apt-repo'" %(self.oh_rsync_user, self.oh_rsync_host)
+        publish_openhome = "sudo /bin/sh -c 'rsync -avz --del /var/www/openhome/apt-repo/ %s@%s:~/build/nightly/apt-repo'" %(self.oh_rsync_user, self.oh_rsync_host)
         time.sleep(60 * random.random())
         ret = self.run_remote_build(cmd)
 
