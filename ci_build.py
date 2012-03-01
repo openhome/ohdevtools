@@ -10,7 +10,7 @@ import time
 import ctypes
 import datetime
 
-VERSION = 7
+VERSION = 8
 
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
@@ -177,13 +177,13 @@ class CaseInsensitiveEnvironmentCopy(dict):
         else:
             raise ValueError()
     def get(self, key, default=None):
-        return dict.get(key.upper(), default)
+        return dict.get(self, key.upper(), default)
     def has_key(self, key):
-        return dict.has_key(key.upper())
+        return dict.has_key(self, key.upper())
     def pop(self, key, *args):
-        return dict.pop(key.upper(), *args)
+        return dict.pop(self, key.upper(), *args)
     def setdefault(self, key, *args):
-        return dict.setdefault(key.upper(), *args)
+        return dict.setdefault(self, key.upper(), *args)
     def update(self, *args, **kwargs):
         if len(args)==0:
             primary={}
