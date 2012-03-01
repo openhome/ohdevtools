@@ -10,7 +10,7 @@ import time
 import ctypes
 import datetime
 
-VERSION = 6
+VERSION = 7
 
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
@@ -161,6 +161,48 @@ def process_kwargs(func_name, kwarg_dict, defaults_dict):
             raise TypeError("{0}() got an unexpected keyword argument '{1}'".format(func_name, key))
     return result
 
+NOT_SPECIFIED = object()
+class CaseInsensitiveEnvironmentCopy(dict):
+    def __contains__(self, key):
+        return dict.__contains__(self, key.upper())
+    def __getitem__(self, key):
+        return dict.__getitem__(self, key.upper())
+    def __setitem__(self, key, value):
+        return dict.__setitem__(self, key.upper(), value)
+    def __init__(self, *args):
+        if len(args)==0:
+            dict.__init__(self)
+        elif len(args)==1:
+            dict.__init__(self, [(k.upper(), v) for (k,v) in args[0].items()])
+        else:
+            raise ValueError()
+    def get(self, key, default=None):
+        return dict.get(key.upper(), default)
+    def has_key(self, key):
+        return dict.has_key(key.upper())
+    def pop(self, key, *args):
+        return dict.pop(key.upper(), *args)
+    def setdefault(self, key, *args):
+        return dict.setdefault(key.upper(), *args)
+    def update(self, *args, **kwargs):
+        if len(args)==0:
+            primary={}
+        elif len(args)==1:
+            primary=CaseInsensitiveEnvironmentCopy(args[0])
+        else:
+            raise ValueError()
+        secondary=CaseInsensitiveEnvironmentCopy(kwargs)
+        return dict.update(self, primary, **secondary)
+
+# This is the same mechanism Python uses to decide if os.environ is case-
+# sensitive:
+if os.name in ['nt', 'os2']:
+    EnvironmentCopy = CaseInsensitiveEnvironmentCopy
+else:
+    EnvironmentCopy = dict
+
+
+
 class Builder(object):
     def __init__(self):
         self._steps = []
@@ -248,7 +290,7 @@ class Builder(object):
         options, args = self._optionParser.parse_args(argv)
         self._context.options = options
         self._context.args = args
-        self._context.env = dict(os.environ)
+        self._context.env = EnvironmentCopy(os.environ)
         for step in self._steps:
             if step.test_conditions(self._context.env):
                 enabled = True
