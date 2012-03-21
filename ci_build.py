@@ -356,6 +356,9 @@ class SshConnection(object):
             for line in source:
                 destination.write(line)
                 destination.flush()
+        self.stdin = stdin
+        self.stdout = stdout
+        self.stderr = stderr
         self.stdout_thread = threading.Thread(target=pump_output_thread, args=(stdout, sys.stdout))
         self.stderr_thread = threading.Thread(target=pump_output_thread, args=(stderr, sys.stderr))
         self.stdout_thread.start()
