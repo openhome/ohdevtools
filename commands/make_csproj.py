@@ -78,7 +78,8 @@ def main():
         print ""
         assembly_name = raw_input("Assembly name (default '{0}')? ".format(project_name)).strip()
         if assembly_name=="":
-            return
+            assembly_name = project_name
+            print assembly_name
         print ""
         print "3. Root namespace"
         print "The root namespace is used by Visual Studio and Resharper"
@@ -86,7 +87,7 @@ def main():
         print ""
         root_namespace = raw_input("Root namespace (default '{0}')? ".format(project_name)).strip()
         if root_namespace == "":
-            root_namespace = assembly_name
+            root_namespace = project_name
             print root_namespace
         print ""
         print "4. Directory name"
@@ -94,7 +95,7 @@ def main():
         print ""
         directory_name = raw_input("Directory name (default '{0}')? ".format(project_name)).strip()
         if directory_name == "":
-            directory_name = assembly_name
+            directory_name = project_name
             print directory_name
         output_type = None
         while output_type not in ["Library", "Exe", "WinExe"]:
