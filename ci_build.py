@@ -10,7 +10,7 @@ import time
 import ctypes
 import datetime
 
-VERSION = 8
+VERSION = 9
 
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
@@ -349,6 +349,26 @@ class Builder(object):
         dependency_collection = self._dependency_collection()
         return dependency_collection.get_args(dependencies, self._context.env)
 
+
+class SshConnection(object):
+    def __init__(self, stdin, stdout, stderr):
+        def pump_output_thread(source, destination):
+            for line in source:
+                destination.write(line)
+                destination.flush()
+        self.stdout_thread = threading.Thread(target=pump_output_thread, args=(stdout, sys.stdout))
+        self.stderr_thread = threading.Thread(target=pump_output_thread, args=(stderr, sys.stderr))
+        self.stdout_thread.start()
+        self.stderr_thread.start()
+    def send(self, data):
+        self.stdin.write(data)
+        self.stdin.flush()
+    def join(self):
+        self.stdout_thread.join()
+        self.stderr_thread.join()
+        return self.stdout.channel.recv_exit_status()
+
+
 class SshSession(object):
     def __init__(self, host, username):
         import paramiko
@@ -357,17 +377,11 @@ class SshSession(object):
         self.ssh.connect(host, username=username, look_for_keys='True')
     def call(self, *args, **kwargs):
         stdin, stdout, stderr = self.ssh.exec_command(*args, **kwargs)
-        def pump_output_thread(source, destination):
-            for line in source:
-                destination.write(line)
-                destination.flush()
-        stdout_thread = threading.Thread(target=pump_output_thread, args=(stdout, sys.stdout))
-        stderr_thread = threading.Thread(target=pump_output_thread, args=(stderr, sys.stderr))
-        stdout_thread.start()
-        stderr_thread.start()
-        stdout_thread.join()
-        stderr_thread.join()
-        return stdout.channel.recv_exit_status()
+        conn = SshConnection(stdin, stdout, stderr)
+        return conn.join()
+    def call_async(self, *args, **kwargs):
+        stdin, stdout, stderr = self.ssh.exec_command(*args, **kwargs)
+        return SshConnection(stdin, stdout, stderr)
     def __call__(self, *args):
         return self.call(*args)
     def __enter__(self):
