@@ -10,7 +10,7 @@ import time
 import ctypes
 import datetime
 
-VERSION = 9
+VERSION = 10
 
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
@@ -326,6 +326,11 @@ class Builder(object):
     def shell(self, *args, **kwargs):
         args = flatten_string_list(args)
         self._check_call(args, env=self._context.env, shell=True, **kwargs)
+    def cli(self, *args, **kwargs):
+        args = flatten_string_list(args)
+        if platform.system() != "Windows":
+            args = ["mono"] + args
+        self._check_call(args, env=self._context.env, shell=True, **kwargs)
     def rsync(self, *args, **kwargs):
         args = flatten_string_list(args)
         self._check_call(["rsync"] + args, **kwargs)
@@ -439,6 +444,7 @@ def run(buildname="build", argv=None):
             'add_bool_option':builder.add_bool_option,
             'python':builder.python,
             'shell':builder.shell,
+            'cli':builder.cli,
             'rsync':builder.rsync,
             'build_step':builder.build_step,
             'build_condition':builder.build_condition,
