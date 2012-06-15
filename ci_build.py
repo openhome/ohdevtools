@@ -10,7 +10,7 @@ import time
 import ctypes
 import datetime
 
-VERSION = 11
+VERSION = 12
 
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
@@ -331,7 +331,7 @@ class Builder(object):
     def cli(self, *args, **kwargs):
         args = flatten_string_list(args)
         if platform.system() != "Windows":
-            args = ["mono"] + args
+            args = ["mono", "--runtime=v4.0.30319"] + args
         kwargs.setdefault('shell', False)
         kwargs.setdefault('env', self._context.env)
         self._check_call(args, **kwargs)
