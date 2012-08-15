@@ -90,13 +90,17 @@ def get_vsvars_environment():
         raise Exception("Got error code %s from subprocess!" % exitcode)
     return eval(stdout.strip())
 
-def default_platform():
+def default_platform(fail_on_unknown=True):
     if platform.system() == 'Windows':
         return 'Windows-x86'
     if platform.system() == 'Linux' and platform.architecture()[0] == '32bit':
         return 'Linux-x86'
     if platform.system() == 'Linux' and platform.architecture()[0] == '64bit':
         return 'Linux-x64'
+    if platform.system() == 'Darwin' and platform.architecture()[0] == '64bit':
+        return 'Mac-x64'
+    if fail_on_unknown:
+        fail('No platform specified and unable to guess.')
     return None
 
 def delete_directory(path, logfile=None):
