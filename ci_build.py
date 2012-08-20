@@ -1,15 +1,23 @@
 from optparse import OptionParser
-from dependencies import read_dependencies_from_filename
+from dependencies import read_json_dependencies_from_filename
+import dependencies
 import os
 import platform
 import threading
 import sys
 import subprocess
 import shutil
+import getpass
 from userlocks import userlock
 from default_platform import default_platform as _default_platform
 
-VERSION = 12
+# The version number of the API. Incremented whenever there
+# are new features or bug fixes.
+VERSION = 13
+
+# The earliest API version that we're still compatible with.
+# Changed only when a change breaks an existing API.
+BACKWARD_VERSION = 13
 
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
@@ -279,25 +287,40 @@ class Builder(object):
     def rsync(self, *args, **kwargs):
         args = flatten_string_list(args)
         self._check_call(["rsync"] + args, **kwargs)
-    def _dependency_collection(self):
-        return read_dependencies_from_filename(os.path.join('projectdata', 'dependencies.txt'), logfile=sys.stdout)
-    def fetch_dependencies(self, *dependencies, **kwargs):
+    def _dependency_collection(self, env):
+        return read_json_dependencies_from_filename(os.path.join('projectdata', 'dependencies.json'), env, logfile=sys.stdout)
+    def _process_dependency_args(self, *selected, **kwargs):
         kwargs = process_kwargs(
             "fetch_dependencies",
             kwargs,
-            {"platform":None})
-        dependencies = flatten_string_list(dependencies)
-        platform = kwargs['platform'] or self._context.env["PLATFORM"]
-        dependency_collection = self._dependency_collection()
-        delete_directory(os.path.join('dependencies', platform), logfile=sys.stdout)
-        delete_directory(os.path.join('dependencies', 'AnyPlatform'), logfile=sys.stdout)
-        if len(dependencies) > 0:
-            if not dependency_collection.fetch(dependencies, self._context.env):
-                raise AbortRunException()
-    def get_dependency_args(self, *dependencies):
-        dependencies = flatten_string_list(dependencies)
-        dependency_collection = self._dependency_collection()
-        return dependency_collection.get_args(dependencies, self._context.env)
+            {"env":None},)
+        selected = flatten_string_list(selected)
+        env = dict(kwargs['env'] or {})
+        if "platform" not in env:
+            env['platform'] = self._context.env["OH_PLATFORM"]
+        if "linn-git-user" not in env:
+            env['linn-git-user'] = getpass.getuser()
+        return selected, env
+    def fetch_dependencies(self, *selected, **kwargs):
+        selected, env = self._process_dependency_args(*selected, **kwargs)
+        try:
+            dependencies.fetch_dependencies(
+                    selected or None, platform=self._context.env["OH_PLATFORM"], env=env,
+                    fetch=True, nuget=True, clean=True, source=False, logfile=sys.stdout )
+        except Exception as e:
+            print e
+            raise AbortRunException()
+    def read_dependencies(self, *selected, **kwargs):
+        selected, env = self._process_dependency_args(*selected, **kwargs)
+        return self._dependency_collection(env)
+    def fetch_source(self, *selected, **kwargs):
+        selected, env = self._process_dependency_args(*selected, **kwargs)
+        dependency_collection = self._dependency_collection(env)
+        return dependency_collection.checkout(selected)
+    def get_dependency_args(self, *selected, **kwargs):
+        selected, env = self._process_dependency_args(*selected, **kwargs)
+        dependency_collection = self._dependency_collection(env)
+        return dependency_collection.get_args(selected)
 
 
 class SshConnection(object):
@@ -359,6 +382,8 @@ def require_version(required_version):
     '''Fail if the version of ohDevTools is too old.'''
     if VERSION<required_version:
         fail("This build requires a newer version of ohDevTools. You have version {0}, but need version {1}.".format(VERSION, required_version),32)
+    if required_version<BACKWARD_VERSION:
+        fail("This build requires an older version of ohDevTools. You have version {0}, but need version {1}.".format(VERSION, required_version),32)
 
 def windows_program_exists(program):
     return subprocess.call(["where", "/q", program], shell=False)==0
@@ -384,6 +409,7 @@ def run(buildname="build", argv=None):
     import ci
     behaviour_globals = {
             'fetch_dependencies':builder.fetch_dependencies,
+            'read_dependencies':builder.read_dependencies,
             'get_dependency_args':builder.get_dependency_args,
             'add_option':builder.add_option,
             'add_bool_option':builder.add_bool_option,
