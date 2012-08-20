@@ -7,6 +7,7 @@ import sys
 import subprocess
 import shutil
 from userlocks import userlock
+from default_platform import default_platform as _default_platform
 
 VERSION = 12
 
@@ -34,17 +35,10 @@ def get_vsvars_environment():
     return eval(stdout.strip())
 
 def default_platform(fail_on_unknown=True):
-    if platform.system() == 'Windows':
-        return 'Windows-x86'
-    if platform.system() == 'Linux' and platform.architecture()[0] == '32bit':
-        return 'Linux-x86'
-    if platform.system() == 'Linux' and platform.architecture()[0] == '64bit':
-        return 'Linux-x64'
-    if platform.system() == 'Darwin' and platform.architecture()[0] == '64bit':
-        return 'Mac-x64'
-    if fail_on_unknown:
+    p = _default_platform()
+    if p is None and fail_on_unknown:
         fail('No platform specified and unable to guess.')
-    return None
+    return p
 
 def delete_directory(path, logfile=None):
     if logfile is None:
