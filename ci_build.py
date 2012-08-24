@@ -309,10 +309,11 @@ class Builder(object):
         return selected, env
     def fetch_dependencies(self, *selected, **kwargs):
         selected, env = self._process_dependency_args(*selected, **kwargs)
+        use_nuget = os.path.isfile('projectdata/packages.config')
         try:
             dependencies.fetch_dependencies(
                     selected or None, platform=self._context.env["OH_PLATFORM"], env=env,
-                    fetch=True, nuget=True, clean=True, source=False, logfile=sys.stdout )
+                    fetch=True, nuget=use_nuget, clean=True, source=False, logfile=sys.stdout )
         except Exception as e:
             print e
             raise AbortRunException()
