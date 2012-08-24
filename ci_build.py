@@ -30,6 +30,12 @@ def get_vsvars_environment():
 
     win32-specific
     """
+    # Note:
+    # This is 32-bit specific. It won't work if we want to use the 64-bit tools.
+    # Sadly VC/bin/amd64/vcvars64.bat doesn't exist on a basic VS Express install.
+    # Our best bet might be to invoke VCVarsQueryRegistry.bat and then assemble
+    # PATH manually based on FrameworkDir64 and whatever other tools we need to
+    # use.
     vs100comntools = os.environ['VS100COMNTOOLS']
     if vs100comntools is None:
         raise Exception("VS100COMNTOOLS is not set in environment.")
