@@ -9,6 +9,7 @@ import dependencies
 import getpass
 import sys
 import traceback
+import os
 
 description = "Fetch ohWidget dependencies from the Internet."
 command_group = "Developer tools"
@@ -22,26 +23,29 @@ def main():
     parser.add_option('--all', action="store_true", default=False, help="Fetch all regular dependencies.")
     parser.add_option('--nuget', action="store_true", default=False, help="Fetch all nuget dependencies.")
     parser.add_option('--source', action="store_true", default=False, help="Fetch source for listed dependencies.")
+    parser.add_option('--release', action="store_const", const="release", dest="debugmode", default="release", help="")
+    parser.add_option('--debug', action="store_const", const="debug", dest="debugmode", default="release", help="")
     parser.add_option('-v', '--verbose', action="store_true", default=False, help="Report more information on errors.")
     parser.add_option('--platform', default=None, help='Target platform.')
     options, args = parser.parse_args()
     if len(args)==0 and not options.clean and not options.nuget and not options.all and not options.source:
+        options.clean = True
+        options.all = True
+        options.nuget = os.path.exists('projectdata/packages.config')
         print "No dependencies were specified. Default to:"
-        print "    go fetch --clean --all --nuget"
+        print "    go fetch --clean --all" + (" --nuget" if options.nuget else "")
         print "[Yn]?",
         answer = raw_input().strip().upper()
         if answer not in ["","Y","YES"]:
             sys.exit(1)
-        options.clean = True
-        options.all = True
-        options.nuget = True
     platform = options.platform or default_platform()
     linn_git_user = options.linn_git_user or getpass.getuser()
     try:
         dependencies.fetch_dependencies(
                 dependency_names=None if options.all else args,
                 platform=platform,
-                env={'linn-git-user':linn_git_user},
+                env={'linn-git-user':linn_git_user,
+                     'debugmode':options.debugmode},
                 nuget=options.nuget and not args,
                 clean=options.clean and not args,
                 fetch=(options.all or bool(args)) and not options.source,
