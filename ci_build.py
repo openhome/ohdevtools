@@ -323,11 +323,11 @@ class Builder(object):
     def fetch_source(self, *selected, **kwargs):
         selected, env = self._process_dependency_args(*selected, **kwargs)
         dependency_collection = self._dependency_collection(env)
-        return dependency_collection.checkout(selected)
+        return dependency_collection.checkout(selected or None)
     def get_dependency_args(self, *selected, **kwargs):
         selected, env = self._process_dependency_args(*selected, **kwargs)
         dependency_collection = self._dependency_collection(env)
-        return dependency_collection.get_args(selected)
+        return dependency_collection.get_args(selected or None)
 
 
 class SshConnection(object):
