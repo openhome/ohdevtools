@@ -10,6 +10,92 @@ import shutil
 from glob import glob
 from default_platform import default_platform
 
+# Master table of dependency types.
+
+# A dependency definition can specify 'type' to inherit definitions from one of these.
+# String values can depend on other string values from the dependency. For example,
+# if 'name' is defined as 'Example' then '${name}.exe' will expand to 'Example.exe'.
+# It does not matter which order the values are defined.
+# String values can also depend on boolean values. For example, the string
+# '${test-value?yes-result:no-result}' will get the value of the string named
+# 'yes-result' if 'test-value' is a true boolean value, and the string named
+# 'no-result' if 'test-value' is a false boolean value.
+
+# The principle string values that must be defined are 'archive-path' to point to the
+# .tar.gz file with the dependency's binaries, 'dest' to specify where to untar it,
+# and 'configure-args' to specify the list of arguments to pass to waf.
+
+# In order for source control fetching to work, the string 'source-git' should point
+# to the git repo and 'tag' should identify the git tag that corresponds to the
+# fetched binaries.
+
+DEPENDENCY_TYPES = {
+    # Label a dependency with the 'ignore' type to prevent it being considered at all.
+    # Can be useful to include comments. (Json has no comment syntax.)
+    'ignore' : {
+        'ignore': True     # This causes the entire dependency entry to be ignored. Useful for comments.
+        },
+
+    # Openhome dependencies generally have an associated git repo to allow us to
+    # fetch source code. They also have a different directory layout to accomodate
+    # the large number of versions created by CI builds.
+    #
+    # An openhome dependency, at minimum, must define:
+    #     name
+    #     version
+    #
+    # Commonly overridden:
+    #     archive-suffix
+    #     platform-specific
+    #     configure-args
+    'openhome' : {
+        'archive-extension': '.tar.gz',
+        'archive-prefix': '',
+        'archive-suffix': '',
+        'binary-repo': 'http://openhome.org/releases/artifacts',
+        'archive-directory': '${binary-repo}/${name}/',
+        'archive-filename': '${archive-prefix}${name}-${version}-${archive-platform}${archive-suffix}${archive-extension}',
+        'archive-path': '${archive-directory}${archive-filename}',
+        'source-path': '${linn-git-user}@core.linn.co.uk:/home/git',
+        'source-git': '${source-path}/${name}.git',
+        'tag': '${name}_${version}',
+        'any-platform': 'AnyPlatform',
+        'platform-specific': True,
+        'archive-platform': '${platform-specific?platform:any-platform}',
+        'dest': 'dependencies/${archive-platform}/',
+        'configure-args': []
+        },
+
+    # External dependencies generally don't have a git repo, and even if they do,
+    # it won't conform to our conventions.
+    #
+    # An external dependency, at minimum, must define:
+    #     name
+    #     archive-filename
+    #
+    # Commonly overriden:
+    #     platform-specific
+    #     configure-args
+    'external' : {
+        'binary-repo': 'http://openhome.org/releases/artifacts',
+        'source-git': None,
+        'any-platform': 'AnyPlatform',
+        'platform-specific': True,
+        'archive-platform': '${platform-specific?platform:any-platform}',
+        'archive-path': '${binary-repo}/${archive-platform}/${archive-filename}',
+        'dest': 'dependencies/${archive-platform}/',
+        'configure-args': []
+        },
+    }
+
+
+
+
+
+
+
+
+
 def default_log(logfile=None):
     return logfile if logfile is not None else open(os.devnull, "w")
 
@@ -93,6 +179,8 @@ class EnvironmentExpander(object):
         return self.expand(key)
     def getraw(self, key):
         return self.env_dict[key]
+    def __contains__(self, key):
+        return key in self.env_dict
     def expand(self, key):
         if key in self.cache:
             return self.cache[key]
@@ -175,6 +263,8 @@ class Dependency(object):
         return self['name']
     def __getitem__(self, key):
         return self.expander.expand(key)
+    def __contains__(self, key):
+        return key in self.expander
     def checkout(self):
         name = self['name']
         sourcegit = self['source-git']
@@ -211,43 +301,23 @@ class DependencyCollection(object):
     def __init__(self, env, logfile=None):
         self.logfile = default_log(logfile)
         self.base_env = env
-        self.dependency_types = {
-                'openhome' : {
-                    'archive-extension': '.tar.gz',
-                    'archive-prefix': '',
-                    'archive-suffix': '',
-                    'binary-repo': 'http://openhome.org/releases/artifacts',
-                    'archive-directory': '${binary-repo}/${name}/',
-                    'archive-filename': '${archive-prefix}${name}-${version}-${archive-platform}${archive-suffix}${archive-extension}',
-                    'archive-path': '${archive-directory}${archive-filename}',
-                    'source-path': '${linn-git-user}@core.linn.co.uk:/home/git',
-                    'source-git': '${source-path}/${name}.git',
-                    'tag': '${name}_${version}',
-                    'any-platform': 'AnyPlatform',
-                    'platform-specific': True,
-                    'archive-platform': '${platform-specific?platform:any-platform}',
-                    'dest': 'dependencies/${archive-platform}/',
-                    },
-                'external' : {
-                    'binary-repo': 'http://openhome.org/releases/artifacts',
-                    'source-git': None,
-                    'any-platform': 'AnyPlatform',
-                    'platform-specific': True,
-                    'archive-platform': '${platform-specific?platform:any-platform}',
-                    'archive-path': '${binary-repo}/${archive-platform}/${archive-filename}',
-                    'dest': 'dependencies/${archive-platform}/',
-                    },
-                }
+        self.dependency_types = DEPENDENCY_TYPES
         self.dependencies = {}
     def create_dependency(self, dependency_definition):
         defn = dependency_definition
-        name = defn['name']
-        dep_type = defn['type']
         env = {}
         env.update(self.base_env)
-        env.update(self.dependency_types[dep_type])
+        if 'type' in defn:
+            dep_type = defn['type']
+            env.update(self.dependency_types[dep_type])
         env.update(defn)
-        self.dependencies[name] = Dependency(name, env, logfile=self.logfile)
+        if 'ignore' in env and env['ignore']:
+            return
+        if 'name' not in env:
+            raise ValueError('Dependency definition contains no name')
+        name = env['name']
+        new_dependency = Dependency(name, env, logfile=self.logfile)
+        self.dependencies[name] = new_dependency
     def __getitem__(self, key):
         return self.dependencies[key]
     def _filter(self, subset=None):
