@@ -13,7 +13,7 @@ from default_platform import default_platform as _default_platform
 
 # The version number of the API. Incremented whenever there
 # are new features or bug fixes.
-VERSION = 13
+VERSION = 14
 
 # The earliest API version that we're still compatible with.
 # Changed only when a change breaks an existing API.
@@ -24,24 +24,20 @@ ALL_STEPS = "all"
 ILLEGAL_STEP_NAMES = [DEFAULT_STEPS, ALL_STEPS]
 
 
-def get_vsvars_environment():
+def get_vsvars_environment(architecture="x86"):
     """
     Returns a dictionary containing the environment variables set up by vsvars32.bat
 
+    architecture - Architecture to pass to vcvarsall.bat. Normally "x86" or "amd64"
+
     win32-specific
     """
-    # Note:
-    # This is 32-bit specific. It won't work if we want to use the 64-bit tools.
-    # Sadly VC/bin/amd64/vcvars64.bat doesn't exist on a basic VS Express install.
-    # Our best bet might be to invoke VCVarsQueryRegistry.bat and then assemble
-    # PATH manually based on FrameworkDir64 and whatever other tools we need to
-    # use.
     vs100comntools = os.environ['VS100COMNTOOLS']
     if vs100comntools is None:
         raise Exception("VS100COMNTOOLS is not set in environment.")
-    vsvars32 = os.path.join(vs100comntools, 'vsvars32.bat')
+    vsvars32 = os.path.join(vs100comntools, '..', '..', 'VC', 'vcvarsall.bat')
     python = sys.executable
-    process = subprocess.Popen('("%s">nul)&&"%s" -c "import os; print repr(os.environ)"' % (vsvars32, python), stdout=subprocess.PIPE, shell=True)
+    process = subprocess.Popen('("%s" %s>nul)&&"%s" -c "import os; print repr(os.environ)"' % (vsvars32, architecture, python), stdout=subprocess.PIPE, shell=True)
     stdout, _ = process.communicate()
     exitcode = process.wait()
     if exitcode != 0:
