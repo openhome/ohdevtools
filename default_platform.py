@@ -7,6 +7,9 @@ def default_platform():
         return 'Linux-x86'
     if platform.system() == 'Linux' and platform.architecture()[0] == '64bit':
         return 'Linux-x64'
-    if platform.system() == 'Darwin' and platform.architecture()[0] == '64bit':
-        return 'Mac-x64'
+    if platform.system() == 'Darwin':
+        # Mac behaves similarly to Windows - a 64-bit machine can support
+        # both 32-bit and 64-bit processes. We prefer 32-bit because it's
+        # generally more compatible and in particular Mono is 32-bit-only.
+        return 'Mac-x86'
     return None
