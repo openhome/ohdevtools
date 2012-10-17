@@ -54,10 +54,19 @@ def findcommand(command):
     print 'Try "go help" for a list of commands.'
     sys.exit(1)
 
+def invoke_module(modulename, args):
+    oldpythonpath = os.getenv('PYTHONPATH')
+    thisdir = os.path.split(os.path.normcase(os.path.abspath(__file__)))[0]
+    pythonpath = (oldpythonpath + ';' + thisdir) if oldpythonpath else thisdir
+    newenv = dict(os.environ)
+    newenv['PYTHONPATH'] = pythonpath
+    exitcode = subprocess.call([sys.executable, '-m', modulename] + args, env=newenv)
+    sys.exit(exitcode)
+
+
 def runcommand(command, args):
     commandname = findcommand(command)
-    exitcode = subprocess.call([sys.executable, '-m', 'commands.'+commandname] + args)
-    sys.exit(exitcode)
+    invoke_module('commands.'+commandname, args)
 
 def showcommandhelp(command):
     commandname = findcommand(command)
@@ -68,8 +77,7 @@ def showcommandhelp(command):
     else:
         print
     print
-    exitcode = subprocess.call([sys.executable, '-m', 'commands.'+commandname, '--help'])
-    sys.exit(exitcode)
+    invoke_module('commands.'+commandname, ['--help'])
 
 def showhelp():
     print
