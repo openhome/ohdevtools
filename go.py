@@ -57,7 +57,7 @@ def findcommand(command):
 def invoke_module(modulename, args):
     oldpythonpath = os.getenv('PYTHONPATH')
     thisdir = os.path.split(os.path.normcase(os.path.abspath(__file__)))[0]
-    pythonpath = (oldpythonpath + ';' + thisdir) if oldpythonpath else thisdir
+    pythonpath = (oldpythonpath + os.path.pathsep + thisdir) if oldpythonpath else thisdir
     newenv = dict(os.environ)
     newenv['PYTHONPATH'] = pythonpath
     exitcode = subprocess.call([sys.executable, '-m', modulename] + args, env=newenv)
