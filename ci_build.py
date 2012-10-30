@@ -278,6 +278,9 @@ class Builder(object):
         args = flatten_string_list(args)
         kwargs.setdefault('shell', True)
         kwargs.setdefault('env', self._context.env)
+        if len(args) == 1 and kwargs['shell']:
+            # The shell hates lists.
+            args = args[0]
         self._check_call(args, **kwargs)
     def cli(self, *args, **kwargs):
         args = flatten_string_list(args)
