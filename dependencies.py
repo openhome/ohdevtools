@@ -1,5 +1,6 @@
 import os
 import tarfile
+import zipfile
 import re
 import urllib
 import urllib2
@@ -7,6 +8,7 @@ import platform
 import subprocess
 import json
 import shutil
+import StringIO
 from glob import glob
 from default_platform import default_platform
 
@@ -55,10 +57,13 @@ DEPENDENCY_TYPES = {
         'binary-repo': 'http://openhome.org/releases/artifacts',
         'archive-directory': '${binary-repo}/${name}/',
         'archive-filename': '${archive-prefix}${name}-${version}-${archive-platform}${archive-suffix}${archive-extension}',
-        'archive-path': '${archive-directory}${archive-filename}',
+        'remote-archive-path': '${archive-directory}${archive-filename}',
+        'use-local-archive': False,
+        'archive-path': '${use-local-archive?local-archive-path:remote-archive-path}',
         'source-path': '${linn-git-user}@core.linn.co.uk:/home/git',
-        'source-git': '${source-path}/${name}.git',
-        'tag': '${name}_${version}',
+        'repo-name': '${name}',
+        'source-git': '${source-path}/${repo-name}.git',
+        'tag': '${repo-name}_${version}',
         'any-platform': 'AnyPlatform',
         'platform-specific': True,
         'archive-platform': '${platform-specific?platform:any-platform}',
@@ -144,24 +149,43 @@ def open_file_url(url):
                 raise Exception("Bad smb:// path")
             final_path = path[1:].replace("/", os.path.sep)
     else:
-        # file://hostname/path/file.ext
-        # Good remote path.
-        remote = True
-        legacy = False
-        final_path = "\\\\" + path.replace("/", os.path.sep)
+        if path[0].isalpha() and path[1] == ':':
+            # file:///x:/foo/bar/baz
+            # Good absolute local path.
+            remote = False
+            legacy = False
+            final_path = path.replace('/', os.path.sep)
+        else:
+            # file://hostname/path/file.ext
+            # Good remote path.
+            remote = True
+            legacy = False
+            final_path = "\\\\" + path.replace("/", os.path.sep)
     if smb and (legacy or not remote):
         raise Exception("Bad smb:// path. Use 'smb://hostname/path/to/file.ext'")
     if (smb or remote) and not platform.platform().startswith("Windows"):
         raise Exception("SMB file access not supported on non-Windows platforms.")
     return open(final_path, "rb")
 
+def urlopen(url):
+    fileobj = urllib2.urlopen(url)
+    try:
+        contents = fileobj.read()
+        return StringIO.StringIO(contents)
+    finally:
+        fileobj.close()
+
 def get_opener_for_path(path):
     if path.startswith("file:") or path.startswith("smb:"):
         return open_file_url
     if re.match("[^\W\d]{2,8}:", path):
-        return urllib2.urlopen
+        return urlopen
     return lambda fname: open(fname, mode="rb")
 
+def is_trueish(value):
+    if hasattr(value, "upper"):
+        value = value.upper()
+    return value in [1, "1", "YES", "Y", "TRUE", "ON", True]
 
 class EnvironmentExpander(object):
     # template_regex matches 
@@ -181,6 +205,12 @@ class EnvironmentExpander(object):
         return self.env_dict[key]
     def __contains__(self, key):
         return key in self.env_dict
+    def keys(self):
+        return self.env_dict.keys()
+    def values(self):
+        return [self.expand(key) for key in self.keys()]
+    def items(self):
+        return [(key, self.expand(key)) for key in self.keys()]
     def expand(self, key):
         if key in self.cache:
             return self.cache[key]
@@ -225,15 +255,25 @@ class EnvironmentExpander(object):
             raise ValueError('conditional must be of form ${condition?result:alternative}')
         primary, alternative = rest.split(':', 1)
         condition, primary, alternative = [x.strip() for x in [condition, primary, alternative]]
-        conditionvalue = self.expand(condition)
-        if conditionvalue:
+        try:
+            conditionvalue = self.expand(condition)
+        except KeyError:
+            conditionvalue = False
+        if is_trueish(conditionvalue):
             return self.expand(primary)
         return self.expand(alternative)
 
+def openarchive(name, fileobj):
+    if os.path.splitext(name)[1].upper() in ['.ZIP', '.NUPKG', '.JAR']:
+        return zipfile.ZipFile(fileobj, "r")
+    else:
+        return tarfile.open(name=name, fileobj=fileobj, mode="r|*")
+
 class Dependency(object):
-    def __init__(self, name, environment, logfile=None):
+    def __init__(self, name, environment, logfile=None, has_overrides=False):
         self.expander = EnvironmentExpander(environment)
         self.logfile = default_log(logfile)
+        self.has_overrides = has_overrides
     def fetch(self):
         remote_path = self.expander.expand('archive-path')
         local_path = os.path.abspath(self.expander.expand('dest'))
@@ -241,7 +281,7 @@ class Dependency(object):
         try:
             opener = get_opener_for_path(remote_path)
             remote_file = opener(remote_path)
-            tar = tarfile.open(name=remote_path, fileobj=remote_file, mode="r|*")
+            archive = openarchive(name=remote_path, fileobj=remote_file)
         except IOError:
             self.logfile.write("  FAILED\n")
             return False
@@ -253,8 +293,8 @@ class Dependency(object):
             # soon when we try to extract the files.
             pass
         self.logfile.write("  unpacking to '%s'\n" % (local_path,))
-        tar.extractall(local_path)
-        tar.close()
+        archive.extractall(local_path)
+        archive.close()
         remote_file.close()
         self.logfile.write("  OK\n")
         return True
@@ -265,6 +305,8 @@ class Dependency(object):
         return self.expander.expand(key)
     def __contains__(self, key):
         return key in self.expander
+    def items(self):
+        return self.expander.items()
     def checkout(self):
         name = self['name']
         sourcegit = self['source-git']
@@ -303,7 +345,7 @@ class DependencyCollection(object):
         self.base_env = env
         self.dependency_types = DEPENDENCY_TYPES
         self.dependencies = {}
-    def create_dependency(self, dependency_definition):
+    def create_dependency(self, dependency_definition, overrides={}):
         defn = dependency_definition
         env = {}
         env.update(self.base_env)
@@ -311,15 +353,20 @@ class DependencyCollection(object):
             dep_type = defn['type']
             env.update(self.dependency_types[dep_type])
         env.update(defn)
+        env.update(overrides)
         if 'ignore' in env and env['ignore']:
             return
         if 'name' not in env:
             raise ValueError('Dependency definition contains no name')
         name = env['name']
-        new_dependency = Dependency(name, env, logfile=self.logfile)
+        new_dependency = Dependency(name, env, logfile=self.logfile, has_overrides=len(overrides) > 0)
         self.dependencies[name] = new_dependency
+    def __contains__(self, key):
+        return key in self.dependencies
     def __getitem__(self, key):
         return self.dependencies[key]
+    def items(self):
+        return self.dependencies.items()
     def _filter(self, subset=None):
         if subset is None:
             return self.dependencies.values()
@@ -352,19 +399,25 @@ class DependencyCollection(object):
             return False
         return True
 
-def read_json_dependencies(dependencyfile, env, logfile):
+def read_json_dependencies(dependencyfile, overridefile, env, logfile):
     collection = DependencyCollection(env, logfile=logfile)
     dependencies = json.load(dependencyfile)
+    overrides = json.load(overridefile)
+    overrides_by_name = dict((dep['name'], dep) for dep in overrides)
     for d in dependencies:
-        collection.create_dependency(d)
+        name = d['name']
+        override = overrides_by_name.get(name,{})
+        collection.create_dependency(d, override)
     return collection
 
-def read_json_dependencies_from_filename(filename, env, logfile):
-    dependencyfile = open(filename, "r")
-    try:
-        return read_json_dependencies(dependencyfile, env, logfile)
-    finally:
-        dependencyfile.close()
+def read_json_dependencies_from_filename(dependencies_filename, overrides_filename, env, logfile):
+    dependencyfile = open(dependencies_filename, "r")
+    with open(dependencies_filename) as dependencyfile:
+        if overrides_filename is not None and os.path.isfile(overrides_filename):
+            with open(overrides_filename) as overridesfile:
+                return read_json_dependencies(dependencyfile, overridesfile, env, logfile)
+        else:
+            return read_json_dependencies(dependencyfile, StringIO.StringIO('[]'), env, logfile)
 
 def cli(args):
     if platform.system() != "Windows":
@@ -378,7 +431,7 @@ def clean_dir(dirname):
         except Exception as e:
             raise Exception("Failed to remove directory. Try closing applications that might be using it. (E.g. Visual Studio.)\n"+str(e))
 
-def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=True, nuget=True, clean=True, source=False, logfile=None):
+def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=True, nuget=True, clean=True, source=False, logfile=None, list_details=False, local_overrides=True, verbose=False):
     '''
     Fetch all the dependencies defined in projectdata/dependencies.json and in
     projectdata/packages.config.
@@ -405,20 +458,33 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
         platform = env['platform'] = default_platform()
     if platform is None:
         raise Exception('Platform not specified and unable to guess.')
-    if clean:
+    if clean and not list_details:
         if fetch:
             clean_dir('dependencies/AnyPlatform')
             clean_dir('dependencies/'+platform)
         if nuget:
             clean_dir('dependencies/nuget')
-    dependencies = read_json_dependencies_from_filename('projectdata/dependencies.json', env=env, logfile=logfile)
-    if fetch:
-        dependencies.fetch(dependency_names)
-    if nuget:
-        nuget_exe = os.path.normpath(list(glob('dependencies/AnyPlatform/NuGet.[0-9]*/NuGet.exe'))[0])
-        cli([nuget_exe, 'install', 'projectdata/packages.config', '-OutputDirectory', 'dependencies/nuget'])
-    if source:
-        dependencies.checkout(dependency_names)
+    overrides_filename = '../dependency_overrides.json' if local_overrides else None
+    dependencies = read_json_dependencies_from_filename('projectdata/dependencies.json', overrides_filename, env=env, logfile=logfile)
+    if list_details:
+        for name, dependency in dependencies.items():
+            print "Dependency '{0}':".format(name)
+            print "    fetches from:     {0!r}".format(dependency['archive-path'])
+            print "    unpacks to:       {0!r}".format(dependency['dest'])
+            print "    local override:   {0}".format("YES (see '../dependency_overrides.json')" if dependency.has_overrides else 'no')
+            if verbose:
+                print "    all keys:"
+                for key, value in sorted(dependency.items()):
+                    print "        {0} = {1!r}".format(key, value)
+            print ""
+    else:
+        if fetch:
+            dependencies.fetch(dependency_names)
+        if nuget:
+            nuget_exe = os.path.normpath(list(glob('dependencies/AnyPlatform/NuGet.[0-9]*/NuGet.exe'))[0])
+            cli([nuget_exe, 'install', 'projectdata/packages.config', '-OutputDirectory', 'dependencies/nuget'])
+        if source:
+            dependencies.checkout(dependency_names)
     return dependencies
 
 

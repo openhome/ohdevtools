@@ -13,7 +13,7 @@ from default_platform import default_platform as _default_platform
 
 # The version number of the API. Incremented whenever there
 # are new features or bug fixes.
-VERSION = 15
+VERSION = 16
 
 # The earliest API version that we're still compatible with.
 # Changed only when a change breaks an existing API.
@@ -293,7 +293,10 @@ class Builder(object):
         args = flatten_string_list(args)
         self._check_call(["rsync"] + args, **kwargs)
     def _dependency_collection(self, env):
-        return read_json_dependencies_from_filename(os.path.join('projectdata', 'dependencies.json'), env, logfile=sys.stdout)
+        return read_json_dependencies_from_filename(
+                os.path.join('projectdata', 'dependencies.json'),
+                os.path.join('..', 'dependency_overrides.json'),
+                env, logfile=sys.stdout)
     def _process_dependency_args(self, *selected, **kwargs):
         kwargs = process_kwargs(
             "fetch_dependencies",
@@ -301,6 +304,9 @@ class Builder(object):
             {"env":None},)
         selected = flatten_string_list(selected)
         env = dict(kwargs['env'] or {})
+        if "debugmode" not in env:
+            env['debugmode'] = 'release'
+        env['titlecase-debugmode'] = env['debugmode'].title()
         if "platform" not in env:
             env['platform'] = self._context.env["OH_PLATFORM"]
         if "linn-git-user" not in env:
