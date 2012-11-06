@@ -159,6 +159,7 @@ class Builder(object):
         self._steps = []
         self._optionParser = OptionParser()
         self.add_bool_option("-v", "--verbose")
+        self.add_bool_option("--no-overrides", help="When fetching dependencies, don't read from a local overrides file.")
         self._enabled_options = set()
         self._disabled_options = set()
         self._disable_all_options = False
@@ -318,7 +319,8 @@ class Builder(object):
         try:
             dependencies.fetch_dependencies(
                     selected or None, platform=self._context.env["OH_PLATFORM"], env=env,
-                    fetch=True, nuget=use_nuget, clean=True, source=False, logfile=sys.stdout )
+                    fetch=True, nuget=use_nuget, clean=True, source=False, logfile=sys.stdout,
+                    local_overrides=not self._context.options.no_overrides)
         except Exception as e:
             print e
             raise AbortRunException()
