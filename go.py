@@ -60,6 +60,9 @@ def invoke_module(modulename, args):
     pythonpath = (oldpythonpath + os.path.pathsep + thisdir) if oldpythonpath else thisdir
     newenv = dict(os.environ)
     newenv['PYTHONPATH'] = pythonpath
+    # This isn't ideal. Importing tkinter, even indirectly, adds unicode
+    # strings to the environment. Force them all to str:
+    newenv = dict((key,str(value)) for (key, value) in newenv.items())
     exitcode = subprocess.call([sys.executable, '-m', modulename] + args, env=newenv)
     sys.exit(exitcode)
 
