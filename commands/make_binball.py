@@ -23,13 +23,16 @@ def main():
         parser.print_usage()
         return
 
-    with tarfile.open(args[0], 'w:gz') as tf:
+    tf = tarfile.open(args[0], 'w:gz')
+    try:
         os.chdir(options.basedir)
         for pattern in args[1:]:
             for fname in ant_glob(pattern):
                 if fname.startswith('./'):
                     fname = fname[2:]
                 tf.add(fname, options.prefix + fname)
+    finally:
+        tf.close()
 
 if __name__ == "__main__":
     main()
