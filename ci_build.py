@@ -199,7 +199,7 @@ class Builder(object):
         steps = flatten_comma_list(steps)
         self._enable_all_options = ALL_STEPS in steps
         #self._enable_default_options = DEFAULT_STEPS in steps
-        self._disable_all_options = DEFAULT_STEPS not in steps
+        self._disable_all_options = DEFAULT_STEPS not in steps and ALL_STEPS not in steps
         self._disabled_options = set(s[1:] for s in steps if s.startswith("-"))
         self._enabled_options = set(s[1:] for s in steps if s.startswith("+"))
         self._enabled_options = self._enabled_options.union(
@@ -246,17 +246,27 @@ class Builder(object):
         for step in self._steps:
             if step.test_conditions(self._context.env):
                 enabled = True
+                reason = "required"
                 if step.is_optional:
                     enabled = step.is_enabled_by_default
+                    reason = "default" if enabled else "not selected"
+                    if self._enable_all_options:
+                        enabled = True
+                        reason = "all selected"
                     if self._disable_all_options:
                         enabled = False
+                        reason = "not selected"
                     if step.name in self._enabled_options:
                         enabled = True
+                        reason = "selected"
                     if step.name in self._disabled_options:
                         enabled = False
+                        reason = "deselected"
                 if enabled:
-                    print step.name
+                    print "Performing step '{0}' (reason: '{1}')".format(step.name, reason)
                     step.run(self._context)
+                else:
+                    print "Skipping step '{0}' (reason: '{1}')".format(step.name, reason)
     def add_bool_option(self, *args, **kwargs):
         kwargs=dict(kwargs)
         kwargs["default"] = False
