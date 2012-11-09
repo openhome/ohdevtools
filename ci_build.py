@@ -276,6 +276,9 @@ class Builder(object):
         self._optionParser.add_option(*args, **kwargs)
 
     def _check_call(self, *args, **kwargs):
+        # force unicode strings in env to str() as unicode env variables break on windows
+        if 'env' in kwargs:
+            kwargs['env'] = dict((key,str(value)) for (key, value) in kwargs['env'].items())
         argstring = [", ".join([repr(arg) for arg in args])]
         kwargstring = [", ".join(["%s=%r" % (k,v) for (k,v) in kwargs.items()])]
         invocation ="subprocess.call({0})",format(", ".join(argstring+kwargstring)) 
