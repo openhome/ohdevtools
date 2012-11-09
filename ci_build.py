@@ -276,11 +276,14 @@ class Builder(object):
         self._optionParser.add_option(*args, **kwargs)
 
     def _check_call(self, *args, **kwargs):
+        argstring = [", ".join([repr(arg) for arg in args])]
+        kwargstring = [", ".join(["%s=%r" % (k,v) for (k,v) in kwargs.items()])]
+        invocation ="subprocess.call({0})",format(", ".join(argstring+kwargstring)) 
         if self._context.options.verbose:
-            argstring = [", ".join([repr(arg) for arg in args])]
-            kwargstring = [", ".join(["%s=%r" % (k,v) for (k,v) in kwargs.items()])]
-            print "subprocess.check_call(%s)" % (", ".join(argstring+kwargstring))
-        subprocess.check_call(*args, **kwargs)
+            print invocation
+        retval = subprocess.call(*args, **kwargs)
+        if retval != 0:
+            fail("subprocess.call({0}, ... ) -> returned {1}".format(", ".join(argstring), retval))
 
     def python(self, *args, **kwargs):
         args = flatten_string_list(args)
