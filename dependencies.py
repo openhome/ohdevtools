@@ -8,7 +8,7 @@ import platform
 import subprocess
 import json
 import shutil
-import StringIO
+import cStringIO
 from glob import glob
 from default_platform import default_platform
 
@@ -68,7 +68,8 @@ DEPENDENCY_TYPES = {
         'platform-specific': True,
         'archive-platform': '${platform-specific?platform:any-platform}',
         'dest': 'dependencies/${archive-platform}/',
-        'configure-args': []
+        'configure-args': [],
+        'strip-archive-dirs': 0
         },
 
     # External dependencies generally don't have a git repo, and even if they do,
@@ -89,7 +90,8 @@ DEPENDENCY_TYPES = {
         'archive-platform': '${platform-specific?platform:any-platform}',
         'archive-path': '${binary-repo}/${archive-platform}/${archive-filename}',
         'dest': 'dependencies/${archive-platform}/',
-        'configure-args': []
+        'configure-args': [],
+        'strip-archive-dirs': 0
         },
     }
 
@@ -171,7 +173,7 @@ def urlopen(url):
     fileobj = urllib2.urlopen(url)
     try:
         contents = fileobj.read()
-        return StringIO.StringIO(contents)
+        return cStringIO.StringIO(contents)
     finally:
         fileobj.close()
 
@@ -264,10 +266,26 @@ class EnvironmentExpander(object):
         return self.expand(alternative)
 
 def openarchive(name, fileobj):
+    memoryfile = cStringIO.StringIO(fileobj.read())
     if os.path.splitext(name)[1].upper() in ['.ZIP', '.NUPKG', '.JAR']:
-        return zipfile.ZipFile(fileobj, "r")
+        return zipfile.ZipFile(memoryfile, "r")
     else:
-        return tarfile.open(name=name, fileobj=fileobj, mode="r|*")
+        return tarfile.open(name=name, fileobj=memoryfile, mode="r:*")
+
+def extract_archive(archive, local_path, strip_dirs=0):
+    # The general idea is to mutate the in-memory archive, changing the
+    # path of files to remove their prefix directories, before invoking
+    # extractall. This can solve the problem of archives that include
+    # a top-level directory whose name includes a variable value like
+    # version-number, which forces us to change assembly references in
+    # every project for every minor change.
+    if strip_dirs > 0:
+        if not isinstance(archive, tarfile.TarFile):
+            raise Exception('Cannot strip leading directories from zip archives.')
+        for entry in archive:
+            entry.name = '/'.join(entry.name.split('/')[strip_dirs:])
+    archive.extractall(local_path)
+
 
 class Dependency(object):
     def __init__(self, name, environment, logfile=None, has_overrides=False):
@@ -277,6 +295,7 @@ class Dependency(object):
     def fetch(self):
         remote_path = self.expander.expand('archive-path')
         local_path = os.path.abspath(self.expander.expand('dest'))
+        strip_dirs = self.expander.expand('strip-archive-dirs')
         self.logfile.write("Fetching '%s'\n  from '%s'\n" % (self.name, remote_path))
         try:
             opener = get_opener_for_path(remote_path)
@@ -293,7 +312,7 @@ class Dependency(object):
             # soon when we try to extract the files.
             pass
         self.logfile.write("  unpacking to '%s'\n" % (local_path,))
-        archive.extractall(local_path)
+        extract_archive(archive, local_path, strip_dirs)
         archive.close()
         remote_file.close()
         self.logfile.write("  OK\n")
@@ -417,7 +436,7 @@ def read_json_dependencies_from_filename(dependencies_filename, overrides_filena
             with open(overrides_filename) as overridesfile:
                 return read_json_dependencies(dependencyfile, overridesfile, env, logfile)
         else:
-            return read_json_dependencies(dependencyfile, StringIO.StringIO('[]'), env, logfile)
+            return read_json_dependencies(dependencyfile, cStringIO.StringIO('[]'), env, logfile)
 
 def cli(args):
     if platform.system() != "Windows":

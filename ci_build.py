@@ -13,7 +13,7 @@ from default_platform import default_platform as _default_platform
 
 # The version number of the API. Incremented whenever there
 # are new features or bug fixes.
-VERSION = 16
+VERSION = 17
 
 # The earliest API version that we're still compatible with.
 # Changed only when a change breaks an existing API.
