@@ -647,13 +647,13 @@ class OpenHomeBuilder(object):
         '''
         msbuild_args = ['msbuild' if self.system == 'Windows' else 'xbuild']
         if target is not None:
-            msbuild_args += ['-target:'+target]
+            msbuild_args += ['/target:'+target]
         if platform is not None:
-            msbuild_args += ['-property:Platform='+platform]
+            msbuild_args += ['/property:Platform='+platform]
         if configuration is not None:
-            msbuild_args += ['-property:Configuration='+configuration]
+            msbuild_args += ['/property:Configuration='+configuration]
         msbuild_args += [project]
-        self._builder.cli(msbuild_args)
+        self._builder.shell(' '.join(msbuild_args))
 
     def nunit(self, test_assembly):
         '''
