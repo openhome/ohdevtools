@@ -14,7 +14,7 @@ from functools import wraps
 
 # The version number of the API. Incremented whenever there
 # are new features or bug fixes.
-VERSION = 18
+VERSION = 19
 
 # The earliest API version that we're still compatible with.
 # Changed only when a change breaks an existing API.
@@ -263,7 +263,7 @@ class Builder(object):
                 reason = "required"
                 if step.is_optional:
                     enabled = step.is_enabled_by_default
-                    reason = "default" if enabled else "not selected"
+                    reason = "default" if enabled else "not default"
                     if self._enable_all_options:
                         enabled = True
                         reason = "all selected"
@@ -493,7 +493,7 @@ class OpenHomeBuilder(object):
     test_location = 'build/{assembly}/bin/{configuration}/{assembly}.dll'
     package_location = 'build/packages/{packagename}'
     package_upload = 'releases@openhome.org:/home/releases/www/artifacts/{uploadpath}'
-    automatic_steps = ['default']
+    automatic_steps = ['fetch','configure','clean','build','test']
 
     def __init__(self):
         super(OpenHomeBuilder, self).__init__()
@@ -516,13 +516,19 @@ class OpenHomeBuilder(object):
         builder.add_option("--steps", default="default",
                 help="Steps to run, comma separated. Allowed: all default fetch clean configure build test publish")
         builder.add_bool_option("--auto", help="Choose behaviour automatically based on environment. (Best for CI servers.)")
+
+        # Sorry, this is a bit crazy. This contortion is intended to let us re-use
+        # Builder.build_step without having to rewrite it. The Builder expects to
+        # call each step and pass in a context object, but we don't want our sub-classes
+        # to have to deal with the context, so our wrapper here accepts the context,
+        # stores it in a field, then forwards to our method.
         def invoke(name):
             def passthrough(context):
                 self._context = context
                 getattr(self, name)()
                 self._context = None
             return passthrough
-        builder.build_step('process_options', optional=False)(self._process_options)
+        builder.build_step('process_options', optional=False)(invoke("_process_options"))
         builder.build_step('setup', optional=False)(invoke("setup"))
         builder.build_step('openhome_setup', optional=False)(invoke("openhome_setup"))
         builder.build_step('fetch', optional=True, default=True)(invoke("fetch"))
@@ -544,42 +550,51 @@ class OpenHomeBuilder(object):
             version = self.version))
         return template.format(**kwargs)
 
-    def _process_platform_options(self, context):
-        system = context.options.system
-        architecture = context.options.architecture
-        platform = context.options.platform
+    def _process_platform_options(self):
+        system = self.options.system
+        architecture = self.options.architecture
+        platform = self.options.platform
         if platform and (system or architecture):
             fail('Specify --platform alone or both --system and --architecture, not a mix.')
         if bool(system) != bool(architecture):
             fail('Specify --system and --architecture together.')
         if platform is None and system is not None:
             platform = system + '-' + architecture
-        if platform is None and context.options.auto:
-            platform = context.env['slave']
+        if platform is None and self.options.auto:
+            platform = self.env['slave']
         if platform is None:
             platform = default_platform()
         if '-' not in platform:
             fail('Platform should be a system and an architecture separated by a hyphen, e.g. Windows-x86.')
 
         system, architecture = platform.split('-', 2)
-        context.env['OH_PLATFORM'] = platform
+        self.env['OH_PLATFORM'] = platform
         self.platform = platform
         self.system = system
         self.architecture = architecture
-    def _process_configuration_options(self, context):
-        configuration = context.options.configuration
+    def _process_configuration_options(self):
+        configuration = self.options.configuration
         if configuration is None:
             configuration = "Release"
         self.configuration = configuration
-    def _process_version_options(self, context):
-        self.version = context.options.version
-    def _process_options(self, context):
+    def _process_version_options(self):
+        self.version = self.options.version
+    def _process_auto_option(self):
+        if self.options.auto:
+            self.steps_to_run = self.automatic_steps
+            if self.env.get('PUBLISH_RELEASE',"false").lower() == "true":
+                self.steps_to_run += ["+publish"]
+            self.version = self.env.get('RELEASE_VERSION', self.version)
+        else:
+            self.steps_to_run = self.options.steps
+    def _process_options(self):
         if self.enable_platforms:
-            self._process_platform_options(context)
+            self._process_platform_options()
         if self.enable_configurations:
-            self._process_configuration_options(context)
+            self._process_configuration_options()
         if self.enable_versioning:
-            self._process_version_options(context)
+            self._process_version_options()
+        self._process_auto_option()
 
     def setup(self):
         '''
@@ -591,10 +606,8 @@ class OpenHomeBuilder(object):
     def openhome_setup(self):
         if self.enable_vsvars and self.system == 'Windows':
             self.env.update(get_vsvars_environment(self.architecture))
-        if self.options.auto:
-            self._builder.specify_optional_steps(*self.automatic_steps)
-        else:
-            self._builder.specify_optional_steps(self.options.steps)
+        print self.steps_to_run
+        self._builder.specify_optional_steps(self.steps_to_run)
 
     def fetch(self):
         '''
