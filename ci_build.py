@@ -10,10 +10,11 @@ import shutil
 import getpass
 from userlocks import userlock
 from default_platform import default_platform as _default_platform
+from functools import wraps
 
 # The version number of the API. Incremented whenever there
 # are new features or bug fixes.
-VERSION = 17
+VERSION = 18
 
 # The earliest API version that we're still compatible with.
 # Changed only when a change breaks an existing API.
@@ -152,7 +153,17 @@ if os.name in ['nt', 'os2']:
 else:
     EnvironmentCopy = dict
 
-
+def callable_to_function(f):
+    '''
+    Take a callable object, such as a function or instance method,
+    and wrap it in a function. This is necessary if you want to
+    annotate it with extra attributes and it might be an instance
+    method.
+    '''
+    @wraps(f)
+    def f_prime(*args, **kwargs):
+        f(*args, **kwargs)
+    return f_prime
 
 class Builder(object):
     def __init__(self):
@@ -165,22 +176,25 @@ class Builder(object):
         self._disable_all_options = False
         self._enable_all_options = False
         #self._context = BuildContext()
+    def has_steps(self):
+        return len(self._steps) > 0
+    def create_build_step(self, f, name):
+        if hasattr(f, "buildstep"):
+            return f
+        f = callable_to_function(f)
+        f.buildstep = BuildStep(name or f.__name__, f)
+        self._steps.append(f.buildstep)
+        return f
     def build_condition(self, name=None, **conditions):
         """Decorator applied to functions in the build_behaviour file."""
         def decorator_func(f):
-            if not hasattr(f, "buildstep"):
-                f.buildstep = BuildStep(name or f.__name__, f)
-                self._steps.append(f.buildstep)
+            f = self.create_build_step(f, name=name)
             f.buildstep.add_conditions(conditions)
             return f
         return decorator_func
     def build_step(self, name=None, optional=False, default=True):
         def decorator_func(f):
-            if not hasattr(f, "buildstep"):
-                f.buildstep = BuildStep(f.__name__, f)
-                self._steps.append(f.buildstep)
-            if name is not None:
-                f.buildstep.name = name
+            f = self.create_build_step(f, name=name)
             f.buildstep.set_optional(optional)
             f.buildstep.set_default(default)
             return f
@@ -302,7 +316,7 @@ class Builder(object):
     def cli(self, *args, **kwargs):
         args = flatten_string_list(args)
         if platform.system() != "Windows":
-            args = ["mono", "--runtime=v4.0.30319"] + args
+            args = ["mono", "--debug", "--runtime=v4.0.30319"] + args
         kwargs.setdefault('shell', False)
         kwargs.setdefault('env', self._context.env)
         self._check_call(args, **kwargs)
@@ -351,6 +365,8 @@ class Builder(object):
         selected, env = self._process_dependency_args(*selected, **kwargs)
         dependency_collection = self._dependency_collection(env)
         return dependency_collection.get_args(selected or None)
+
+
 
 
 class SshConnection(object):
@@ -434,6 +450,266 @@ def scp(*args):
         raise "Cannot find scp (or pscp) in the path."
     subprocess.check_call([program] + list(args))
 
+
+def _forward_to_builder(name):
+    '''
+    Create a method that just calls a method of the same name
+    on the builder object with the same arguments.
+    '''
+    @wraps(getattr(Builder, name))
+    def func(self, *args, **kwargs):
+        return getattr(self._builder, name)(*args, **kwargs)
+    return func
+
+def _forward_to_function(f):
+    '''
+    Create a method that just calls a function with the same
+    arguments.
+    '''
+    @wraps(f)
+    def func(self, *args, **kwargs):
+        return f(args, kwargs)
+    return func
+
+class OpenHomeBuilder(object):
+
+    # This is a slightly awkward attempt to bridge the way to a more maintainable
+    # system while making the 'build_behaviour' files easier to work with. To smooth
+    # the transition, this still uses some tricks that may be confusing for maintainers,
+    # but the idea is that the interface it presents to the 'build_behaviour' script
+    # is more natural and can eventually be provided without any esoteric Python.
+
+    # This tries to tame and conceal the broad generality of Builder and present it as
+    # a base-class for projects to sub-class. Instead of allowing completely arbitrary
+    # steps to be registered, a sensible set of steps is enforced:
+    #     setup, fetch, clean, configure, build, test, publish
+    # This allows projects to avoid excessibly duplicating each other.
+
+    enable_configurations = True
+    enable_platforms = True
+    enable_versioning = True
+    enable_vsvars = True
+
+    test_location = 'build/{assembly}/bin/{configuration}/{assembly}.dll'
+    package_location = 'build/packages/{packagename}'
+    package_upload = 'releases@openhome.org:/home/releases/www/artifacts/{uploadpath}'
+    automatic_steps = ['default']
+
+    def __init__(self):
+        super(OpenHomeBuilder, self).__init__()
+
+    def startup(self, builder):
+        self._builder = builder
+        self._context = None
+        if self.enable_platforms:
+            builder.add_option('--platform', help="Target platform. E.g. Windows-x86, Linux-x64, iOs-armv7.")
+            builder.add_option('--system', help="Target system. E.g. Windows, Linux, Mac, iOs.")
+            builder.add_option('--architecture', help="Target architecture. E.g. x86, x64.")
+        if self.enable_configurations:
+            builder.add_option('--configuration', help="Target configuration. E.g. Debug, Release.")
+            builder.add_option("--debug", action="store_const", const="Debug", dest="configuration",
+                    help="Specify Debug configuration. Short for --configuration=Debug")
+            builder.add_option("--release", action="store_const", const="Release", dest="configuration",
+                    help="Specify Release configuration. Short for --configuration=Release")
+        if self.enable_versioning:
+            builder.add_option('--version', help="Specify version number for build.")
+        builder.add_option("--steps", default="default",
+                help="Steps to run, comma separated. Allowed: all default fetch clean configure build test publish")
+        builder.add_bool_option("--auto", help="Choose behaviour automatically based on environment. (Best for CI servers.)")
+        def invoke(name):
+            def passthrough(context):
+                self._context = context
+                getattr(self, name)()
+                self._context = None
+            return passthrough
+        builder.build_step('process_options', optional=False)(self._process_options)
+        builder.build_step('setup', optional=False)(invoke("setup"))
+        builder.build_step('openhome_setup', optional=False)(invoke("openhome_setup"))
+        builder.build_step('fetch', optional=True, default=True)(invoke("fetch"))
+        builder.build_step('configure', optional=True, default=True)(invoke("configure"))
+        builder.build_step('clean', optional=True, default=True)(invoke("clean"))
+        builder.build_step('build', optional=True, default=True)(invoke("build"))
+        builder.build_step('test', optional=True, default=False)(invoke("test"))
+        builder.build_step('publish', optional=True, default=False)(invoke("publish"))
+
+    def __getattr__(self, name):
+        return getattr(self._context, name)
+
+    def _expand_template(self, template, **kwargs):
+        kwargs.update(dict(
+            configuration = self.configuration,
+            system = self.system,
+            architecture = self.architecture,
+            platform = self.platform,
+            version = self.version))
+        return template.format(**kwargs)
+
+    def _process_platform_options(self, context):
+        system = context.options.system
+        architecture = context.options.architecture
+        platform = context.options.platform
+        if platform and (system or architecture):
+            fail('Specify --platform alone or both --system and --architecture, not a mix.')
+        if bool(system) != bool(architecture):
+            fail('Specify --system and --architecture together.')
+        if platform is None and system is not None:
+            platform = system + '-' + architecture
+        if platform is None and context.options.auto:
+            platform = context.env['slave']
+        if platform is None:
+            platform = default_platform()
+        if '-' not in platform:
+            fail('Platform should be a system and an architecture separated by a hyphen, e.g. Windows-x86.')
+
+        system, architecture = platform.split('-', 2)
+        context.env['OH_PLATFORM'] = platform
+        self.platform = platform
+        self.system = system
+        self.architecture = architecture
+    def _process_configuration_options(self, context):
+        configuration = context.options.configuration
+        if configuration is None:
+            configuration = "Release"
+        self.configuration = configuration
+    def _process_version_options(self, context):
+        self.version = context.options.version
+    def _process_options(self, context):
+        if self.enable_platforms:
+            self._process_platform_options(context)
+        if self.enable_configurations:
+            self._process_configuration_options(context)
+        if self.enable_versioning:
+            self._process_version_options(context)
+
+    def setup(self):
+        '''
+        Subclasses can override to specify setup behaviour to occur before the
+        start of any build.
+        '''
+        pass
+
+    def openhome_setup(self):
+        if self.enable_vsvars and self.system == 'Windows':
+            self.env.update(get_vsvars_environment(self.architecture))
+        if self.options.auto:
+            self._builder.specify_optional_steps(*self.automatic_steps)
+        else:
+            self._builder.specify_optional_steps(self.options.steps)
+
+    def fetch(self):
+        '''
+        Fetch dependencies. Subclasses may override.
+        '''
+        self.fetch_dependencies()
+
+    def configure(self):
+        '''
+        Invoke any configure script. Subclasses should override this if the
+        project requires configuration.
+        '''
+        pass
+
+    def clean(self):
+        '''
+        Clean out build results. Subclasses should override this.
+        '''
+        pass
+
+    def build(self):
+        '''
+        Perform the build. Subclasses should override this.
+        '''
+        pass
+
+    def test(self):
+        '''
+        Run the tests. Subclasses should override this.
+        '''
+        pass
+
+    def publish(self):
+        '''
+        Publish the packages. Subclasses should override this.
+        '''
+        pass
+
+    def set_nunit_location(self, nunitexe):
+        '''
+        Specify where nunit can be found. Subclasses must invoke this in order
+        to use the nunit() method.
+        '''
+        self.nunitexe = nunitexe
+
+    def msbuild(self, project, target='Build', platform=None, configuration=None):
+        '''
+        Invoke msbuild/xbuild to build a project/solution. Specify the path to
+        the project or solution file.
+        '''
+        msbuild_args = ['msbuild' if self.system == 'Windows' else 'xbuild']
+        if target is not None:
+            msbuild_args += ['-target:'+target]
+        if platform is not None:
+            msbuild_args += ['-property:Platform='+platform]
+        if configuration is not None:
+            msbuild_args += ['-property:Configuration='+configuration]
+        msbuild_args += [project]
+        self._builder.cli(msbuild_args)
+
+    def nunit(self, test_assembly):
+        '''
+        Run NUnit on a test assembly. Specify the name of the assembly (with
+        no extension). Test assemblies are located using the template string
+        test_location.
+        '''
+        if self.nunitexe is None:
+            fail("The builder's setup method should call set_nunit_location().")
+        self._builder.cli([
+            self.nunitexe,
+            '-labels',
+            '-noshadow',
+            self._expand_template(self.test_location, assembly=test_assembly)])
+
+    def publish_package(self, packagename, uploadpath):
+        '''
+        Publish a package via scp to the package repository. Projects can
+        override the package_location and package_upload template strings to
+        control where packages are uploaded to.
+        '''
+        packagename = self._expand_template(packagename)
+        uploadpath = self._expand_template(uploadpath)
+        sourcepath = self._expand_template(self.package_location, packagename=packagename)
+        destinationpath = self._expand_template(self.package_upload, uploadpath=uploadpath)
+        scp(sourcepath, destinationpath)
+
+    # This just sets up forwarding methods for a bunch of methods on the Builder, to
+    # allow sub-classes access to them.
+
+    fetch_dependencies = _forward_to_builder("fetch_dependencies")
+    read_dependencies = _forward_to_builder("read_dependencies")
+    get_dependency_args = _forward_to_builder("get_dependency_args")
+    add_option = _forward_to_builder("add_option")
+    add_bool_option = _forward_to_builder("add_bool_option")
+    python = _forward_to_builder("python")
+    shell = _forward_to_builder("shell")
+    cli = _forward_to_builder("cli")
+    rsync = _forward_to_builder("rsync")
+    #build_step = _forward_to_builder("build_step")
+    #build_condition = _forward_to_builder("condition")
+    modify_optional_steps = _forward_to_builder("modify_optional_steps")
+    specify_optional_steps = _forward_to_builder("specify_optional_steps")
+    default_platform = _forward_to_function(default_platform)
+
+    # This sets up forwarding methods for a bunch of useful functions, to allow
+    # sub-classes access to them.
+    get_vsvars_environment = _forward_to_function(get_vsvars_environment)
+    SshSession = _forward_to_function(SshSession)
+    userlock = _forward_to_function(userlock)
+    fail = _forward_to_function(fail)
+    scp = _forward_to_function(scp)
+    require_version = _forward_to_function(require_version)
+
+
+
 def run(buildname="build", argv=None):
     builder = Builder()
     import ci
@@ -458,12 +734,17 @@ def run(buildname="build", argv=None):
             'userlock':userlock,
             'fail':fail,
             'scp':scp,
-            'require_version':require_version
+            'require_version':require_version,
+            'OpenHomeBuilder':OpenHomeBuilder
         }
     for name, value in behaviour_globals.items():
         setattr(ci, name, value)
     try:
-        execfile(os.path.join('projectdata', buildname+'_behaviour.py'), dict(behaviour_globals))
+        global_dict = dict(behaviour_globals)
+        execfile(os.path.join('projectdata', buildname+'_behaviour.py'), global_dict)
+        if not builder.has_steps() and 'Builder' in global_dict:
+            instance = global_dict['Builder']()
+            instance.startup(builder)
         builder.run(argv)
     except AbortRunException as e:
         print e.message
