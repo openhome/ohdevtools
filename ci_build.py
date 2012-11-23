@@ -668,7 +668,7 @@ class OpenHomeBuilder(object):
         msbuild_args += [project]
         self._builder.shell(' '.join(msbuild_args))
     
-    def mdtool(self, project, target='build', configuration=None):
+    def mdtool(self, project, target='build', configuration=None, bundle=None):
         '''
         Invoke mdtool to build a project/solution. Specify the path to
         the project or solution file.
@@ -679,6 +679,8 @@ class OpenHomeBuilder(object):
         if configuration is not None:
             mdtool_args += ['-c:'+configuration]
         mdtool_args += [('-p:' if target == 'mac-bundle' else ' ') + project]
+        if bundle is not None:
+            mdtool_args += [' '+bundle]
         self._builder.shell(' '.join(mdtool_args))
     
     def nunit(self, test_assembly):
