@@ -14,7 +14,7 @@ from functools import wraps
 
 # The version number of the API. Incremented whenever there
 # are new features or bug fixes.
-VERSION = 20
+VERSION = 21
 
 # The earliest API version that we're still compatible with.
 # Changed only when a change breaks an existing API.
@@ -673,14 +673,20 @@ class OpenHomeBuilder(object):
         Invoke mdtool to build a project/solution. Specify the path to
         the project or solution file.
         '''
-        mdtool_args = ['/Applications/MonoDevelop.app/Contents/MacOS/mdtool' if self.system == 'Mac' else 'mdtool']
-        if target is not None:
-            mdtool_args += [' '+target]
+        mdtool_args = ['/Applications/MonoDevelop.app/Contents/MacOS/mdtool' if (self.system == 'Mac' or self.system == 'iOs') else 'mdtool']
+        if target == "build" or target == "Build":
+            mdtool_args += ['build']
+            mdtool_args += ['-t:Build']
+        elif target == "clean" or target == "Clean":
+            mdtool_args += ['build']
+            mdtool_args += ['-t:Clean']
+        elif target is not None:
+            mdtool_args += [target]
         if configuration is not None:
             mdtool_args += ['-c:'+configuration]
-        mdtool_args += [('-p:' if target == 'mac-bundle' else ' ') + project]
+        mdtool_args += [('-p:' if target == 'mac-bundle' else '') + project]
         if bundle is not None:
-            mdtool_args += [' '+bundle]
+            mdtool_args += [bundle]
         self._builder.shell(' '.join(mdtool_args))
     
     def nunit(self, test_assembly):
