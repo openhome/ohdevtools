@@ -14,11 +14,11 @@ from functools import wraps
 
 # The version number of the API. Incremented whenever there
 # are new features or bug fixes.
-VERSION = 21
+VERSION = 22
 
 # The earliest API version that we're still compatible with.
 # Changed only when a change breaks an existing API.
-BACKWARD_VERSION = 13
+BACKWARD_VERSION = 22
 
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
