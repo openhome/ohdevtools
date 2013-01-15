@@ -34,8 +34,9 @@ def get_vsvars_environment(architecture="x86"):
     win32-specific
     """
 	
-    vscomntools = os.environ['VS110COMNTOOLS']
-    if vscomntools is None:
+    try:
+        vscomntools = os.environ['VS110COMNTOOLS']
+    except:
         vscomntools = os.environ['VS100COMNTOOLS']
         if vscomntools is None:
             raise Exception("Neither VS110COMNTOOLS or VS100COMNTOOLS are set in environment.")
