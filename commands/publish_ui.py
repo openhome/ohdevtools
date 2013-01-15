@@ -6,6 +6,7 @@ import subprocess
 
 description = "Publish latest UI files onto sheeva003."
 command_group = "Hudson commands"
+command_hidden = True
 
 
 def rssh(username,host,cmd):

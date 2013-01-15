@@ -5,6 +5,11 @@ import os
 import ntpath
 from xml.sax.saxutils import escape, quoteattr
 
+
+description = "Generates MSBuild fragments for embedding content."
+# Hide from "go help" for now: not relevant to most projects.
+command_hidden = True
+
 usage_text = """
 
 Creates XML to insert in a csproj file to embed content.

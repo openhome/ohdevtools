@@ -6,6 +6,7 @@ import os
 description = "Create an empty, properly configured .csproj file."
 command_group = "Developer tools"
 command_synonyms = ["mkprj","make-csproj"]
+command_name = "make-csproj"
 
 TEMPLATE = """<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" DefaultTargets="WafBuild" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">

@@ -14,6 +14,10 @@ import time
 import shutil
 import glob
 
+description = "Run soak tests. ohWidget-specific."
+# Hide this from "go help" for now:
+command_hidden = True
+
 REQUIRED_DIRS = ["build", "integrationtest", "scripts", "soaktestrepo"]
 
 timestamp = lambda:datetime.datetime.now().isoformat()

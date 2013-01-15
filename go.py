@@ -2,26 +2,35 @@ import sys, os, subprocess
 
 HELP_SYNONYMS = ["--help", "-h", "/h", "/help", "/?", "-?", "h", "help", "commands"]
 
-def get_command_details(command):
+def get_command_details(modulename):
+    command = modulename
     try:
         commands_module = __import__('commands.'+command)
         command_module = getattr(commands_module, command)
     except:
         #print sys.exc_info()
-        return Command(command, "", "[There was an error processing this command]", "")
+        return Command(command, command, "", "[There was an error processing this command]", "", False)
     description = getattr(command_module, 'description', '[No description available]')
     group = getattr(command_module, 'command_group', '')
     synonyms = getattr(command_module, 'command_synonyms', [])
-    return Command(command, group, description, synonyms)
+    name = getattr(command_module, 'command_name', command)
+    hidden = getattr(command_module, 'command_hidden', False)
+    if command not in synonyms:
+        synonyms.append(command)
+    if name in synonyms:
+        synonyms.remove(name)
+    return Command(name, command, group, description, synonyms, hidden)
 
 class Command(object):
-    def __init__(self, name, group, description, synonyms):
+    def __init__(self, name, modulename, group, description, synonyms, hidden):
         self.name = name
+        self.modulename = modulename
         self.group = group
         self.description = description
         self.synonyms = list(synonyms)
+        self.hidden = hidden
 
-def getcommandnames():
+def getcommandmodules():
     dirpath, scriptname = os.path.split(os.path.abspath(__file__))
     filenames = os.listdir(os.path.join(dirpath, 'commands'))
     commands = [f[:-3] for f in filenames if f.endswith('.py')]
@@ -30,10 +39,11 @@ def getcommandnames():
     return commands
 
 def getcommands():
-    commandnames = getcommandnames()
+    commandmodules = getcommandmodules()
+    commanddetails = [get_command_details(c) for c in commandmodules]
     return dict(
-            (c, get_command_details(c))
-            for c in commandnames)
+            (d.name, d)
+            for d in commanddetails)
 
 def get_commands_and_synonyms():
     commands = getcommands()
@@ -44,12 +54,12 @@ def get_commands_and_synonyms():
     return commands_and_synonyms
 
 def findcommand(command):
-    command_names = getcommandnames()
-    if command in command_names:
+    command_modules = getcommandmodules()
+    if command in command_modules:
         return command
     commands = get_commands_and_synonyms()
     if command in commands:
-        return commands[command].name
+        return commands[command].modulename
     print 'Unrecognized command.'
     print 'Try "go help" for a list of commands.'
     sys.exit(1)
@@ -94,6 +104,8 @@ def showhelp():
     maxlen = max(len(cmd) for (cmd,details) in commands)
     groups = {}
     for cmd, details in commands:
+        if details.hidden:
+            continue
         groups.setdefault(details.group, []).append(details)
     for group, commandlist in sorted(groups.items()):
         print

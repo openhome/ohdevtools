@@ -7,7 +7,8 @@ from antglob import ant_glob
 import tarfile
 
 description = "Assemble a tarball of binaries."
-command_group = "Developer tools"
+command_group = "Build components"
+command_name = "make-binball"
 
 def make_parser():
     parser = OptionParser(usage="make_binball [OPTIONS...] <TARBALL_FILENAME.tar.gz> <FILESPEC>...")

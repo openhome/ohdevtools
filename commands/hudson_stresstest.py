@@ -14,6 +14,7 @@ from ci_build import run
 
 description = "Perform an automated stress test, for use on build agents."
 command_group = "Hudson commands"
+command_hidden = True
 
 def hudson_build():
     run("build", ["--stresstest-only"])

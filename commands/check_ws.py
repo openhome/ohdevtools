@@ -6,6 +6,8 @@ from antglob import ant_glob
 
 description = "Check files for consistency of line-endings and indentation."
 command_group = "Developer tools"
+command_name = "check-ws"
+command_synonyms = ["chkws"]
 
 # State machine for analysing text files
 class Machine(object):

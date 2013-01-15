@@ -11,7 +11,8 @@
 ## e.g. export NODE_VERSION=1.10~blah && export REPOSITORY=unstable
 
 description = "Build a filesystem image for an OpenHome node."
-command_group = "Hudson commands"
+command_group = "Build commands"
+command_hidden = True
 
 import subprocess
 import sys

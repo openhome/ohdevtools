@@ -14,8 +14,9 @@ from ci_build import run
 import sys
 
 description = "Perform an automated build and test, for use on build agents."
-command_group = "Hudson commands"
-command_synonyms = ["ci-build"]
+command_group = "Build commands"
+command_synonyms = ["ci-build", "build"]
+command_name = "ci-build"
 
 def hudson_build():
     buildname = "build"

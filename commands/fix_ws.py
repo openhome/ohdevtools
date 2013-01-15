@@ -7,6 +7,7 @@ from antglob import ant_glob
 
 description = "Re-write files to change line-endings and/or indentation."
 command_group = "Developer tools"
+command_name = "fix-ws"
 
 # State machine for analysing text files
 class LineEndingMachine(object):

@@ -14,6 +14,7 @@ import os
 description = "Fetch ohWidget dependencies from the Internet."
 command_group = "Developer tools"
 command_synonyms = ["fetch", "fetch-dependencies"]
+command_name = "fetch-dependencies"
 usage = """
 usage: %prog [options] [dependency...]
 

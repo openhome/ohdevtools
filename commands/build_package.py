@@ -12,6 +12,7 @@
 
 description = "Build a Debian package for ohWidget."
 command_group = "Hudson commands"
+command_hidden = True
 
 import os
 import subprocess
