@@ -22,6 +22,19 @@ from default_platform import default_platform
 # '${test-value?yes-result:no-result}' will get the value of the string named
 # 'yes-result' if 'test-value' is a true boolean value, and the string named
 # 'no-result' if 'test-value' is a false boolean value.
+# Finally, string values can also depend on a lookup table defined as a JSON object.
+# For example, given these definitions:
+# {
+#     "servertable":{
+#         "Windows":"windows.openhome.org",
+#         "Linux":"linux.openhome.org",
+#         "*":"openhome.org"
+#     },
+#     "server":"${servertable[$system]}"
+# }
+# If 'system' is defined as 'Windows', then 'server' will be defined as
+# 'windows.openhome.org'. The '*' entry is the default: if a lookup fails the default
+# will be used instead.
 
 # The principle string values that must be defined are 'archive-path' to point to the
 # .tar.gz file with the dependency's binaries, 'dest' to specify where to untar it,
@@ -197,6 +210,16 @@ class EnvironmentExpander(object):
         (?P<word>\$[a-zA-Z_][a-zA-Z_0-9]*)| # Match $word
         (?P<parens>\$\{[^}]*\})             # Match ${any-thing}
         """)
+    # Matches foo[bar]
+    index_regex = re.compile(r"""
+        (?x)         # Enable whitespace and comments
+        ^            # Match only at start of string
+        ([^][]*)     # Match table name (no brackets allowed)
+        \[           # Match one open bracket: [
+        ([^][]*)     # Match key (no brackets allowed)
+        \]           # Match one close bracket: ]
+        $
+        """)
     def __init__(self, env_dict):
         self.env_dict = env_dict
         self.cache = {}
@@ -230,12 +253,22 @@ class EnvironmentExpander(object):
         return self._expandvalue(value)
     def _expandvalue(self, value):
         if isinstance(value, (str, unicode)):
-            return self.template_regex.sub(self.replacematch, value)
+            return self.expandstring(value)
+            #return self.template_regex.sub(self.replacematch, value)
         elif isinstance(value, (list, tuple)):
             return [self._expandvalue(x) for x in value]
         elif isinstance(value, dict):
-            return dict((k, self.expandvalue(v)) for (k,v) in value.items())
+            return dict((k, self._expandvalue(v)) for (k,v) in value.items())
         return value
+    def expandstring(self, value):
+        firstmatch = self.template_regex.match(value)
+        if firstmatch is not None and firstmatch.group(0) == value and value != "$$":
+            # Special case: The entire string is a single expansion. In this case,
+            # we allow the expansion to be *anything* (bool, int, list...),
+            # not just a string.
+            return self.replacematch(firstmatch)
+        return self.template_regex.sub(self.replacematch, value)
+
     def replacematch(self, match):
         if match.group('dollar'):
             return '$'
@@ -246,9 +279,31 @@ class EnvironmentExpander(object):
             key = match.group('parens')[2:-1]
         assert key is not None
         key = key.strip()
+        if '[' in key:
+            return self.expandlookup(key)
         if '?' in key:
             return self.expandconditional(key)
         return self.expand(key)
+    def expandlookup(self, key):
+        match = self.index_regex.match(key)
+        if match is None:
+            raise ValueError('lookup must be of form ${table[key]}')
+        tablename = match.group(1).strip()
+        keyname = match.group(2).strip()
+        table = self.expand(tablename)
+        if keyname.startswith('$'):
+            key = self.expand(keyname[1:])
+        else:
+            key = keyname
+        if not isinstance(table, dict):
+            raise ValueError("lookup table must expand to a JSON object (got {0!r} instead)".format(table))
+        if not isinstance(key, (str,unicode)):
+            raise ValueError("lookup index must expand to a JSON string (got {0!r} instead)".format(key))
+        if not key in table:
+            if '*' in table:
+                return table['*']
+            raise KeyError("Key not in table, and no default '*' entry found: key={0!r}\ntable={1!r}".format(key, table))
+        return table[key]
     def expandconditional(self, key):
         if '?' not in key:
             raise ValueError('conditional must be of form ${condition?result:alternative}')
