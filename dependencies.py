@@ -515,6 +515,9 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
         env['platform'] = platform
     if 'platform' not in env:
         platform = env['platform'] = default_platform()
+    if '-' in platform:
+        env['system'], env['architecture'] = platform.split('-',2)
+
     if platform is None:
         raise Exception('Platform not specified and unable to guess.')
     if clean and not list_details:
