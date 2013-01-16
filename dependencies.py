@@ -9,6 +9,7 @@ import subprocess
 import json
 import shutil
 import cStringIO
+import md5
 from glob import glob
 from default_platform import default_platform
 
@@ -82,7 +83,8 @@ DEPENDENCY_TYPES = {
         'archive-platform': '${platform-specific?platform:any-platform}',
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': [],
-        'strip-archive-dirs': 0
+        'strip-archive-dirs': 0,
+        'allow-cache': False
         },
 
     # External dependencies generally don't have a git repo, and even if they do,
@@ -104,7 +106,8 @@ DEPENDENCY_TYPES = {
         'archive-path': '${binary-repo}/${archive-platform}/${archive-filename}',
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': [],
-        'strip-archive-dirs': 0
+        'strip-archive-dirs': 0,
+        'allow-cache': False
         },
     }
 
@@ -181,6 +184,72 @@ def open_file_url(url):
     if (smb or remote) and not platform.platform().startswith("Windows"):
         raise Exception("SMB file access not supported on non-Windows platforms.")
     return open(final_path, "rb")
+
+
+class FileCache(object):
+    ENTRY_PREFIX = "URL_CACHE_ENTRY."
+    def __init__(self, path, size):
+        if not os.path.isdir(path):
+            os.makedirs(path)
+        self.path = path
+        self.size = size
+    def clean(self):
+        names = glob(self.path + '/' + self.ENTRY_PREFIX + '*')
+        names.sort(key = os.path.getmtime)
+        if len(names) > self.size:
+            to_delete = names[:-self.size]
+            for path in to_delete:
+                shutil.rmtree(path)
+    def path_for_name(self, name):
+        digest = md5.md5(name).hexdigest()
+        return self.path + '/' + self.ENTRY_PREFIX + digest
+    def put(self, name, content):
+        path = self.path_for_name(name)
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+        os.mkdir(path)
+        with open(path+'/filename', 'w') as f:
+            f.write(name)
+        with open(path+'/content', 'wb') as f:
+            f.write(content.read())
+    def get(self, name, mode='r'):
+        path = self.path_for_name(name)
+        if not os.path.isdir(path):
+            return None
+        if not os.path.isfile(path+'/filename'):
+            return None
+        with open(path+'/filename', 'r') as f:
+            filename = f.read().strip()
+        if filename != name:
+            return None
+        return open(path+'/content', mode)
+
+
+class FileFetcher(object):
+    def __init__(self, cache):
+        self.cache = cache
+    def fetch(self, path, allow_cached=False):
+        if path.startswith("file:") or path.startswith("smb:"):
+            return self.fetch_file_url(path)
+        if re.match("[^\W\d]{2,8}:", path):
+            return self.fetch_url(path, allow_cached)
+        return self.fetch_local(path)
+    def fetch_local(self, path):
+        return open(path, mode="rb"), 'file'
+    def fetch_file_url(self, path):
+        return open_file_url(path), 'file'
+    def fetch_url(self, path, allow_cached):
+        if not allow_cached:
+            return urlopen(path), 'web'
+        f = self.cache.get(path, mode="rb")
+        if f is not None:
+            return f, 'cache'
+        f = urlopen(path)
+        self.cache.put(path, f)
+        self.cache.clean()
+        f.seek(0)
+        return f, 'web'
+
 
 def urlopen(url):
     fileobj = urllib2.urlopen(url)
@@ -320,44 +389,101 @@ class EnvironmentExpander(object):
             return self.expand(primary)
         return self.expand(alternative)
 
+class Archive(object):
+    def extract(self, local_path, strip_dirs=0):
+        # The general idea is to mutate the in-memory archive, changing the
+        # path of files to remove their prefix directories, before invoking
+        # extract repeatedly. This can solve the problem of archives that
+        # include a top-level directory whose name includes a variable value
+        # like version-number, which forces us to change assembly references
+        # in every project for every minor change.
+        infolist = self.getinfolist()
+        goodentries=[]
+        for entry in infolist:
+            path_fragments = self.getentryname(entry).split('/')
+            isgood = len(path_fragments) > strip_dirs
+            isdir = self.isdir(entry)
+            if isgood:
+                path_fragments = path_fragments[strip_dirs:]
+                if path_fragments == ['']:
+                    continue
+                filename = '/'.join(path_fragments)
+                self.setentryname(entry, filename)
+                goodentries.append(entry)
+            if (not isdir) and (not isgood):
+                raise ValueError('Attempted to strip more leading directories than contained in archive file:{0}, strip:{1}'.format(self.getentryname(entry), strip_dirs))
+        # Extract files first (directories will be created as needed):
+        for entry in goodentries:
+            if not self.isdir(entry):
+                self.extractentry(entry, local_path)
+        # Extract directories to update their attributes:
+        for entry in goodentries:
+            if self.isdir(entry):
+                self.extractentry(entry, local_path)
+
+class ZipArchive(Archive):
+    def __init__(self, file):
+        self.zf = zipfile.ZipFile(file, "r")
+    def getinfolist(self):
+        return self.zf.infolist()
+    def getentryname(self, entry):
+        return entry.filename
+    def setentryname(self, entry, name):
+        entry.filename = name
+    def extractentry(self, entry, localpath):
+        self.zf.extract(entry, localpath)
+    def isdir(self, entry):
+        return entry.filename.endswith('/')
+    def close(self):
+        self.zf.close()
+
+class TarArchive(Archive):
+    def __init__(self, name, fileobj):
+        self.tf = tarfile.open(name=name, fileobj=fileobj, mode="r:*")
+    def getinfolist(self):
+        return list(self.tf)
+    def getentryname(self, entry):
+        return entry.name
+    def setentryname(self, entry, name):
+        entry.name = name
+    def extractentry(self, entry, localpath):
+        self.tf.extract(entry, localpath)
+    def isdir(self, entry):
+        return entry.isdir()
+    def close(self):
+        self.tf.close()
+
 def openarchive(name, fileobj):
     memoryfile = cStringIO.StringIO(fileobj.read())
     if os.path.splitext(name)[1].upper() in ['.ZIP', '.NUPKG', '.JAR']:
-        return zipfile.ZipFile(memoryfile, "r")
+        return ZipArchive(memoryfile)
     else:
-        return tarfile.open(name=name, fileobj=memoryfile, mode="r:*")
+        return TarArchive(name, memoryfile)
 
 def extract_archive(archive, local_path, strip_dirs=0):
-    # The general idea is to mutate the in-memory archive, changing the
-    # path of files to remove their prefix directories, before invoking
-    # extractall. This can solve the problem of archives that include
-    # a top-level directory whose name includes a variable value like
-    # version-number, which forces us to change assembly references in
-    # every project for every minor change.
-    if strip_dirs > 0:
-        if not isinstance(archive, tarfile.TarFile):
-            raise Exception('Cannot strip leading directories from zip archives.')
-        for entry in archive:
-            entry.name = '/'.join(entry.name.split('/')[strip_dirs:])
-    archive.extractall(local_path)
+    archive.extract(local_path, strip_dirs)
 
 
 class Dependency(object):
-    def __init__(self, name, environment, logfile=None, has_overrides=False):
+    def __init__(self, name, environment, fetcher, logfile=None, has_overrides=False):
         self.expander = EnvironmentExpander(environment)
         self.logfile = default_log(logfile)
         self.has_overrides = has_overrides
+        self.fetcher = fetcher
     def fetch(self):
         remote_path = self.expander.expand('archive-path')
         local_path = os.path.abspath(self.expander.expand('dest'))
         strip_dirs = self.expander.expand('strip-archive-dirs')
-        self.logfile.write("Fetching '%s'\n  from '%s'\n" % (self.name, remote_path))
+        allow_cache = self.expander.expand('allow-cache')
+        self.logfile.write("Fetching '%s'\n  from '%s'" % (self.name, remote_path))
         try:
-            opener = get_opener_for_path(remote_path)
-            remote_file = opener(remote_path)
+            remote_file, method = self.fetcher.fetch(remote_path, allow_cache)
+            self.logfile.write(" (" + method + ")\n")
+            #opener = get_opener_for_path(remote_path)
+            #remote_file = opener(remote_path)
             archive = openarchive(name=remote_path, fileobj=remote_file)
         except IOError:
-            self.logfile.write("  FAILED\n")
+            self.logfile.write("\n  FAILED\n")
             return False
         try:
             os.makedirs(local_path)
@@ -414,11 +540,14 @@ class Dependency(object):
 
 
 class DependencyCollection(object):
-    def __init__(self, env, logfile=None):
+    def __init__(self, env, logfile=None, fetcher=None):
+        if fetcher is None:
+            fetcher = make_default_fetcher()
         self.logfile = default_log(logfile)
         self.base_env = env
         self.dependency_types = DEPENDENCY_TYPES
         self.dependencies = {}
+        self.fetcher = fetcher
     def create_dependency(self, dependency_definition, overrides={}):
         defn = dependency_definition
         env = {}
@@ -433,7 +562,7 @@ class DependencyCollection(object):
         if 'name' not in env:
             raise ValueError('Dependency definition contains no name')
         name = env['name']
-        new_dependency = Dependency(name, env, logfile=self.logfile, has_overrides=len(overrides) > 0)
+        new_dependency = Dependency(name, env, self.fetcher, logfile=self.logfile, has_overrides=len(overrides) > 0)
         self.dependencies[name] = new_dependency
     def __contains__(self, key):
         return key in self.dependencies
@@ -473,8 +602,8 @@ class DependencyCollection(object):
             return False
         return True
 
-def read_json_dependencies(dependencyfile, overridefile, env, logfile):
-    collection = DependencyCollection(env, logfile=logfile)
+def read_json_dependencies(dependencyfile, overridefile, env, logfile, fetcher=None):
+    collection = DependencyCollection(env, logfile=logfile, fetcher=fetcher)
     dependencies = json.load(dependencyfile)
     overrides = json.load(overridefile)
     overrides_by_name = dict((dep['name'], dep) for dep in overrides)
@@ -484,14 +613,14 @@ def read_json_dependencies(dependencyfile, overridefile, env, logfile):
         collection.create_dependency(d, override)
     return collection
 
-def read_json_dependencies_from_filename(dependencies_filename, overrides_filename, env, logfile):
+def read_json_dependencies_from_filename(dependencies_filename, overrides_filename, env, logfile, fetcher=None):
     dependencyfile = open(dependencies_filename, "r")
     with open(dependencies_filename) as dependencyfile:
         if overrides_filename is not None and os.path.isfile(overrides_filename):
             with open(overrides_filename) as overridesfile:
-                return read_json_dependencies(dependencyfile, overridesfile, env, logfile)
+                return read_json_dependencies(dependencyfile, overridesfile, env, logfile, fetcher)
         else:
-            return read_json_dependencies(dependencyfile, cStringIO.StringIO('[]'), env, logfile)
+            return read_json_dependencies(dependencyfile, cStringIO.StringIO('[]'), env, logfile, fetcher)
 
 def cli(args):
     if platform.system() != "Windows":
@@ -544,6 +673,20 @@ def clean_directories(directories):
             raise Exception("Failed to remove directory '{0}'. Try closing applications that might be using it. (E.g. Visual Studio.)".format(lastdirectory))
         else:
             raise Exception("Failed to remove directory. Try closing applications that might be using it. (E.g. Visual Studio.)\n"+str(e))
+
+def get_data_dir():
+    userdata = os.environ.get('LOCALAPPDATA', None)
+    if userdata is not None:
+        return userdata + '/ohDevTools'
+    userdata = os.environ.get('HOME', '.')
+    return userdata + '/.ohdevtools'
+
+def make_default_fetcher():
+    data_dir = get_data_dir()
+    cache_dir = data_dir + '/cache'
+    cache = FileCache(cache_dir, 20)
+    return FileFetcher(cache)
+
 
 def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=True, nuget=True, clean=True, source=False, logfile=None, list_details=False, local_overrides=True, verbose=False):
     '''
