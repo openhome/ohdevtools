@@ -746,8 +746,17 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
         if fetch:
             dependencies.fetch(dependency_names)
         if nuget:
-            nuget_exe = os.path.normpath(list(glob('dependencies/AnyPlatform/NuGet.[0-9]*/NuGet.exe'))[0])
-            cli([nuget_exe, 'install', 'projectdata/packages.config', '-OutputDirectory', 'dependencies/nuget'])
+            if not os.path.exists('projectdata/packages.config'):
+                print "Skipping NuGet invocation because projectdata/packages.config not found."
+            else:
+                nuget_exes = [os.path.normpath(p) for p in glob('dependencies/AnyPlatform/NuGet.[0-9]*/NuGet.exe')]
+                if len(nuget_exes) == 0:
+                    raise Exception("'NuGet.exe' not found, cannot fetch NuGet dependencies.")
+                nuget_exe = nuget_exes[0]
+                if len(nuget_exes) > 1:
+                    print "Warning: multiple copies of 'NuGet.exe' found. Using:"
+                    print "    " + nuget_exe
+                cli([nuget_exe, 'install', 'projectdata/packages.config', '-OutputDirectory', 'dependencies/nuget'])
         if source:
             dependencies.checkout(dependency_names)
     return dependencies
