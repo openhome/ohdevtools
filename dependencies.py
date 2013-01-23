@@ -555,6 +555,10 @@ class DependencyCollection(object):
         if 'type' in defn:
             dep_type = defn['type']
             env.update(self.dependency_types[dep_type])
+        else:
+            # default to an 'external' dependency type if none specified
+            dep_type = 'external'
+            env.update(self.dependency_types[dep_type])
         env.update(defn)
         env.update(overrides)
         if 'ignore' in env and env['ignore']:
