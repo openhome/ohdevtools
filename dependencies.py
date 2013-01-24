@@ -413,12 +413,13 @@ class Archive(object):
                 goodentries.append(entry)
             if (not isdir) and (not isgood):
                 raise ValueError('Attempted to strip more leading directories than contained in archive file:{0}, strip:{1}'.format(self.getentryname(entry), strip_dirs))
-        # Extract files first (directories will be created as needed):
-        for entry in goodentries:
+        self.extract_many(goodentries, local_path)
+    def extract_files(self, entries, local_path):
+        for entry in entries:
             if not self.isdir(entry):
                 self.extractentry(entry, local_path)
-        # Extract directories to update their attributes:
-        for entry in goodentries:
+    def extract_directories(self, entries, local_path):
+        for entry in entries:
             if self.isdir(entry):
                 self.extractentry(entry, local_path)
 
@@ -431,6 +432,11 @@ class ZipArchive(Archive):
         return entry.filename
     def setentryname(self, entry, name):
         entry.filename = name
+    def extract_many(self, entries, localpath):
+        # Extract the directories first, as zipfile doesn't create
+        # them on demand.
+        self.extract_directories(entries, localpath)
+        self.extract_files(entries, localpath)
     def extractentry(self, entry, localpath):
         permission_bits = entry.external_attr >> 16
         is_dir = stat.S_ISDIR(permission_bits)
@@ -472,6 +478,11 @@ class TarArchive(Archive):
         return entry.name
     def setentryname(self, entry, name):
         entry.name = name
+    def extract_many(self, entries, localpath):
+        # Extract files first (directories will be created as needed):
+        self.extract_files(entries, localpath)
+        # Extract directories to update their attributes:
+        self.extract_directories(entries, localpath)
     def extractentry(self, entry, localpath):
         self.tf.extract(entry, localpath)
     def isdir(self, entry):
