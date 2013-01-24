@@ -10,6 +10,7 @@ import json
 import shutil
 import cStringIO
 import md5
+import stat
 from glob import glob
 from default_platform import default_platform
 
@@ -431,7 +432,32 @@ class ZipArchive(Archive):
     def setentryname(self, entry, name):
         entry.filename = name
     def extractentry(self, entry, localpath):
-        self.zf.extract(entry, localpath)
+        permission_bits = entry.external_attr >> 16
+        is_dir = stat.S_ISDIR(permission_bits)
+        is_symlink = stat.S_ISLNK(permission_bits)
+        if is_dir:
+            # Zipfile directory handling is broken in Python 2.6
+            # We need to do it ourselves
+            dirpath = os.path.join(localpath, entry.filename)
+            try:
+                os.mkdir(dirpath)
+                # We don't currently restore directory permissions
+            except OSError:
+                # Python makes it unnecessarily hard only to ignore
+                # failure to create the directory due to it already
+                # existing. Easier to ignore everything. In the
+                # rare cases when it would fail for other reasons,
+                # it's very likely that another operation will fail
+                # shortly anyway.
+                pass
+        elif is_symlink and platform.system() != 'Windows':
+            linktext = self.zf.read(entry)
+            # Symlink handling broken in zipfile
+            # Create symlinks manually, except on Windows, where
+            # symlinks are very poorly supported.
+            os.symlink(linktext, os.path.join(localpath, entry.filename))
+        else:
+            self.zf.extract(entry, localpath)
     def isdir(self, entry):
         return entry.filename.endswith('/')
     def close(self):
