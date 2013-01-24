@@ -418,7 +418,7 @@ class SshSession(object):
 class AbortRunException(Exception):
     def __init__(self, message="Aborted due to error.", exitcode=1):
         Exception.__init__(self, message)
-        self.message = message
+        self.usermessage = message
         self.exitcode = exitcode
 
 def fail(*args, **kwargs):
@@ -785,7 +785,7 @@ def run(buildname="build", argv=None):
             instance.startup(builder)
         builder.run(argv)
     except AbortRunException as e:
-        print e.message
+        print e.usermessage
         sys.exit(e.exitcode)
     for name in behaviour_globals.keys():
         delattr(ci, name)

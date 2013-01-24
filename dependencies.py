@@ -9,7 +9,7 @@ import subprocess
 import json
 import shutil
 import cStringIO
-import md5
+import hashlib
 import stat
 from glob import glob
 from default_platform import default_platform
@@ -202,7 +202,7 @@ class FileCache(object):
             for path in to_delete:
                 shutil.rmtree(path)
     def path_for_name(self, name):
-        digest = md5.md5(name).hexdigest()
+        digest = hashlib.md5(name).hexdigest()
         return self.path + '/' + self.ENTRY_PREFIX + digest
     def put(self, name, content):
         path = self.path_for_name(name)
