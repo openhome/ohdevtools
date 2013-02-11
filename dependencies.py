@@ -110,6 +110,25 @@ DEPENDENCY_TYPES = {
         'strip-archive-dirs': 0,
         'allow-cache': False
         },
+
+    # Ex-nuget dependencies don't have a git repo, but they are always
+    # AnyPlatform and have a strict convention on location and structure
+    # that makes them easy to specify.
+    #
+    # An exnuget dependency need only specify:
+    #     name
+    #     version
+    'exnuget' : {
+        'archive-extension': '.tar.gz',
+        'binary-repo': 'http://openhome.org/releases/artifacts',
+        'archive-directory': '${binary-repo}/nuget/',
+        'archive-filename': '${name}.${version}${archive-extension}',
+        'archive-path': '${archive-directory}${archive-filename}',
+        'dest': 'dependencies/nuget/',
+        'configure-args': [],
+        'strip-archive-dirs': 0,
+        'allow-cache': False
+        },
     }
 
 
