@@ -14,7 +14,7 @@ from functools import wraps
 
 # The version number of the API. Incremented whenever there
 # are new features or bug fixes.
-VERSION = 24
+VERSION = 25
 
 # The earliest API version that we're still compatible with.
 # Changed only when a change breaks an existing API.
@@ -475,6 +475,13 @@ def _forward_to_function(f):
         return f(args, kwargs)
     return func
 
+
+def string_is_truish(value):
+    return value.lower() in ['1', 'yes', 'true', 'on', 'y', 't']
+
+def string_is_falsish(value):
+    return value.lower() in ['0', 'no', 'false', 'off', 'n', 'f']
+
 class OpenHomeBuilder(object):
 
     # This is a slightly awkward attempt to bridge the way to a more maintainable
@@ -489,10 +496,10 @@ class OpenHomeBuilder(object):
     #     setup, fetch, clean, configure, build, test, publish
     # This allows projects to avoid excessibly duplicating each other.
 
-    enable_configurations = True
-    enable_platforms = True
-    enable_versioning = True
-    enable_vsvars = True
+    enable_configurations = True   # Adds --configuration, --debug and --release options.
+    enable_platforms = True        # Adds --platform, --system and --architecture options.
+    enable_versioning = True       # Adds --version option.
+    enable_vsvars = True           # Find and call vsvarsall if cl.exe is not on path.
 
     test_location = 'build/{assembly}/bin/{configuration}/{assembly}.dll'
     package_location = 'build/packages/{packagename}'
@@ -517,6 +524,8 @@ class OpenHomeBuilder(object):
                     help="Specify Release configuration. Short for --configuration=Release")
         if self.enable_versioning:
             builder.add_option('--version', help="Specify version number for build.")
+        if self.enable_vsvars:
+            builder.add_option('--vsvars', default="auto", help="Find and run vsvarsall.bat: 'yes' - always, 'no' - never, 'auto' - only if cl.exe not on path. Default 'auto'.")
         builder.add_option("--steps", default="default",
                 help="Steps to run, comma separated. Allowed: all default fetch clean configure build test publish")
         builder.add_bool_option("--auto", help="Choose behaviour automatically based on environment. (Best for CI servers.)")
@@ -609,7 +618,18 @@ class OpenHomeBuilder(object):
 
     def openhome_setup(self):
         if self.enable_vsvars and self.system == 'Windows':
-            self.env.update(get_vsvars_environment(self.architecture))
+            vsvars_string = self.options.vsvars.lower()
+            if vsvars_string == 'auto':
+                vsvars = not program_exists('cl')
+            elif string_is_truish(vsvars_string):
+                vsvars = True
+            elif string_is_falsish(vsvars_string):
+                vsvars = False
+            else:
+                fail('Bad value for --vsvars')
+            if vsvars:
+                print 'Automatically find Visual Studio...'
+                self.env.update(get_vsvars_environment(self.architecture))
         print self.steps_to_run
         self._builder.specify_optional_steps(self.steps_to_run)
 
