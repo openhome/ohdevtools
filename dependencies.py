@@ -88,6 +88,32 @@ DEPENDENCY_TYPES = {
         'allow-cache': False
         },
 
+    # Internal dependencies are named and structured in a similar manner
+    # to those of type 'openhome', but are considered private, and held
+    # on core.linn.co.uk
+    #
+    # Must define, at minimum:
+    #       name
+    #       version
+    #
+    # Commonly overridden:
+    #       archive-suffix
+
+    'internal' : {
+        'binary-repo': 'http://core.linn.co.uk/~artifacts/artifacts',
+        'source-git': None,
+        'any-platform': 'AnyPlatform',
+        'platform-specific': True,
+        'archive-suffix': '',
+        'archive-filename': '${name}-${version}-${platform}${archive-suffix}.tar.gz',
+        'archive-platform': '${platform-specific?platform:any-platform}',
+        'archive-path': '${binary-repo}/${name}/${archive-filename}',
+        'dest': 'dependencies/${archive-platform}/',
+        'configure-args': [],
+        'strip-archive-dirs': 0,
+        'allow-cache': False
+        },
+
     # External dependencies generally don't have a git repo, and even if they do,
     # it won't conform to our conventions.
     #
