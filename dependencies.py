@@ -617,12 +617,12 @@ class DependencyCollection(object):
             env.update(self.dependency_types[dep_type])
         env.update(defn)
         env.update(overrides)
-        if 'ignore' in env and env['ignore']:
-            return
         if 'name' not in env:
             raise ValueError('Dependency definition contains no name')
         name = env['name']
         new_dependency = Dependency(name, env, self.fetcher, logfile=self.logfile, has_overrides=len(overrides) > 0)
+        if 'ignore' in new_dependency and new_dependency['ignore']:
+            return
         self.dependencies[name] = new_dependency
     def __contains__(self, key):
         return key in self.dependencies
