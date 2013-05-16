@@ -14,7 +14,7 @@ from functools import wraps
 
 # The version number of the API. Incremented whenever there
 # are new features or bug fixes.
-VERSION = 25
+VERSION = 26
 
 # The earliest API version that we're still compatible with.
 # Changed only when a change breaks an existing API.
@@ -677,7 +677,7 @@ class OpenHomeBuilder(object):
         '''
         self.nunitexe = nunitexe
 
-    def msbuild(self, project, target='Build', platform=None, configuration=None):
+    def msbuild(self, project, target='Build', platform=None, configuration=None, args=None):
         '''
         Invoke msbuild/xbuild to build a project/solution. Specify the path to
         the project or solution file.
@@ -690,6 +690,8 @@ class OpenHomeBuilder(object):
         if configuration is not None:
             msbuild_args += ['/property:Configuration='+configuration]
         msbuild_args += [project]
+        if args is not None:
+            msbuild_args += args
         self._builder.shell(' '.join(msbuild_args))
     
     def mdtool(self, project, target='build', configuration=None, bundle=None):
