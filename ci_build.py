@@ -14,7 +14,7 @@ from functools import wraps
 
 # The version number of the API. Incremented whenever there
 # are new features or bug fixes.
-VERSION = 26
+VERSION = 27
 
 # The earliest API version that we're still compatible with.
 # Changed only when a change breaks an existing API.
@@ -505,6 +505,7 @@ class OpenHomeBuilder(object):
     package_location = 'build/packages/{packagename}'
     package_upload = 'releases@openhome.org:/home/releases/www/artifacts/{uploadpath}'
     automatic_steps = ['fetch','configure','clean','build','test']
+    mdtool_mac = '/Applications/Xamarin\ Studio.app/Contents/MacOS/mdtool'
 
     def __init__(self):
         super(OpenHomeBuilder, self).__init__()
@@ -699,7 +700,7 @@ class OpenHomeBuilder(object):
         Invoke mdtool to build a project/solution. Specify the path to
         the project or solution file.
         '''
-        mdtool_args = ['/Applications/MonoDevelop.app/Contents/MacOS/mdtool' if (self.system == 'Mac' or self.system == 'iOs') else 'mdtool']
+        mdtool_args = [self.mdtool_mac if (self.system == 'Mac' or self.system == 'iOs') else 'mdtool']
         if target == "build" or target == "Build":
             mdtool_args += ['build']
             mdtool_args += ['-t:Build']
