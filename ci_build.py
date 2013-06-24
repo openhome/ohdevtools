@@ -14,7 +14,7 @@ from functools import wraps
 
 # The version number of the API. Incremented whenever there
 # are new features or bug fixes.
-VERSION = 27
+VERSION = 28
 
 # The earliest API version that we're still compatible with.
 # Changed only when a change breaks an existing API.
