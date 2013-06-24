@@ -1,4 +1,5 @@
 from optparse import OptionParser
+import os
 
 description = "Write a simple AssemblyInfo.cs file."
 command_group = "Build components"
@@ -60,6 +61,9 @@ def main():
         # E.g. file not found. Continue and try to write the file.
         pass
 
+    dirpath, _ = os.path.split(os.path.abspath(args[0]))
+    if not os.path.isdir(dirpath):
+        os.makedirs(dirpath)
     with open(args[0], 'w') as outfile:
         outfile.write(new_content)
 
