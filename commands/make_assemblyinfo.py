@@ -51,10 +51,14 @@ def main():
             assembly_version=encode_csharp_string(options.assembly_version),
             assembly_file_version=encode_csharp_string(options.assembly_file_version))
 
-    with open(args[0], 'r') as infile:
-        old_content = infile.read()
-        if old_content == new_content:
-            return
+    try:
+        with open(args[0], 'r') as infile:
+            old_content = infile.read()
+            if old_content == new_content:
+                return
+    except IOError:
+        # E.g. file not found. Continue and try to write the file.
+        pass
 
     with open(args[0], 'w') as outfile:
         outfile.write(new_content)
