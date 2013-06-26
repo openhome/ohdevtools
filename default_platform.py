@@ -3,6 +3,8 @@ import platform
 def default_platform():
     if platform.system() == 'Windows':
         return 'Windows-x86'
+    if platform.system() == 'Linux' and platform.architecture()[0] == '32bit' and platform.machine()[0:3] == 'ppc':
+        return 'Linux-ppc32'
     if platform.system() == 'Linux' and platform.architecture()[0] == '32bit':
         return 'Linux-x86'
     if platform.system() == 'Linux' and platform.architecture()[0] == '64bit':
