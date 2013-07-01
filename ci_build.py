@@ -14,7 +14,7 @@ from functools import wraps
 
 # The version number of the API. Incremented whenever there
 # are new features or bug fixes.
-VERSION = 28
+VERSION = 29
 
 # The earliest API version that we're still compatible with.
 # Changed only when a change breaks an existing API.
@@ -506,6 +506,7 @@ class OpenHomeBuilder(object):
     package_upload = 'releases@openhome.org:/home/releases/www/artifacts/{uploadpath}'
     automatic_steps = ['fetch','configure','clean','build','test']
     mdtool_mac = '/Applications/Xamarin\ Studio.app/Contents/MacOS/mdtool'
+    msbuild_verbosity = 'minimal'
 
     def __init__(self):
         super(OpenHomeBuilder, self).__init__()
@@ -631,7 +632,6 @@ class OpenHomeBuilder(object):
             if vsvars:
                 print 'Automatically find Visual Studio...'
                 self.env.update(get_vsvars_environment(self.architecture))
-        print self.steps_to_run
         self._builder.specify_optional_steps(self.steps_to_run)
 
     def fetch(self):
@@ -678,18 +678,28 @@ class OpenHomeBuilder(object):
         '''
         self.nunitexe = nunitexe
 
-    def msbuild(self, project, target='Build', platform=None, configuration=None, args=None):
+    def msbuild(self, project, target='Build', platform=None, configuration=None, args=None, properties=None, verbosity=None):
         '''
         Invoke msbuild/xbuild to build a project/solution. Specify the path to
         the project or solution file.
         '''
         msbuild_args = ['msbuild' if self.system == 'Windows' else 'xbuild']
+        properties = {} if properties is None else dict(properties)
+
         if target is not None:
             msbuild_args += ['/target:'+target]
+
+        if verbosity is None:
+            verbosity = self.msbuild_verbosity
+        msbuild_args += ['/verbosity:'+verbosity]
+
         if platform is not None:
-            msbuild_args += ['/property:Platform='+platform]
+            properties['Platform'] = platform
+
         if configuration is not None:
-            msbuild_args += ['/property:Configuration='+configuration]
+            properties['Configuration'] = configuration
+
+        msbuild_args += ['/property:{0}={1}'.format(k,v) for (k,v) in properties.items() if v is not None]
         msbuild_args += [project]
         if args is not None:
             msbuild_args += args
