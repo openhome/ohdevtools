@@ -11,14 +11,7 @@ import getpass
 from userlocks import userlock
 from default_platform import default_platform as _default_platform
 from functools import wraps
-
-# The version number of the API. Incremented whenever there
-# are new features or bug fixes.
-VERSION = 29
-
-# The earliest API version that we're still compatible with.
-# Changed only when a change breaks an existing API.
-BACKWARD_VERSION = 22
+import version
 
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
@@ -430,10 +423,10 @@ def fail(*args, **kwargs):
 
 def require_version(required_version):
     '''Fail if the version of ohDevTools is too old.'''
-    if VERSION<required_version:
-        fail("This build requires a newer version of ohDevTools. You have version {0}, but need version {1}.".format(VERSION, required_version),32)
-    if required_version<BACKWARD_VERSION:
-        fail("This build requires an older version of ohDevTools. You have version {0}, but need version {1}.".format(VERSION, required_version),32)
+    try:
+        version.require_version(required_version)
+    except version.BadVersionException as e:
+        fail(e.usermessage, 32)
 
 def windows_program_exists(program):
     return subprocess.call(["where", "/q", program], shell=False)==0

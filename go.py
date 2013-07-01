@@ -1,4 +1,4 @@
-import sys, os, subprocess
+import sys, os, subprocess, version
 
 HELP_SYNONYMS = ["--help", "-h", "/h", "/help", "/?", "-?", "h", "help", "commands"]
 
@@ -115,6 +115,7 @@ def showhelp():
             print "    %s   %s" % (details.name.ljust(maxlen), details.description)
 
 def main():
+    version.check_version()
     if len(sys.argv) < 2 or sys.argv[1] in HELP_SYNONYMS:
         if len(sys.argv) >= 3:
             showcommandhelp(sys.argv[2])
