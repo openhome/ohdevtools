@@ -500,6 +500,7 @@ class OpenHomeBuilder(object):
     automatic_steps = ['fetch','configure','clean','build','test']
     mdtool_mac = '/Applications/Xamarin\ Studio.app/Contents/MacOS/mdtool'
     msbuild_verbosity = 'minimal'
+    platform_slave_overrides = {} # subclasses should override this to map non-standard platform slave labels to standard ones in auto behaviour
 
     def __init__(self):
         super(OpenHomeBuilder, self).__init__()
@@ -570,6 +571,9 @@ class OpenHomeBuilder(object):
             platform = system + '-' + architecture
         if platform is None and self.options.auto:
             platform = self.env['slave']
+            #  to map non-standard platform slave labels to standard ones in auto behaviour e.g. Android-mono -> Android-anycpu
+            if platform in self.platform_slave_overrides:
+                platform = self.platform_slave_overrides[platform]
         if platform is None:
             platform = default_platform()
         if '-' not in platform:
