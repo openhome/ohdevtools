@@ -707,7 +707,7 @@ class OpenHomeBuilder(object):
         Invoke mdtool to build a project/solution. Specify the path to
         the project or solution file.
         '''
-        mdtool_args = [self.mdtool_mac if (self.system == 'Mac' or self.system == 'iOs') else 'mdtool']
+        mdtool_args = [self.mdtool_mac if (self.system == 'Mac' or self.system == 'iOs' or self.system == 'Android') else 'mdtool']
         if target == "build" or target == "Build":
             mdtool_args += ['build']
             mdtool_args += ['-t:Build']
