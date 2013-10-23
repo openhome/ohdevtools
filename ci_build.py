@@ -12,6 +12,7 @@ from userlocks import userlock
 from default_platform import default_platform as _default_platform
 from functools import wraps
 import version
+import filechecker
 
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
@@ -465,7 +466,7 @@ def _forward_to_function(f):
     '''
     @wraps(f)
     def func(self, *args, **kwargs):
-        return f(args, kwargs)
+        return f(*args, **kwargs)
     return func
 
 
@@ -500,6 +501,14 @@ class OpenHomeBuilder(object):
     automatic_steps = ['fetch','configure','clean','build','test']
     mdtool_mac = '/Applications/Xamarin\ Studio.app/Contents/MacOS/mdtool'
     msbuild_verbosity = 'minimal'
+
+    source_check_rules = [ ]
+    standard_source_check_rules = [
+            ['src/**/*.csproj', 'warnings-as-errors'],     # All C# projects should enable warnings-as-errors
+            ['src/**/*.csproj', 'import-shared-settings'], # All C# projects should import the shared settings
+            ['src/**/*.orig', 'disallow'],                 # Don't commit .orig files from merges!
+            ['src/**/*.cs', 'no-tabs'],                    # Don't use tabs in C# source
+            ]
     platform_slave_overrides = {} # subclasses should override this to map non-standard platform slave labels to standard ones in auto behaviour
 
     def __init__(self):
@@ -540,6 +549,7 @@ class OpenHomeBuilder(object):
         builder.build_step('process_options', optional=False)(invoke("_process_options"))
         builder.build_step('setup', optional=False)(invoke("setup"))
         builder.build_step('openhome_setup', optional=False)(invoke("openhome_setup"))
+        builder.build_step('check_source', optional=True, default=True)(invoke("check_source"))
         builder.build_step('fetch', optional=True, default=True)(invoke("fetch"))
         builder.build_step('configure', optional=True, default=True)(invoke("configure"))
         builder.build_step('clean', optional=True, default=True)(invoke("clean"))
@@ -631,11 +641,22 @@ class OpenHomeBuilder(object):
                 self.env.update(get_vsvars_environment(self.architecture))
         self._builder.specify_optional_steps(self.steps_to_run)
 
+    def check_source(self):
+        '''
+        Check files in the source tree according to source_check_rules.
+        See filechecker.py for possible rules to apply.
+        '''
+        if self.source_check_rules == []:
+            print 'No rules defined.'
+            return
+        if not filechecker.apply_rules(self.source_check_rules):
+            self.fail('Source tree failed automated checks. Use --no-check-source to suppress these checks temporarily.')
+
     def fetch(self):
         '''
         Fetch dependencies. Subclasses may override.
         '''
-        self.fetch_dependencies()
+        self.fetch_dependencies(env={'debugmode':self.configuration, 'platform':self.platform})
 
     def configure(self):
         '''
@@ -643,6 +664,7 @@ class OpenHomeBuilder(object):
         project requires configuration.
         '''
         pass
+
 
     def clean(self):
         '''
