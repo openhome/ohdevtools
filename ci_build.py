@@ -650,7 +650,7 @@ class OpenHomeBuilder(object):
             print 'No rules defined.'
             return
         if not filechecker.apply_rules(self.source_check_rules):
-            self.fail('Source tree failed automated checks. Use --no-check-source to suppress these checks temporarily.')
+            self.fail('Source tree failed automated checks. Use --steps="default,-check_source" to suppress these checks temporarily.')
 
     def fetch(self):
         '''
