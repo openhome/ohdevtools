@@ -47,10 +47,10 @@ def check_warnings_as_errors(filename):
 
     return okay_in_debug and okay_in_release
 
-def check_imports_prime(required_import, filename):
+def check_imports_prime(predicate, filename):
     xmlroot = parse(filename)
     import_elements = xmlroot.findall('.//'+MSBUILD+'Import')
-    return any(x.attrib.get('Project', None) == required_import for x in import_elements)
+    return any(predicate(x.attrib.get('Project', '')) for x in import_elements)
 
 def check_imports(required_import):
     def check_imports_partial(filename):
@@ -66,7 +66,7 @@ def disallow(filename):
 
 DEFAULT_DEFINITIONS = {
     'warnings-as-errors' : check_warnings_as_errors,
-    'import-shared-settings' : check_imports('..\\SharedSettings.targets'),
+    'import-shared-settings' : check_imports(lambda x:x.endswith('SharedSettings.targets')),
     'no-tabs' : check_notabs,
     'disallow' : disallow
     }
