@@ -759,7 +759,7 @@ class OpenHomeBuilder(object):
             '-noshadow',
             self._expand_template(self.test_location, assembly=test_assembly)])
 
-    def publish_package(self, packagename, uploadpath):
+    def publish_package(self, packagename, uploadpath, package_location=None, package_upload=None):
         '''
         Publish a package via scp to the package repository. Projects can
         override the package_location and package_upload template strings to
@@ -767,8 +767,12 @@ class OpenHomeBuilder(object):
         '''
         packagename = self._expand_template(packagename)
         uploadpath = self._expand_template(uploadpath)
-        sourcepath = self._expand_template(self.package_location, packagename=packagename)
-        destinationpath = self._expand_template(self.package_upload, uploadpath=uploadpath)
+        if package_location is None:
+            package_location = self.package_location
+        if package_upload is None:
+            package_upload = self.package_upload
+        sourcepath = self._expand_template(package_location, packagename=packagename)
+        destinationpath = self._expand_template(package_upload, uploadpath=uploadpath)
         scp(sourcepath, destinationpath)
 
     # This just sets up forwarding methods for a bunch of methods on the Builder, to
