@@ -9,9 +9,43 @@ from collections import defaultdict
 MSBUILD = "{http://schemas.microsoft.com/developer/msbuild/2003}"
 
 def check_warnings_as_errors(filename):
+    # We don't want to parse the entire msbuild file. There are basically
+    # two ways we expect this to be set up:
+    #
+    # 1. The default way used by Visual Studio is to define awkward conditions
+    #    on property groups to specify different behaviour for debug and release.
+    #    In that case, we want to make sure that both debug and release turn on
+    #    warnings-as-errors. We use the simple heuristic of looking for the
+    #    text "debug" or "release" somewhere in the condition attribute of the
+    #    PropertyGroup to detect this.
+    # 2. In some cases we have a cleaner setup where warnings-as-errors appears
+    #    in an unconditional block. In that case, it doesn't matter if there are
+    #    no entries in the configuration-specific blocks.
+    #
+    # If a csproj file does something much weirder with conditional properties,
+    # we may have false negatives or false positives. It doesn't seem worth
+    # trying to handle those cases right now.
     xmlroot = parse(filename)
-    warning_elements = xmlroot.findall('.//'+MSBUILD+'TreatWarningsAsErrors')
-    return len(warning_elements) >= 1 and all(x.text == 'true' for x in warning_elements)
+    propertygroup_elements = xmlroot.findall('.//'+MSBUILD+'PropertyGroup')
+
+    okay_in_debug = False
+    okay_in_release = False
+
+    for parent_group in propertygroup_elements:
+        warning_elements = parent_group.findall(MSBUILD+'TreatWarningsAsErrors')
+        condition = parent_group.attrib.get('Condition', '')
+        for element in warning_elements:
+            if element.text != 'true':
+                return False
+            if 'debug' in condition.lower():
+                okay_in_debug = True
+            elif 'release' in condition.lower():
+                okay_in_release = True
+            else:
+                okay_in_debug = True
+                okay_in_release = True
+
+    return okay_in_debug and okay_in_release
 
 def check_imports_prime(required_import, filename):
     xmlroot = parse(filename)
