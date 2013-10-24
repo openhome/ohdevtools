@@ -500,7 +500,7 @@ class OpenHomeBuilder(object):
 
     test_location = 'build/{assembly}/bin/{configuration}/{assembly}.dll'
     package_location = 'build/packages/{packagename}'
-    package_upload = 'releases@openhome.org:/home/releases/www/artifacts/{uploadpath}'
+    package_upload = 'releases@www.openhome.org:/home/releases/www/artifacts/{uploadpath}'
     automatic_steps = ['fetch','configure','clean','build','test']
     mdtool_mac = '/Applications/Xamarin\ Studio.app/Contents/MacOS/mdtool'
     msbuild_verbosity = 'minimal'
