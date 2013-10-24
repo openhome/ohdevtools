@@ -293,12 +293,15 @@ class Builder(object):
             kwargs['env'] = dict((key,str(value)) for (key, value) in kwargs['env'].items())
         argstring = [", ".join([repr(arg) for arg in args])]
         kwargstring = [", ".join(["%s=%r" % (k,v) for (k,v) in kwargs.items()])]
-        invocation ="subprocess.call({0})",format(", ".join(argstring+kwargstring)) 
+        invocation = "subprocess.call({0})".format(", ".join(argstring+kwargstring)) 
         if self._context.options.verbose:
             print invocation
-        retval = subprocess.call(*args, **kwargs)
+        try:
+            retval = subprocess.call(*args, **kwargs)
+        except OSError as e:
+            fail("{0} -> failed with exception {1}".format(invocation, e))
         if retval != 0:
-            fail("subprocess.call({0}, ... ) -> returned {1}".format(", ".join(argstring), retval))
+            fail("{0} -> returned {1}".format(invocation, retval))
 
     def python(self, *args, **kwargs):
         args = flatten_string_list(args)
