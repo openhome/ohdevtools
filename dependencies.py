@@ -300,8 +300,15 @@ class FileFetcher(object):
 def urlopen(url):
     fileobj = urllib2.urlopen(url)
     try:
-        contents = fileobj.read()
+        contents = ''
+        chunk = fileobj.read( 10000000 )
+        while len( chunk ):        
+            contents += chunk
+            chunk = fileobj.read( 10000000 )
         return cStringIO.StringIO(contents)
+    except:
+        print '\n\n**** FAILED reading from %s ****\n' % url
+        os._exit(-1)
     finally:
         fileobj.close()
 
