@@ -9,8 +9,8 @@ import subprocess
 import json
 import shutil
 import cStringIO
-import hashlib
 import stat
+import tempfile
 from glob import glob
 from default_platform import default_platform
 
@@ -84,8 +84,7 @@ DEPENDENCY_TYPES = {
         'archive-platform': '${platform-specific?platform:any-platform}',
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': [],
-        'strip-archive-dirs': 0,
-        'allow-cache': False
+        'strip-archive-dirs': 0
         },
 
     # Internal dependencies are named and structured in a similar manner
@@ -110,8 +109,7 @@ DEPENDENCY_TYPES = {
         'archive-path': '${binary-repo}/${name}/${archive-filename}',
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': [],
-        'strip-archive-dirs': 0,
-        'allow-cache': False
+        'strip-archive-dirs': 0
         },
 
     # External dependencies generally don't have a git repo, and even if they do,
@@ -133,8 +131,7 @@ DEPENDENCY_TYPES = {
         'archive-path': '${binary-repo}/${archive-platform}/${archive-filename}',
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': [],
-        'strip-archive-dirs': 0,
-        'allow-cache': False
+        'strip-archive-dirs': 0
         },
 
     # Ex-nuget dependencies don't have a git repo, but they are always
@@ -152,8 +149,7 @@ DEPENDENCY_TYPES = {
         'archive-path': '${archive-directory}${archive-filename}',
         'dest': 'dependencies/nuget/',
         'configure-args': [],
-        'strip-archive-dirs': 0,
-        'allow-cache': False
+        'strip-archive-dirs': 0
         },
     }
 
@@ -232,97 +228,49 @@ def open_file_url(url):
     return open(final_path, "rb")
 
 
-class FileCache(object):
-    ENTRY_PREFIX = "URL_CACHE_ENTRY."
-    def __init__(self, path, size):
-        if not os.path.isdir(path):
-            os.makedirs(path)
-        self.path = path
-        self.size = size
-    def clean(self):
-        names = glob(self.path + '/' + self.ENTRY_PREFIX + '*')
-        names.sort(key = os.path.getmtime)
-        if len(names) > self.size:
-            to_delete = names[:-self.size]
-            for path in to_delete:
-                shutil.rmtree(path)
-    def path_for_name(self, name):
-        digest = hashlib.md5(name).hexdigest()
-        return self.path + '/' + self.ENTRY_PREFIX + digest
-    def put(self, name, content):
-        path = self.path_for_name(name)
-        if os.path.isdir(path):
-            shutil.rmtree(path)
-        os.mkdir(path)
-        with open(path+'/filename', 'w') as f:
-            f.write(name)
-        with open(path+'/content', 'wb') as f:
-            f.write(content.read())
-    def get(self, name, mode='r'):
-        path = self.path_for_name(name)
-        if not os.path.isdir(path):
-            return None
-        if not os.path.isfile(path+'/filename'):
-            return None
-        with open(path+'/filename', 'r') as f:
-            filename = f.read().strip()
-        if filename != name:
-            return None
-        return open(path+'/content', mode)
-
-
 class FileFetcher(object):
-    def __init__(self, cache):
-        self.cache = cache
-    def fetch(self, path, allow_cached=False):
+
+    def __init__(self):
+        pass
+
+    def fetch(self, path):
         if path.startswith("file:") or path.startswith("smb:"):
             return self.fetch_file_url(path)
         if re.match("[^\W\d]{2,8}:", path):
-            return self.fetch_url(path, allow_cached)
+            return self.fetch_url(path)
         return self.fetch_local(path)
+
     def fetch_local(self, path):
         return open(path, mode="rb"), 'file'
+
     def fetch_file_url(self, path):
         return open_file_url(path), 'file'
-    def fetch_url(self, path, allow_cached):
-        if not allow_cached:
-            return urlopen(path), 'web'
-        f = self.cache.get(path, mode="rb")
-        if f is not None:
-            return f, 'cache'
-        f = urlopen(path)
-        self.cache.put(path, f)
-        self.cache.clean()
-        f.seek(0)
-        return f, 'web'
+
+    def fetch_url(self, path):
+        return urlopen(path), 'web'
 
 
 def urlopen(url):
-    fileobj = urllib2.urlopen(url)
+    temppath = os.path.join( tempfile.gettempdir(), 'fetch.tmp' )
     try:
-        contents = ''
-        chunk = fileobj.read( 10000000 )
-        while len( chunk ):        
-            contents += chunk
-            chunk = fileobj.read( 10000000 )
-        return cStringIO.StringIO(contents)
+        remotefile = urllib2.urlopen(url)
+        localfile = open( temppath, 'wb' )
+        chunk = remotefile.read( 100000 )
+        while len( chunk ):
+            localfile.write( chunk )
+            chunk = remotefile.read( 100000 )
+        localfile.close()
+        remotefile.close()
     except:
         print '\n\n**** FAILED reading from %s ****\n' % url
         os._exit(-1)
-    finally:
-        fileobj.close()
-
-def get_opener_for_path(path):
-    if path.startswith("file:") or path.startswith("smb:"):
-        return open_file_url
-    if re.match("[^\W\d]{2,8}:", path):
-        return urlopen
-    return lambda fname: open(fname, mode="rb")
+    return temppath
 
 def is_trueish(value):
     if hasattr(value, "upper"):
         value = value.upper()
     return value in [1, "1", "YES", "Y", "TRUE", "ON", True]
+
 
 class EnvironmentExpander(object):
     # template_regex matches 
@@ -406,6 +354,7 @@ class EnvironmentExpander(object):
         if '?' in key:
             return self.expandconditional(key)
         return self.expand(key)
+
     def expandlookup(self, key):
         match = self.index_regex.match(key)
         if match is None:
@@ -426,6 +375,7 @@ class EnvironmentExpander(object):
                 return table['*']
             raise KeyError("Key not in table, and no default '*' entry found: key={0!r}\ntable={1!r}".format(key, table))
         return table[key]
+
     def expandconditional(self, key):
         if '?' not in key:
             raise ValueError('conditional must be of form ${condition?result:alternative}')
@@ -442,7 +392,9 @@ class EnvironmentExpander(object):
             return self.expand(primary)
         return self.expand(alternative)
 
+
 class Archive(object):
+
     def extract(self, local_path, strip_dirs=0):
         # The general idea is to mutate the in-memory archive, changing the
         # path of files to remove their prefix directories, before invoking
@@ -466,29 +418,37 @@ class Archive(object):
             if (not isdir) and (not isgood):
                 raise ValueError('Attempted to strip more leading directories than contained in archive file:{0}, strip:{1}'.format(self.getentryname(entry), strip_dirs))
         self.extract_many(goodentries, local_path)
+
     def extract_files(self, entries, local_path):
         for entry in entries:
             if not self.isdir(entry):
                 self.extractentry(entry, local_path)
+
     def extract_directories(self, entries, local_path):
         for entry in entries:
             if self.isdir(entry):
                 self.extractentry(entry, local_path)
 
 class ZipArchive(Archive):
-    def __init__(self, file):
-        self.zf = zipfile.ZipFile(file, "r")
+
+    def __init__(self, path):
+        self.zf = zipfile.ZipFile(path, "r")
+
     def getinfolist(self):
         return self.zf.infolist()
+
     def getentryname(self, entry):
         return entry.filename
+
     def setentryname(self, entry, name):
         entry.filename = name
+
     def extract_many(self, entries, localpath):
         # Extract the directories first, as zipfile doesn't create
         # them on demand.
         self.extract_directories(entries, localpath)
         self.extract_files(entries, localpath)
+
     def extractentry(self, entry, localpath):
         permission_bits = entry.external_attr >> 16
         is_dir = stat.S_ISDIR(permission_bits)
@@ -516,61 +476,71 @@ class ZipArchive(Archive):
             os.symlink(linktext, os.path.join(localpath, entry.filename))
         else:
             self.zf.extract(entry, localpath)
+
     def isdir(self, entry):
         return entry.filename.endswith('/')
+
     def close(self):
         self.zf.close()
 
+
 class TarArchive(Archive):
-    def __init__(self, name, fileobj):
-        self.tf = tarfile.open(name=name, fileobj=fileobj, mode="r:*")
+
+    def __init__(self, path):
+        self.tf = tarfile.open(path, mode="r:*")
+
     def getinfolist(self):
         return list(self.tf)
+
     def getentryname(self, entry):
         return entry.name
+
     def setentryname(self, entry, name):
         entry.name = name
+
     def extract_many(self, entries, localpath):
         # Extract files first (directories will be created as needed):
         self.extract_files(entries, localpath)
         # Extract directories to update their attributes:
         self.extract_directories(entries, localpath)
+
     def extractentry(self, entry, localpath):
         self.tf.extract(entry, localpath)
+
     def isdir(self, entry):
         return entry.isdir()
+
     def close(self):
         self.tf.close()
 
-def openarchive(name, fileobj):
-    memoryfile = cStringIO.StringIO(fileobj.read())
+
+def openarchive( name, temppath ):
     if os.path.splitext(name)[1].upper() in ['.ZIP', '.NUPKG', '.JAR']:
-        return ZipArchive(memoryfile)
+        return ZipArchive( temppath )
     else:
-        return TarArchive(name, memoryfile)
+        return TarArchive( temppath )
 
 def extract_archive(archive, local_path, strip_dirs=0):
     archive.extract(local_path, strip_dirs)
 
 
 class Dependency(object):
+
     def __init__(self, name, environment, fetcher, logfile=None, has_overrides=False):
         self.expander = EnvironmentExpander(environment)
         self.logfile = default_log(logfile)
         self.has_overrides = has_overrides
         self.fetcher = fetcher
+
     def fetch(self):
         remote_path = self.expander.expand('archive-path')
         local_path = os.path.abspath(self.expander.expand('dest'))
         strip_dirs = self.expander.expand('strip-archive-dirs')
-        allow_cache = self.expander.expand('allow-cache')
         self.logfile.write("Fetching '%s'\n  from '%s'" % (self.name, remote_path))
         try:
-            remote_file, method = self.fetcher.fetch(remote_path, allow_cache)
+            fetched_path, method = self.fetcher.fetch(remote_path)
             self.logfile.write(" (" + method + ")\n")
-            #opener = get_opener_for_path(remote_path)
-            #remote_file = opener(remote_path)
-            archive = openarchive(name=remote_path, fileobj=remote_file)
+            archive = openarchive(remote_path, fetched_path)
         except IOError:
             self.logfile.write("\n  FAILED\n")
             return False
@@ -584,9 +554,9 @@ class Dependency(object):
         self.logfile.write("  unpacking to '%s'\n" % (local_path,))
         extract_archive(archive, local_path, strip_dirs)
         archive.close()
-        remote_file.close()
         self.logfile.write("  OK\n")
         return True
+
     @property
     def name(self):
         return self['name']
@@ -629,9 +599,8 @@ class Dependency(object):
 
 
 class DependencyCollection(object):
-    def __init__(self, env, logfile=None, fetcher=None):
-        if fetcher is None:
-            fetcher = make_default_fetcher()
+    def __init__(self, env, logfile=None):
+        fetcher = FileFetcher()
         self.logfile = default_log(logfile)
         self.base_env = env
         self.dependency_types = DEPENDENCY_TYPES
@@ -695,8 +664,8 @@ class DependencyCollection(object):
             return False
         return True
 
-def read_json_dependencies(dependencyfile, overridefile, env, logfile, fetcher=None):
-    collection = DependencyCollection(env, logfile=logfile, fetcher=fetcher)
+def read_json_dependencies(dependencyfile, overridefile, env, logfile):
+    collection = DependencyCollection(env, logfile=logfile)
     dependencies = json.load(dependencyfile)
     overrides = json.load(overridefile)
     overrides_by_name = dict((dep['name'], dep) for dep in overrides)
@@ -706,14 +675,14 @@ def read_json_dependencies(dependencyfile, overridefile, env, logfile, fetcher=N
         collection.create_dependency(d, override)
     return collection
 
-def read_json_dependencies_from_filename(dependencies_filename, overrides_filename, env, logfile, fetcher=None):
+def read_json_dependencies_from_filename(dependencies_filename, overrides_filename, env, logfile):
     dependencyfile = open(dependencies_filename, "r")
     with open(dependencies_filename) as dependencyfile:
         if overrides_filename is not None and os.path.isfile(overrides_filename):
             with open(overrides_filename) as overridesfile:
-                return read_json_dependencies(dependencyfile, overridesfile, env, logfile, fetcher)
+                return read_json_dependencies(dependencyfile, overridesfile, env, logfile)
         else:
-            return read_json_dependencies(dependencyfile, cStringIO.StringIO('[]'), env, logfile, fetcher)
+            return read_json_dependencies(dependencyfile, cStringIO.StringIO('[]'), env, logfile)
 
 def cli(args):
     if platform.system() != "Windows":
@@ -773,12 +742,6 @@ def get_data_dir():
         return userdata + '/ohDevTools'
     userdata = os.environ.get('HOME', '.')
     return userdata + '/.ohdevtools'
-
-def make_default_fetcher():
-    data_dir = get_data_dir()
-    cache_dir = data_dir + '/cache'
-    cache = FileCache(cache_dir, 20)
-    return FileFetcher(cache)
 
 
 def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=True, nuget=True, clean=True, source=False, logfile=None, list_details=False, local_overrides=True, verbose=False):
