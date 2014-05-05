@@ -251,10 +251,10 @@ class FileFetcher(object):
 
 
 def urlopen(url):
-    temppath = os.path.join( tempfile.gettempdir(), 'fetch.tmp' )
+    handle, temppath = tempfile.mkstemp( suffix='.tmp' )
     try:
         remotefile = urllib2.urlopen(url)
-        localfile = open( temppath, 'wb' )
+        localfile = os.fdopen( handle, 'wb' )
         chunk = remotefile.read( 100000 )
         while len( chunk ):
             localfile.write( chunk )
@@ -535,6 +535,7 @@ class Dependency(object):
     def fetch(self):
         remote_path = self.expander.expand('archive-path')
         local_path = os.path.abspath(self.expander.expand('dest'))
+        fetched_path = None
         strip_dirs = self.expander.expand('strip-archive-dirs')
         self.logfile.write("Fetching '%s'\n  from '%s'" % (self.name, remote_path))
         try:
@@ -554,6 +555,8 @@ class Dependency(object):
         self.logfile.write("  unpacking to '%s'\n" % (local_path,))
         extract_archive(archive, local_path, strip_dirs)
         archive.close()
+        if fetched_path:
+            os.unlink( fetched_path )
         self.logfile.write("  OK\n")
         return True
 
