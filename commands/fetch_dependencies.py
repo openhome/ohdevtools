@@ -50,11 +50,10 @@ def main():
     parser.add_option('--no-overrides', action="store_true", default=False, help="Don't process ../dependency_overrides.json for local overrides.")
     options, args = parser.parse_args()
     if len(args)==0 and not options.clean and not options.nuget and not options.all and not options.source and not options.list:
-        options.clean = True
         options.all = True
         options.nuget = os.path.exists('projectdata/packages.config')
         print "No dependencies were specified. Default to:"
-        print "    go fetch --clean --all" + (" --nuget" if options.nuget else "")
+        print "    go fetch --all" + (" --nuget" if options.nuget else "")
         print "[Yn]?",
         answer = raw_input().strip().upper()
         if answer not in ["","Y","YES"]:
