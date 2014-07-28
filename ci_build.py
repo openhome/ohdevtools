@@ -347,10 +347,15 @@ class Builder(object):
     def fetch_dependencies(self, *selected, **kwargs):
         selected, env = self._process_dependency_args(*selected, **kwargs)
         use_nuget = os.path.isfile('projectdata/packages.config')
+        clean = False
+        if 'default' in self._enabled_options or 'all' in self._enabled_options or 'clean' in self._enabled_options:
+            clean = True                                    # clean-for fetch follows clean-for-build
+        if 'clean' in self._disabled_options:
+            clean = False
         try:
             dependencies.fetch_dependencies(
                     selected or None, platform=self._context.env["OH_PLATFORM"], env=env,
-                    fetch=True, nuget=use_nuget, clean=True, source=False, logfile=sys.stdout,
+                    fetch=True, nuget=use_nuget, clean=clean, source=False, logfile=sys.stdout,
                     local_overrides=not self._context.options.no_overrides)
         except Exception as e:
             print e
