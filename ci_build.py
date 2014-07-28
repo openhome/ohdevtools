@@ -27,13 +27,17 @@ def get_vsvars_environment(architecture="x86"):
 
     win32-specific
     """
-	
-    try:
-        vscomntools = os.environ['VS110COMNTOOLS']
-    except:
-        vscomntools = os.environ['VS100COMNTOOLS']
-        if vscomntools is None:
-            raise Exception("Neither VS110COMNTOOLS or VS100COMNTOOLS are set in environment.")
+
+    comntoolsVarNames = ['VS100COMNTOOLS', 'VS110COMNTOOLS', 'VS120COMNTOOLS']
+
+    for varName in comntoolsVarNames:
+        vscomntools = os.getenv(varName)
+        if vscomntools is not None:
+            break
+
+    if vscomntools is None:
+        raise Exception('Couldn\'t find COMNTOOLS environment variable (tried %s)' % ', '.join(comntoolsVarNames))
+    
     vsvars32 = os.path.join(vscomntools, '..', '..', 'VC', 'vcvarsall.bat')
     python = sys.executable
     process = subprocess.Popen('("%s" %s>nul)&&"%s" -c "import os; print repr(os.environ)"' % (vsvars32, architecture, python), stdout=subprocess.PIPE, shell=True)

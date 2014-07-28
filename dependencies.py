@@ -225,7 +225,7 @@ def open_file_url(url):
         raise Exception("Bad smb:// path. Use 'smb://hostname/path/to/file.ext'")
     if (smb or remote) and not platform.platform().startswith("Windows"):
         raise Exception("SMB file access not supported on non-Windows platforms.")
-    return open(final_path, "rb")
+    return final_path
 
 
 class FileFetcher(object):
@@ -241,7 +241,7 @@ class FileFetcher(object):
         return self.fetch_local(path)
 
     def fetch_local(self, path):
-        return open(path, mode="rb"), 'file'
+        return path, 'file'
 
     def fetch_file_url(self, path):
         return open_file_url(path), 'file'
@@ -556,7 +556,8 @@ class Dependency(object):
         extract_archive(archive, local_path, strip_dirs)
         archive.close()
         if fetched_path:
-            os.unlink( fetched_path )
+            if fetched_path != remote_path:
+                os.unlink(fetched_path)
         self.logfile.write("  OK\n")
         return True
 
