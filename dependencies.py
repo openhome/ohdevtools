@@ -650,13 +650,57 @@ class DependencyCollection(object):
     def fetch(self, subset=None):
         dependencies = self._filter(subset)
         failed_dependencies = []
+        filename = self.fetched_deps_filename( dependencies )
+        prefetch_deps = self.load_fetched_deps( filename  )
+        postfetch_deps = {}
         for d in dependencies:
-            if not d.fetch():
-                failed_dependencies.append(d.name)
+            name = None
+            version = None
+            if 'name' in d.expander:
+                name = d.expander.expand('name')
+            if 'version' in d.expander:
+                version = d.expander.expand('version')
+            elif 'internal-version' in d.expander:
+                version = d.expander.expand('internal-version')
+            elif 'external-version' in d.expander:
+                version = d.expander.expand('external-version')
+            do_fetch = True
+            if name in prefetch_deps.keys():
+                if prefetch_deps[name] == version:
+                    self.logfile.write("Skipping fetch of %s as unchanged (at Ver %s)\n" % (name, version))
+                    postfetch_deps[name] = version
+                    do_fetch = False
+            if do_fetch:
+                if not d.fetch():
+                    failed_dependencies.append(d.name)
+                else:
+                    if name and version:
+                        postfetch_deps[name] = version
+        self.save_fetched_deps(filename, postfetch_deps)
         if failed_dependencies:
             self.logfile.write("Failed to fetch some dependencies: " + ' '.join(failed_dependencies) + '\n')
             return False
         return True
+    def fetched_deps_filename(self, deps):
+        for d in deps:
+            if 'dest' in d.expander:
+                filename = os.path.join(d.expander.expand('dest').split('/')[0], 'loadedDeps.json')
+                break
+        return filename
+    def load_fetched_deps(self, filename):
+        loaded_deps = {}
+        if os.path.isfile(filename):
+            try:
+                f = open(filename, 'rt')
+                loaded_deps = json.load(f)
+                f.close()
+            except:
+                self.logfile.write("Error with current fetched dependency file: %s\n" % filename)
+        return loaded_deps
+    def save_fetched_deps(self, filename, deps):
+        f = open(filename, 'wt')
+        json.dump(deps, f)
+        f.close()
     def checkout(self, subset=None):
         dependencies = self._filter(subset)
         failed_dependencies = []
@@ -779,6 +823,10 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
     if platform is None:
         raise Exception('Platform not specified and unable to guess.')
     if clean and not list_details:
+        try:
+            os.unlink('dependencies/loadedDeps.json')
+        except:
+            pass
         clean_dirs = []
         if fetch:
             clean_dirs += [
