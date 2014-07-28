@@ -57,3 +57,7 @@ webuitest.xml
 
 # .widgetset files in the ohwidget root
 /*.widgetset
+
+# Eclipse and PyCharm IDE control files
+.project
+.idea
