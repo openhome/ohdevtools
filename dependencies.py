@@ -664,6 +664,8 @@ class DependencyCollection(object):
                 version = d.expander.expand('internal-version')
             elif 'external-version' in d.expander:
                 version = d.expander.expand('external-version')
+            if 'debugmode' in d.expander:
+                version += '-' + d.expander.expand('debugmode')
             do_fetch = True
             if name in prefetch_deps.keys():
                 if prefetch_deps[name] == version:
