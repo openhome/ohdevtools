@@ -654,30 +654,24 @@ class DependencyCollection(object):
         prefetch_deps = self.load_fetched_deps( filename  )
         postfetch_deps = {}
         for d in dependencies:
-            name = None
-            version = None
+            do_fetch = True
+            name = ''
+            path = ''
             if 'name' in d.expander:
                 name = d.expander.expand('name')
-            if 'version' in d.expander:
-                version = d.expander.expand('version')
-            elif 'internal-version' in d.expander:
-                version = d.expander.expand('internal-version')
-            elif 'external-version' in d.expander:
-                version = d.expander.expand('external-version')
-            if 'debugmode' in d.expander:
-                version += '-' + d.expander.expand('debugmode')
-            do_fetch = True
+            if 'archive-path' in d.expander:
+                path = d.expander.expand('archive-path')
             if name in prefetch_deps.keys():
-                if prefetch_deps[name] == version:
-                    self.logfile.write("Skipping fetch of %s as unchanged (at Ver %s)\n" % (name, version))
-                    postfetch_deps[name] = version
+                if prefetch_deps[name] == path:
+                    self.logfile.write("Skipping fetch of %s as unchanged (%s)\n" % (name, path))
+                    postfetch_deps[name] = path
                     do_fetch = False
             if do_fetch:
                 if not d.fetch():
                     failed_dependencies.append(d.name)
                 else:
-                    if name and version:
-                        postfetch_deps[name] = version
+                    if name and path:
+                        postfetch_deps[name] = path
         self.save_fetched_deps(filename, postfetch_deps)
         if failed_dependencies:
             self.logfile.write("Failed to fetch some dependencies: " + ' '.join(failed_dependencies) + '\n')
