@@ -173,6 +173,7 @@ class Builder(object):
         self._optionParser = OptionParser()
         self.add_bool_option("-v", "--verbose")
         self.add_bool_option("--no-overrides", help="When fetching dependencies, don't read from a local overrides file.")
+        self.add_bool_option("--incremental-fetch", help="Force incremental fetch, over-riding clean flag.")
         self._enabled_options = set()
         self._disabled_options = set()
         self._disable_all_options = False
@@ -353,7 +354,10 @@ class Builder(object):
         use_nuget = os.path.isfile('projectdata/packages.config')
         clean = False
         if 'default' in self._enabled_options or 'all' in self._enabled_options or 'clean' in self._enabled_options:
-            clean = True                                    # clean-for fetch follows clean-for-build
+            if self._context.options.incremental_fetch:
+                clean = False                                   # clean-for fetch follows clean-for-build
+            else:                                               # unless incremental-fetch option is set -  in
+                clean = True                                    # which case clean will NOT clean the dependencies
         if 'clean' in self._disabled_options:
             clean = False
         try:
