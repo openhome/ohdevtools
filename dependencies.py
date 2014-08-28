@@ -672,12 +672,14 @@ class DependencyCollection(object):
                 else:
                     if name and path:
                         postfetch_deps[name] = path
-        self.save_fetched_deps(filename, postfetch_deps)
+        if filename:
+            self.save_fetched_deps(filename, postfetch_deps)
         if failed_dependencies:
             self.logfile.write("Failed to fetch some dependencies: " + ' '.join(failed_dependencies) + '\n')
             return False
         return True
     def fetched_deps_filename(self, deps):
+        filename = None
         for d in deps:
             if 'dest' in d.expander:
                 filename = os.path.join(d.expander.expand('dest').split('/')[0], 'loadedDeps.json')
@@ -685,7 +687,7 @@ class DependencyCollection(object):
         return filename
     def load_fetched_deps(self, filename):
         loaded_deps = {}
-        if os.path.isfile(filename):
+        if filename and os.path.isfile(filename):
             try:
                 f = open(filename, 'rt')
                 loaded_deps = json.load(f)
@@ -720,13 +722,18 @@ def read_json_dependencies(dependencyfile, overridefile, env, logfile):
     return collection
 
 def read_json_dependencies_from_filename(dependencies_filename, overrides_filename, env, logfile):
-    dependencyfile = open(dependencies_filename, "r")
-    with open(dependencies_filename) as dependencyfile:
-        if overrides_filename is not None and os.path.isfile(overrides_filename):
-            with open(overrides_filename) as overridesfile:
-                return read_json_dependencies(dependencyfile, overridesfile, env, logfile)
-        else:
-            return read_json_dependencies(dependencyfile, cStringIO.StringIO('[]'), env, logfile)
+    try:
+        dependencyfile = open(dependencies_filename, "r")
+        with open(dependencies_filename) as dependencyfile:
+            if overrides_filename is not None and os.path.isfile(overrides_filename):
+                with open(overrides_filename) as overridesfile:
+                    return read_json_dependencies(dependencyfile, overridesfile, env, logfile)
+            else:
+                return read_json_dependencies(dependencyfile, cStringIO.StringIO('[]'), env, logfile)
+    except (OSError, IOError) as e:
+        if e.errno != 2:
+            raise
+        return DependencyCollection(env, logfile=logfile)
 
 def cli(args):
     if platform.system() != "Windows":
