@@ -581,15 +581,15 @@ class Dependency(object):
         try:
             if not os.path.exists('../'+name):
                 self.logfile.write('  git clone {0} {1}\n'.format(sourcegit, name))
-                subprocess.check_call(['git', 'clone', sourcegit, name], cwd='..', shell=True)
+                subprocess.check_call(['git', 'clone', sourcegit, name], cwd='..', shell=False)
             elif not os.path.isdir('../'+name):
                 self.logfile.write('Cannot checkout {0}, because directory ../{0} already exists\n'.format(name))
                 return False
             else:
                 self.logfile.write('  git fetch origin\n')
-                subprocess.check_call(['git', 'fetch', 'origin'], cwd='../'+name, shell=True)
+                subprocess.check_call(['git', 'fetch', 'origin'], cwd='../'+name, shell=False)
             self.logfile.write("  git checkout {0}\n".format(tag))
-            subprocess.check_call(['git', 'checkout', tag], cwd='../'+name, shell=True)
+            subprocess.check_call(['git', 'checkout', tag], cwd='../'+name, shell=False)
         except subprocess.CalledProcessError as cpe:
             self.logfile.write(str(cpe)+'\n')
             return False
