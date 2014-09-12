@@ -518,6 +518,8 @@ class OpenHomeBuilder(object):
     mdtool_mac = '/Applications/Xamarin\ Studio.app/Contents/MacOS/mdtool'
     msbuild_verbosity = 'minimal'
 
+    cover_reports = [ ]
+
     source_check_rules = [ ]
     standard_source_check_rules = [
             ['src/**/*.csproj', 'warnings-as-errors'],     # All C# projects should enable warnings-as-errors
@@ -713,6 +715,20 @@ class OpenHomeBuilder(object):
         '''
         self.nunitexe = nunitexe
 
+    def set_cover_location(self, coverexe):
+        '''
+        Specify where OpenCover can be found. Subclasses must invoke this in order
+        to use the cover() method
+        '''
+        self.coverexe = coverexe
+
+    def set_reportgen_location(self, reportgenexe):
+        '''
+        Specify where ReportGenerator can be found. Subclasses must invoke this in order
+        to use the coverReport() method
+        '''
+        self.reportgenexe = reportgenexe
+
     def msbuild(self, project, target='Build', platform=None, configuration=None, args=None, properties=None, verbosity=None):
         '''
         Invoke msbuild/xbuild to build a project/solution. Specify the path to
@@ -774,6 +790,46 @@ class OpenHomeBuilder(object):
             '-labels',
             '-noshadow',
             self._expand_template(self.test_location, assembly=test_assembly)])
+
+    def cover(self, **args):
+        '''
+        Carry out a test, measuring it's code coverage. Accepts the following keyworded arguments:
+        - assembly-filter - a filter used by OpenCover to find the assemblies that coverage should be measured for (see OpenCover docs)
+        - output - path of the output xml report
+        - one of:
+          - command - command to execute
+          - nunit_assembly - name of an assembly to be run using nunit (located using the template string test_location)
+        '''
+        if self.coverexe is None:
+            fail("The builer's setup method should call set_cover_location().")
+        cmd_options = [self.coverexe, '-register:user', '-filter:' + args['assembly_filter'], '-output:' + args['output']]
+        if 'command' in args:
+            cmd_options.extend(['-target:' + args['command']])
+        elif 'nunit_assembly' in args:
+            if self.nunitexe is not None:
+                full_name = os.getcwd() + '/' + self._expand_template(self.test_location, assembly=args['nunit_assembly'])
+                cmd_options.extend(['-coverbytest:*.dll', '-target:' + self.nunitexe, '-targetargs:' + full_name + ' /noshadow /nologo'])
+            else:
+                fail("The builder's setup method should call set_nunit_location().")
+        else:
+            fail("Invalid arguments: " + args)
+        self._builder.cli(cmd_options)
+        self.cover_reports.append(args['output'])
+
+    def coverReport(self, output_dir, reports=None):
+        '''
+        Generates a HTML report, based on the provided array xml reports. If no reports are provided,
+        then all the reports generated using the cover function will be used. The array can contain filter strings,
+        i.e. 'reports/*.xml'.
+        '''
+        if self.reportgenexe is None:
+            fail("The builder's setup method should call set_reportgen_location().")
+        if reports is None:
+            reports = self.cover_reports
+        self._builder.cli([
+            self.reportgenexe,
+            '-reports:' + ";".join(reports),
+            '-targetdir:' + output_dir])
 
     def publish_package(self, packagename, uploadpath, package_location=None, package_upload=None):
         '''
