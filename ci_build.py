@@ -802,7 +802,7 @@ class OpenHomeBuilder(object):
         '''
         if self.coverexe is None:
             fail("The builer's setup method should call set_cover_location().")
-        cmd_options = [self.coverexe, '-register:user', '-log:Off', -filter:' + args['assembly_filter'], '-output:' + args['output']]
+        cmd_options = [self.coverexe, '-register:user', '-log:Off', '-filter:' + args['assembly_filter'], '-output:' + args['output']]
         if 'command' in args:
             cmd_options.extend(['-target:' + args['command']])
         elif 'nunit_assembly' in args:
