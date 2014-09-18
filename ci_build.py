@@ -729,6 +729,14 @@ class OpenHomeBuilder(object):
         '''
         self.reportgenexe = reportgenexe
 
+    def should_cover(self):
+        '''
+        Return whether the tests should be covered or not. By default, this method only
+        returns true if the platform is 'Windows-x86', but it could be overriden to enable or
+        disable coverage for other platforms.
+        '''
+        return self.platform == 'Windows-x86'
+        
     def msbuild(self, project, target='Build', platform=None, configuration=None, args=None, properties=None, verbosity=None):
         '''
         Invoke msbuild/xbuild to build a project/solution. Specify the path to
@@ -802,19 +810,29 @@ class OpenHomeBuilder(object):
         '''
         if self.coverexe is None:
             fail("The builer's setup method should call set_cover_location().")
-        cmd_options = [self.coverexe, '-register:user', '-filter:' + args['assembly_filter'], '-output:' + args['output']]
-        if 'command' in args:
-            cmd_options.extend(['-target:' + args['command']])
-        elif 'nunit_assembly' in args:
-            if self.nunitexe is not None:
-                full_name = os.getcwd() + '/' + self._expand_template(self.test_location, assembly=args['nunit_assembly'])
-                cmd_options.extend(['-coverbytest:*.dll', '-target:' + self.nunitexe, '-targetargs:' + full_name + ' /noshadow /nologo'])
+        if self.should_cover():
+            report_dir = os.path.dirname(args['output'])
+            if not os.path.exists(report_dir):
+                os.makedirs(report_dir)
+            cmd_options = [self.coverexe, '-register:user', '-filter:' + args['assembly_filter'], '-output:' + args['output']]
+            if 'command' in args:
+                cmd_options.extend(['-target:' + args['command']])
+            elif 'nunit_assembly' in args:
+                if self.nunitexe is not None:
+                    full_name = os.getcwd() + '/' + self._expand_template(self.test_location, assembly=args['nunit_assembly'])
+                    cmd_options.extend(['-coverbytest:*.dll', '-target:' + self.nunitexe, '-targetargs:' + full_name + ' /noshadow /nologo'])
+                else:
+                    fail("The builder's setup method should call set_nunit_location().")
             else:
-                fail("The builder's setup method should call set_nunit_location().")
+                fail("Invalid arguments: " + args)
+            self._builder.cli(cmd_options)
+            self.cover_reports.append(args['output'])
         else:
-            fail("Invalid arguments: " + args)
-        self._builder.cli(cmd_options)
-        self.cover_reports.append(args['output'])
+            print 'Coverage not enabled for this platform, executing tests normally'
+            if 'command' in args:
+                self._builder.cli(args['command'])
+            elif 'nunit_assembly' in args:
+                self.nunit(args['nunit_assembly'])
 
     def coverReport(self, output_dir, reports=None):
         '''
@@ -822,14 +840,17 @@ class OpenHomeBuilder(object):
         then all the reports generated using the cover function will be used. The array can contain filter strings,
         i.e. 'reports/*.xml'.
         '''
-        if self.reportgenexe is None:
-            fail("The builder's setup method should call set_reportgen_location().")
-        if reports is None:
-            reports = self.cover_reports
-        self._builder.cli([
-            self.reportgenexe,
-            '-reports:' + ";".join(reports),
-            '-targetdir:' + output_dir])
+        if self.should_cover():
+            if self.reportgenexe is None:
+                fail("The builder's setup method should call set_reportgen_location().")
+            if reports is None:
+                reports = self.cover_reports
+            self._builder.cli([
+                self.reportgenexe,
+                '-reports:' + ";".join(reports),
+                '-targetdir:' + output_dir])
+        else:
+            print 'Coverage not enabled for this platform, not generating report'
 
     def publish_package(self, packagename, uploadpath, package_location=None, package_upload=None):
         '''
