@@ -742,7 +742,8 @@ class OpenHomeBuilder(object):
         Invoke msbuild/xbuild to build a project/solution. Specify the path to
         the project or solution file.
         '''
-        msbuild_args = ['msbuild' if self.system == 'Windows' else 'xbuild']
+        #msbuild_args = ['msbuild' if self.system == 'Windows' else 'xbuild']
+        msbuild_args = ['msbuild' if sys.platform.startswith('win') else 'xbuild']
         properties = {} if properties is None else dict(properties)
 
         if target is not None:
@@ -769,7 +770,7 @@ class OpenHomeBuilder(object):
         Invoke mdtool to build a project/solution. Specify the path to
         the project or solution file.
         '''
-        mdtool_args = [self.mdtool_mac if (self.system == 'Mac' or self.system == 'iOs' or self.system == 'Android') else 'mdtool']
+        mdtool_args = [self.mdtool_mac if sys.platform.startswith('darwin') else 'mdtool']
         if target == "build" or target == "Build":
             mdtool_args += ['build']
             mdtool_args += ['-t:Build']
