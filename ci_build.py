@@ -736,7 +736,8 @@ class OpenHomeBuilder(object):
         returns true if the platform is 'Windows-x86', but it could be overriden to enable or
         disable coverage for other platforms.
         '''
-        return self.platform == 'Windows-x86'
+        cover = self.env.get('COVER',"false").lower() == "true"
+        return cover and (self.platform == 'Windows-x86')
         
     def msbuild(self, project, target='Build', platform=None, configuration=None, args=None, properties=None, verbosity=None):
         '''
