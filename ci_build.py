@@ -861,7 +861,8 @@ class OpenHomeBuilder(object):
       '''
       if self.should_cover():
           head, tail = os.path.split(output)
-          os.makedirs(head)
+          if not os.path.isdir(head):
+              os.makedirs(head)
           if reports is None:
               reports = self.cover_reports
           with tarfile.open(output, 'w') as tar:
