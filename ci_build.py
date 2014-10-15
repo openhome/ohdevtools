@@ -732,12 +732,13 @@ class OpenHomeBuilder(object):
 
     def should_cover(self):
         '''
-        Return whether the tests should be covered or not. By default, this method only
-        returns true if the platform is 'Windows-x86', but it could be overriden to enable or
-        disable coverage for other platforms.
+        Return whether the tests should be covered or not. This method
+        returns true if the platform is 'Windows-x86', a 'COVER' environment variable is
+        set to 'true' and the configuration is 'Release', but it could be overriden to
+        enable or disable coverage for other configurations.
         '''
         cover = self.env.get('COVER',"false").lower() == "true"
-        return cover and (self.platform == 'Windows-x86')
+        return (self.configuration == 'Release') and cover and (self.platform == 'Windows-x86')
         
     def msbuild(self, project, target='Build', platform=None, configuration=None, args=None, properties=None, verbosity=None):
         '''
