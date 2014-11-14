@@ -818,7 +818,7 @@ class OpenHomeBuilder(object):
             report_dir = os.path.dirname(args['output'])
             if not os.path.exists(report_dir):
                 os.makedirs(report_dir)
-            cmd_options = [self.coverexe, '-register:user', '-filter:' + args['assembly_filter'], '-output:' + args['output']]
+            cmd_options = [self.coverexe, '-returntargetcode', '-register:user', '-filter:' + args['assembly_filter'], '-output:' + args['output']]
             if 'command' in args:
                 cmd_options.extend(['-target:' + args['command']])
             elif 'nunit_assembly' in args:
