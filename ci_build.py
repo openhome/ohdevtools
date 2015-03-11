@@ -13,6 +13,7 @@ from default_platform import default_platform as _default_platform
 from functools import wraps
 import version
 import filechecker
+import tarfile
 
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
@@ -518,6 +519,8 @@ class OpenHomeBuilder(object):
     mdtool_mac = '/Applications/Xamarin\ Studio.app/Contents/MacOS/mdtool'
     msbuild_verbosity = 'minimal'
 
+    cover_reports = [ ]
+
     source_check_rules = [ ]
     standard_source_check_rules = [
             ['src/**/*.csproj', 'warnings-as-errors'],     # All C# projects should enable warnings-as-errors
@@ -713,12 +716,37 @@ class OpenHomeBuilder(object):
         '''
         self.nunitexe = nunitexe
 
+    def set_cover_location(self, coverexe):
+        '''
+        Specify where OpenCover can be found. Subclasses must invoke this in order
+        to use the cover() method
+        '''
+        self.coverexe = coverexe
+
+    def set_reportgen_location(self, reportgenexe):
+        '''
+        Specify where ReportGenerator can be found. Subclasses must invoke this in order
+        to use the coverReport() method
+        '''
+        self.reportgenexe = reportgenexe
+
+    def should_cover(self):
+        '''
+        Return whether the tests should be covered or not. This method
+        returns true if the platform is 'Windows-x86', a 'COVER' environment variable is
+        set to 'true' and the configuration is 'Release', but it could be overriden to
+        enable or disable coverage for other configurations.
+        '''
+        cover = self.env.get('COVER',"false").lower() == "true"
+        return (self.configuration == 'Release') and cover and (self.platform == 'Windows-x86')
+        
     def msbuild(self, project, target='Build', platform=None, configuration=None, args=None, properties=None, verbosity=None):
         '''
         Invoke msbuild/xbuild to build a project/solution. Specify the path to
         the project or solution file.
         '''
-        msbuild_args = ['msbuild' if self.system == 'Windows' else 'xbuild']
+        #msbuild_args = ['msbuild' if self.system == 'Windows' else 'xbuild']
+        msbuild_args = ['msbuild' if sys.platform.startswith('win') else 'xbuild']
         properties = {} if properties is None else dict(properties)
 
         if target is not None:
@@ -745,7 +773,7 @@ class OpenHomeBuilder(object):
         Invoke mdtool to build a project/solution. Specify the path to
         the project or solution file.
         '''
-        mdtool_args = [self.mdtool_mac if (self.system == 'Mac' or self.system == 'iOs' or self.system == 'Android') else 'mdtool']
+        mdtool_args = [self.mdtool_mac if sys.platform.startswith('darwin') else 'mdtool']
         if target == "build" or target == "Build":
             mdtool_args += ['build']
             mdtool_args += ['-t:Build']
@@ -774,6 +802,77 @@ class OpenHomeBuilder(object):
             '-labels',
             '-noshadow',
             self._expand_template(self.test_location, assembly=test_assembly)])
+
+    def cover(self, **args):
+        '''
+        Carry out a test, measuring it's code coverage. Accepts the following keyworded arguments:
+        - assembly-filter - a filter used by OpenCover to find the assemblies that coverage should be measured for (see OpenCover docs)
+        - output - path of the output xml report
+        - one of:
+          - command - command to execute
+          - nunit_assembly - name of an assembly to be run using nunit (located using the template string test_location)
+        '''
+        if self.coverexe is None:
+            fail("The builer's setup method should call set_cover_location().")
+        if self.should_cover():
+            report_dir = os.path.dirname(args['output'])
+            if not os.path.exists(report_dir):
+                os.makedirs(report_dir)
+            cmd_options = [self.coverexe, '-returntargetcode', '-register:user', '-filter:' + args['assembly_filter'], '-output:' + args['output']]
+            if 'command' in args:
+                cmd_options.extend(['-target:' + args['command']])
+            elif 'nunit_assembly' in args:
+                if self.nunitexe is not None:
+                    full_name = os.getcwd() + '/' + self._expand_template(self.test_location, assembly=args['nunit_assembly'])
+                    cmd_options.extend(['-coverbytest:*.dll', '-target:' + self.nunitexe, '-targetargs:' + full_name + ' /noshadow /nologo'])
+                else:
+                    fail("The builder's setup method should call set_nunit_location().")
+            else:
+                fail("Invalid arguments: " + args)
+            self._builder.cli(cmd_options)
+            self.cover_reports.append(args['output'])
+        else:
+            print 'Coverage not enabled for this platform, executing tests normally'
+            if 'command' in args:
+                self._builder.cli(args['command'])
+            elif 'nunit_assembly' in args:
+                self.nunit(args['nunit_assembly'])
+
+    def cover_report(self, output_dir, reports=None):
+        '''
+        Generates a HTML report, based on the provided array xml reports. If no reports are provided,
+        then all the reports generated using the cover function will be used. The array can contain filter strings,
+        i.e. 'reports/*.xml'.
+        '''
+        if self.should_cover():
+            if self.reportgenexe is None:
+                fail("The builder's setup method should call set_reportgen_location().")
+            if reports is None:
+                reports = self.cover_reports
+            self._builder.cli([
+                self.reportgenexe,
+                '-reports:' + ";".join(reports),
+                '-targetdir:' + output_dir])
+        else:
+            print 'Coverage not enabled for this platform, not generating report'
+
+    def cover_compress(self, output, reports=None):
+      '''
+      Generates a tar file with the specified name, containing all the reports provided. If no reports are provided,
+      all the reports generated by the cover calls will be added.
+      '''
+      if self.should_cover():
+          head, tail = os.path.split(output)
+          if not os.path.isdir(head):
+              os.makedirs(head)
+          if reports is None:
+              reports = self.cover_reports
+          with tarfile.open(output, 'w') as tar:
+              for report in reports:
+                  head, tail = os.path.split(report)
+                  tar.add(report, arcname=tail)
+      else:
+          print 'Coverage not enabled for this platform, not generating ' + output
 
     def publish_package(self, packagename, uploadpath, package_location=None, package_upload=None):
         '''
