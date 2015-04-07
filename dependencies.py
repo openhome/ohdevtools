@@ -875,6 +875,6 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
                 print "Skipping NuGet invocation because {0} not found.".format(nuget_sln)
             else:
                 print "Fetching dependencies based on {0}".format(nuget_sln)
-                cli(args + [nuget_sln])
+                cli(args + [nuget_sln , '-ConfigFile', 'nuget.config'])
                 
     return dependencies
