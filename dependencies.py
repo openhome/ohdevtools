@@ -796,7 +796,7 @@ def get_data_dir():
     return userdata + '/.ohdevtools'
 
 
-def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=True, nuget_packages=None, nuget_sln=None, clean=True, source=False, logfile=None, list_details=False, local_overrides=True, verbose=False):
+def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=True, nuget_packages=None, nuget_sln=None, nuget_config='nuget.config', clean=True, source=False, logfile=None, list_details=False, local_overrides=True, verbose=False):
     '''
     Fetch all the dependencies defined in projectdata/dependencies.json and in
     projectdata/packages.config.
@@ -875,6 +875,8 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
                 print "Skipping NuGet invocation because {0} not found.".format(nuget_sln)
             else:
                 print "Fetching dependencies based on {0}".format(nuget_sln)
-                cli(args + [nuget_sln , '-ConfigFile', 'nuget.config'])
+                # recursive lookup of the nuget.config file does not work on linux... So,
+                # the location of the file needs to be specified explicitly
+                cli(args + [nuget_sln , '-ConfigFile', nuget_config])
                 
     return dependencies
