@@ -253,12 +253,13 @@ class FileFetcher(object):
 def urlopen(url):
     handle, temppath = tempfile.mkstemp( suffix='.tmp' )
     try:
-        remotefile = urllib2.urlopen(url)
+        req = urllib2.Request(url=url, headers={'Accept-Encoding': 'identity'})
+        remotefile = urllib2.urlopen( req )
         localfile = os.fdopen( handle, 'wb' )
-        chunk = remotefile.read( 100000 )
+        chunk = remotefile.read( 1000000 )      # chunk size optimised for download speed
         while len( chunk ):
             localfile.write( chunk )
-            chunk = remotefile.read( 100000 )
+            chunk = remotefile.read( 1000000 )
         localfile.close()
         remotefile.close()
     except:
