@@ -352,7 +352,6 @@ class Builder(object):
         return selected, env
     def fetch_dependencies(self, *selected, **kwargs):
         selected, env = self._process_dependency_args(*selected, **kwargs)
-        use_nuget = os.path.isfile('projectdata/packages.config')
         clean = False
         if 'default' in self._enabled_options or 'all' in self._enabled_options or 'clean' in self._enabled_options:
             if self._context.options.incremental_fetch:
@@ -363,8 +362,10 @@ class Builder(object):
             clean = False
         try:
             dependencies.fetch_dependencies(
-                    selected or None, platform=self._context.env["OH_PLATFORM"], env=env,
-                    fetch=True, nuget=use_nuget, clean=clean, source=False, logfile=sys.stdout,
+                    selected or None, platform=self._context.env["OH_PLATFORM"], env=env, fetch=True,
+                    nuget_packages='projectdata/packages.config' if not self.nuget_sln else None,
+                    nuget_sln=self.nuget_sln,
+                    clean=clean, source=False, logfile=sys.stdout,
                     local_overrides=not self._context.options.no_overrides)
         except Exception as e:
             print e
@@ -536,6 +537,7 @@ class OpenHomeBuilder(object):
     def startup(self, builder):
         self._builder = builder
         self._context = None
+        self._builder.nuget_sln = None
         if self.enable_platforms:
             builder.add_option('--platform', help="Target platform. E.g. Windows-x86, Linux-x64, iOs-armv7.")
             builder.add_option('--system', help="Target system. E.g. Windows, Linux, Mac, iOs.")
@@ -739,6 +741,14 @@ class OpenHomeBuilder(object):
         '''
         cover = self.env.get('COVER',"false").lower() == "true"
         return (self.configuration == 'Release') and cover and (self.platform == 'Windows-x86')
+        
+    def set_nuget_sln(self, sln):
+        '''
+        Set the solution file to be used for fetching nuget dependencies. If this is not set,
+        the packages.config file found in the project's projectdata directory will be used.
+        '''
+        print "setting solution to use for nuget to  {0}".format(sln)
+        self._builder.nuget_sln = sln
         
     def msbuild(self, project, target='Build', platform=None, configuration=None, args=None, properties=None, verbosity=None):
         '''

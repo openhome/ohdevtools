@@ -795,7 +795,7 @@ def get_data_dir():
     return userdata + '/.ohdevtools'
 
 
-def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=True, nuget=True, clean=True, source=False, logfile=None, list_details=False, local_overrides=True, verbose=False):
+def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=True, nuget_packages=None, nuget_sln=None, clean=True, source=False, logfile=None, list_details=False, local_overrides=True, verbose=False):
     '''
     Fetch all the dependencies defined in projectdata/dependencies.json and in
     projectdata/packages.config.
@@ -814,6 +814,7 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
     logfile:
         File-like object for log messages.
     '''
+    nuget = nuget_packages is not None or nuget_sln is not None
     if env is None:
         env = {}
     if platform is not None:
@@ -856,20 +857,23 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
     else:
         if fetch:
             dependencies.fetch(dependency_names)
-        if nuget:
-            if not os.path.exists('projectdata/packages.config'):
-                print "Skipping NuGet invocation because projectdata/packages.config not found."
-            else:
-                nuget_exes = [os.path.normpath(p) for p in glob('dependencies/AnyPlatform/NuGet.[0-9]*/NuGet.exe')]
-                if len(nuget_exes) == 0:
-                    raise Exception("'NuGet.exe' not found, cannot fetch NuGet dependencies.")
-                nuget_exe = nuget_exes[0]
-                if len(nuget_exes) > 1:
-                    print "Warning: multiple copies of 'NuGet.exe' found. Using:"
-                    print "    " + nuget_exe
-                cli([nuget_exe, 'install', 'projectdata/packages.config', '-OutputDirectory', 'dependencies/nuget'])
+        
         if source:
             dependencies.checkout(dependency_names)
+            
+        args = ['../ohdevtools/nuget/nuget.exe', 'restore']
+        if nuget_packages:
+            if not os.path.exists(nuget_packages):
+                print "Skipping NuGet invocation because {0} not found.".format(nuget_packages)
+            else:
+                print "Fetching dependencies based on {0}".format(nuget_packages)
+                # force the output directory to maintain legacy support, where there is no nuget.config file in the project
+                cli(args + [nuget_packages, '-OutputDirectory', 'dependencies/nuget'])
+        elif nuget_sln:
+            if not os.path.exists(nuget_sln):
+                print "Skipping NuGet invocation because {0} not found.".format(nuget_sln)
+            else:
+                print "Fetching dependencies based on {0}".format(nuget_sln)
+                cli(args + [nuget_sln])
+                
     return dependencies
-
-
