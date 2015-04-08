@@ -884,6 +884,30 @@ class OpenHomeBuilder(object):
       else:
           print 'Coverage not enabled for this platform, not generating ' + output
 
+    def pack_nuget(self, project_name, output_path='build/packages', include_references=True):
+        '''
+        Creates a nuget package based on the supplied project file
+        '''
+        args = ['../ohdevtools/nuget/nuget.exe', 'pack', project_name, '-Properties', 'Configuration='+self.configuration]
+        if output_path is not None:
+            args += ['-OutputDirectory', output_path]
+        if include_references:
+            args += ['-IncludeReferencedProjects']
+        self.cli(args)
+
+    def publish_nuget(self, package, api_key=None, server=None, config_file='nuget.config'):
+        '''
+        Packs the nuget packa
+        '''
+        args = ['../ohdevtools/nuget/nuget.exe', 'push', package]
+        if api_key is not None:
+            args += [api_key]
+        if server is not None:
+            args += ['-Source', server]
+        if config_file is not None:
+            args += ['-ConfigFile', config_file]
+        self.cli(args)
+
     def publish_package(self, packagename, uploadpath, package_location=None, package_upload=None):
         '''
         Publish a package via scp to the package repository. Projects can
