@@ -861,15 +861,21 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
         
         if source:
             dependencies.checkout(dependency_names)
-            
-        args = ['../ohdevtools/nuget/nuget.exe', 'restore']
+
         if nuget_packages:
+            # follow the legacy behaviour if a valid nuget packages.config file has been specified
             if not os.path.exists(nuget_packages):
-                print "Skipping NuGet invocation because {0} not found.".format(nuget_packages)
+                print "Skipping NuGet invocation because projectdata/packages.config not found."
             else:
                 print "Fetching dependencies based on {0}".format(nuget_packages)
-                # force the output directory to maintain legacy support, where there is no nuget.config file in the project
-                cli(args + [nuget_packages, '-OutputDirectory', 'dependencies/nuget'])
+                nuget_exes = [os.path.normpath(p) for p in glob('dependencies/AnyPlatform/NuGet.[0-9]*/NuGet.exe')]
+                if len(nuget_exes) == 0:
+                    raise Exception("'NuGet.exe' not found, cannot fetch NuGet dependencies.")
+                nuget_exe = nuget_exes[0]
+                if len(nuget_exes) > 1:
+                    print "Warning: multiple copies of 'NuGet.exe' found. Using:"
+                    print "    " + nuget_exe
+                cli([nuget_exe, 'install', nuget_packages, '-OutputDirectory', 'dependencies/nuget'])
         elif nuget_sln:
             if not os.path.exists(nuget_sln):
                 print "Skipping NuGet invocation because {0} not found.".format(nuget_sln)
@@ -877,6 +883,6 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
                 print "Fetching dependencies based on {0}".format(nuget_sln)
                 # recursive lookup of the nuget.config file does not work on linux... So,
                 # the location of the file needs to be specified explicitly
-                cli(args + [nuget_sln , '-ConfigFile', nuget_config])
+                cli(['../ohdevtools/nuget/nuget.exe', 'restore', nuget_sln , '-ConfigFile', nuget_config])
                 
     return dependencies
