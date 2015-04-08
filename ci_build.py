@@ -888,7 +888,7 @@ class OpenHomeBuilder(object):
         '''
         Creates a nuget package based on the supplied project file
         '''
-        args = ['../ohdevtools/nuget/nuget.exe', 'pack', project_name, '-Properties', 'Configuration='+self.configuration]
+        args = ['../ohdevtools/nuget/nuget.exe', 'pack', project_name, '-Verbosity', 'detailed', '-Properties', 'Configuration='+self.configuration]
         if output_path is not None:
             args += ['-OutputDirectory', output_path]
         if include_references:
