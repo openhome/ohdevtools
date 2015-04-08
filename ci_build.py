@@ -884,11 +884,11 @@ class OpenHomeBuilder(object):
       else:
           print 'Coverage not enabled for this platform, not generating ' + output
 
-    def pack_nuget(self, project_name, output_path='build/packages', include_references=True):
+    def pack_nuget(self, project_name, base_path, output_path='build/packages', include_references=True):
         '''
         Creates a nuget package based on the supplied project file
         '''
-        args = ['../ohdevtools/nuget/nuget.exe', 'pack', project_name, '-Verbosity', 'detailed', '-Properties', 'Configuration='+self.configuration]
+        args = ['../ohdevtools/nuget/nuget.exe', 'pack', project_name, '-BasePath', base_path, '-Properties', 'Configuration='+self.configuration+';version='+self.version+'.0']
         if output_path is not None:
             args += ['-OutputDirectory', output_path]
         if include_references:
