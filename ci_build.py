@@ -170,6 +170,7 @@ def callable_to_function(f):
 
 class Builder(object):
     def __init__(self):
+        self.nuget_sln = None
         self._steps = []
         self._optionParser = OptionParser()
         self.add_bool_option("-v", "--verbose")
@@ -537,7 +538,6 @@ class OpenHomeBuilder(object):
     def startup(self, builder):
         self._builder = builder
         self._context = None
-        self._builder.nuget_sln = None
         if self.enable_platforms:
             builder.add_option('--platform', help="Target platform. E.g. Windows-x86, Linux-x64, iOs-armv7.")
             builder.add_option('--system', help="Target system. E.g. Windows, Linux, Mac, iOs.")
