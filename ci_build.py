@@ -884,11 +884,16 @@ class OpenHomeBuilder(object):
       else:
           print 'Coverage not enabled for this platform, not generating ' + output
 
-    def pack_nuget(self, project_name, base_path, output_path='build/packages', include_references=True):
+    def pack_nuget(self, project_name, base_path, props=None, output_path='build/packages', include_references=True):
         '''
         Creates a nuget package based on the supplied project file
         '''
-        args = ['../ohdevtools/nuget/nuget.exe', 'pack', project_name, '-BasePath', base_path, '-Properties', 'Configuration='+self.configuration+';version='+self.version+'.0']
+        props = {} if props is None else props
+        props['Configuration'] = self.configuration
+        props['version'] = self.version + '.0' if self.version is not None
+        props_str = ';'.join(['%s=%s' % (k, v) for (k, v) in props.items()])
+
+        args = ['../ohdevtools/nuget/nuget.exe', 'pack', project_name, '-BasePath', base_path, '-Properties', props_str]
         if output_path is not None:
             args += ['-OutputDirectory', output_path]
         if include_references:
