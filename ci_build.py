@@ -890,7 +890,7 @@ class OpenHomeBuilder(object):
         '''
         props = {} if props is None else props
         props['Configuration'] = self.configuration
-        props['version'] = self.version + '.0' if self.version is not None
+        props['version'] = self.version + '.0' if self.version is not None else '0.0.0.1'
         props_str = ';'.join(['%s=%s' % (k, v) for (k, v) in props.items()])
 
         args = ['../ohdevtools/nuget/nuget.exe', 'pack', project_name, '-BasePath', base_path, '-Properties', props_str]
