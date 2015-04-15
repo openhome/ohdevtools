@@ -883,6 +883,9 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
                 print "Fetching dependencies based on {0}".format(nuget_sln)
                 # recursive lookup of the nuget.config file does not work on linux... So,
                 # the location of the file needs to be specified explicitly
-                cli(['../ohdevtools/nuget/nuget.exe', 'restore', nuget_sln , '-ConfigFile', nuget_config])
+                args = ['../ohdevtools/nuget/nuget.exe', 'restore', nuget_sln]
+                if nuget_config is not None and os.path.isfile(nuget_config):
+                    args += ['-ConfigFile', nuget_config]
+                cli(args)
                 
     return dependencies
