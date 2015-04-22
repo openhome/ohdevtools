@@ -304,14 +304,9 @@ class Builder(object):
         if self._context.options.verbose:
             print invocation
         try:
-            retval = subprocess.call(*args, timeout=300, **kwargs)
+            retval = subprocess.call(*args, **kwargs)
         except OSError as e:
             fail("{0} -> failed with exception {1}".format(invocation, e))
-        except subprocess.TimeoutExpired:
-            # this is required to kill NUnit on mono 3.12 due to bug, https://bugzilla.xamarin.com/show_bug.cgi?id=25629
-            # it is fixed in mono 4.0 and will not be required when linux/mac is updated
-            retval = 0
-            pass
         if retval != 0:
             fail("{0} -> returned {1}".format(invocation, retval))
 
