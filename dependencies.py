@@ -871,10 +871,7 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
                 if len(nuget_exes) > 1:
                     print "Warning: multiple copies of 'NuGet.exe' found. Using:"
                     print "    " + nuget_exe
-                args = [nuget_exe, 'install', nuget_packages, '-OutputDirectory', 'dependencies/nuget']
-                if nuget_config is not None and os.path.isfile(nuget_config):
-                    args += ['-ConfigFile', nuget_config]
-                cli(args)
+                cli([nuget_exe, 'install', nuget_packages, '-OutputDirectory', 'dependencies/nuget'])
         elif nuget_sln:
             if not os.path.exists(nuget_sln):
                 print "Skipping NuGet invocation because {0} not found.".format(nuget_sln)
