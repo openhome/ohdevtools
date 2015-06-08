@@ -2,3 +2,5 @@ Copyright 2011-14, OpenHome. All rights reserved.
 
 Unless otherwise stated, all code in this project is licensed under the 2-clause
 (Simplified) BSD license.  See BsdLicense.txt for details.
+
+The nuget.exe object included in this repository is distributed by the NuGet project under the Apache Version 2.0 license. See ApacheLicense.txt for details.
