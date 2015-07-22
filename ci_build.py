@@ -895,6 +895,8 @@ class OpenHomeBuilder(object):
 
         args = ['../ohdevtools/nuget/nuget.exe', 'pack', project_name, '-BasePath', base_path, '-Properties', props_str]
         if output_path is not None:
+            if not os.path.exists(output_path):
+                os.makedirs(output_path)
             args += ['-OutputDirectory', output_path]
         if include_references:
             args += ['-IncludeReferencedProjects']
