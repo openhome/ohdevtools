@@ -263,8 +263,8 @@ def urlopen(url):
         localfile.close()
         remotefile.close()
     except:
-        print '\n\n**** FAILED reading from %s ****\n' % url
-        os._exit(-1)
+        # errors handled in caller to permit execution to continue after errored dependency
+        os.close( handle )
     return temppath
 
 def is_trueish(value):
@@ -541,8 +541,14 @@ class Dependency(object):
         self.logfile.write("Fetching '%s'\n  from '%s'" % (self.name, remote_path))
         try:
             fetched_path, method = self.fetcher.fetch(remote_path)
-            self.logfile.write(" (" + method + ")\n")
-            archive = openarchive(remote_path, fetched_path)
+            statinfo = os.stat(fetched_path)
+            if statinfo.st_size:
+                self.logfile.write(" (" + method + ")\n")
+                archive = openarchive(remote_path, fetched_path)
+            else:
+                os.unlink(fetched_path)
+                self.logfile.write("\n**** WARNING - failed to fetch %s ****\n" % remote_path)
+                return False
         except IOError:
             self.logfile.write("\n  FAILED\n")
             return False
@@ -832,15 +838,11 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
             os.unlink('dependencies/loadedDeps.json')
         except:
             pass
-        clean_dirs = []
-        if fetch:
-            clean_dirs += [
-                'dependencies/AnyPlatform',
-                'dependencies/'+platform]
-        if nuget:
-            clean_dirs += ['dependencies/nuget']
+        clean_dirs = [
+            'dependencies/AnyPlatform',
+            'dependencies/'+platform,
+            'dependencies/nuget']
         clean_directories(clean_dirs)
-
 
     overrides_filename = '../dependency_overrides.json' if local_overrides else None
     dependencies = read_json_dependencies_from_filename('projectdata/dependencies.json', overrides_filename, env=env, logfile=logfile)

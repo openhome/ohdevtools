@@ -862,6 +862,7 @@ class OpenHomeBuilder(object):
             self._builder.cli([
                 self.reportgenexe,
                 '-reports:' + ";".join(reports),
+                '-historydir:history',
                 '-targetdir:' + output_dir])
         else:
             print 'Coverage not enabled for this platform, not generating report'
