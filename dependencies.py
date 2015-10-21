@@ -859,8 +859,9 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
             print ""
     else:
         if fetch:
-            dependencies.fetch(dependency_names)
-        
+            if not dependencies.fetch(dependency_names):
+                raise Exception("Failed to load requested dependencies")
+
         if source:
             dependencies.checkout(dependency_names)
 
