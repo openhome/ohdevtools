@@ -29,7 +29,7 @@ def get_vsvars_environment(architecture="x86"):
     win32-specific
     """
 
-    comntoolsVarNames = ['VS100COMNTOOLS', 'VS110COMNTOOLS', 'VS120COMNTOOLS']
+    comntoolsVarNames = ['VS100COMNTOOLS', 'VS110COMNTOOLS', 'VS120COMNTOOLS', 'VS140COMNTOOLS']
 
     for varName in comntoolsVarNames:
         vscomntools = os.getenv(varName)
