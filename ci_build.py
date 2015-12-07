@@ -647,7 +647,7 @@ class OpenHomeBuilder(object):
         pass
 
     def openhome_setup(self):
-        if self.enable_vsvars and self.system == 'Windows':
+        if self.enable_vsvars and self.system.lower().startswith('windows'):
             vsvars_string = self.options.vsvars.lower()
             if vsvars_string == 'auto':
                 vsvars = not program_exists('cl')
