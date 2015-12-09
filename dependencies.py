@@ -70,11 +70,13 @@ DEPENDENCY_TYPES = {
         'archive-prefix': '',
         'archive-suffix': '',
         'binary-repo': 'http://openhome.org/releases/artifacts',
+        'mirror-repo': 'http://PC868/mirror.openhome.org/releases/artifacts',
         'archive-directory': '${binary-repo}/${name}/',
         'archive-filename': '${archive-prefix}${name}-${version}-${archive-platform}${archive-suffix}${archive-extension}',
         'remote-archive-path': '${archive-directory}${archive-filename}',
         'use-local-archive': False,
         'archive-path': '${use-local-archive?local-archive-path:remote-archive-path}',
+        'mirror-path': '${mirror-repo}/${name}/${archive-filename}',
         'source-path': '${linn-git-user}@core.linn.co.uk:/home/git',
         'repo-name': '${name}',
         'source-git': '${source-path}/${repo-name}.git',
@@ -107,6 +109,7 @@ DEPENDENCY_TYPES = {
         'archive-filename': '${name}-${version}-${platform}${archive-suffix}.tar.gz',
         'archive-platform': '${platform-specific?platform:any-platform}',
         'archive-path': '${binary-repo}/${name}/${archive-filename}',
+        'mirror-path': None,
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': [],
         'strip-archive-dirs': 0
@@ -129,6 +132,7 @@ DEPENDENCY_TYPES = {
         'platform-specific': True,
         'archive-platform': '${platform-specific?platform:any-platform}',
         'archive-path': '${binary-repo}/${archive-platform}/${archive-filename}',
+        'mirror-path': None,
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': [],
         'strip-archive-dirs': 0
@@ -147,6 +151,7 @@ DEPENDENCY_TYPES = {
         'archive-directory': '${binary-repo}/nuget/',
         'archive-filename': '${name}.${version}${archive-extension}',
         'archive-path': '${archive-directory}${archive-filename}',
+        'mirror-path': None,
         'dest': 'dependencies/nuget/',
         'configure-args': [],
         'strip-archive-dirs': 0
@@ -254,7 +259,7 @@ def urlopen(url):
     handle, temppath = tempfile.mkstemp( suffix='.tmp' )
     try:
         req = urllib2.Request(url=url, headers={'Accept-Encoding': 'identity'})
-        remotefile = urllib2.urlopen( req )
+        remotefile = urllib2.urlopen( req, timeout=10 )
         localfile = os.fdopen( handle, 'wb' )
         chunk = remotefile.read( 1000000 )      # chunk size optimised for download speed
         while len( chunk ):
@@ -535,23 +540,44 @@ class Dependency(object):
 
     def fetch(self):
         remote_path = self.expander.expand('archive-path')
+        mirror_path = self.expander.expand('mirror-path')
         local_path = os.path.abspath(self.expander.expand('dest'))
         fetched_path = None
         strip_dirs = self.expander.expand('strip-archive-dirs')
-        self.logfile.write("Fetching '%s'\n  from '%s'" % (self.name, remote_path))
-        try:
-            fetched_path, method = self.fetcher.fetch(remote_path)
-            statinfo = os.stat(fetched_path)
-            if statinfo.st_size:
-                self.logfile.write(" (" + method + ")\n")
-                archive = openarchive(remote_path, fetched_path)
-            else:
-                os.unlink(fetched_path)
-                self.logfile.write("\n**** WARNING - failed to fetch %s ****\n" % remote_path)
+        success = False
+
+        if mirror_path:
+            self.logfile.write("\nFetching '%s'\n  from '%s'" % (self.name, mirror_path))
+            try:
+                fetched_path, method = self.fetcher.fetch(mirror_path)
+                statinfo = os.stat(fetched_path)
+                if statinfo.st_size:
+                    self.logfile.write(" (" + method + ")\n")
+                    archive = openarchive(mirror_path, fetched_path)
+                    success = True
+                else:
+                    self.logfile.write("\n  .... not found on mirror\n" )
+                    os.unlink(fetched_path)
+            except:
+                # something went wrong - we'll just fall thru to remote fetch
+                pass
+
+        if not success:
+            self.logfile.write("\nFetching '%s'\n  from '%s'" % (self.name, remote_path))
+            try:
+                fetched_path, method = self.fetcher.fetch(remote_path)
+                statinfo = os.stat(fetched_path)
+                if statinfo.st_size:
+                    self.logfile.write(" (" + method + ")\n")
+                    archive = openarchive(remote_path, fetched_path)
+                else:
+                    os.unlink(fetched_path)
+                    self.logfile.write("\n**** WARNING - failed to fetch %s ****\n" % remote_path)
+                    return False
+            except IOError:
+                self.logfile.write("\n  FAILED\n")
                 return False
-        except IOError:
-            self.logfile.write("\n  FAILED\n")
-            return False
+
         try:
             os.makedirs(local_path)
         except OSError:
@@ -559,6 +585,7 @@ class Dependency(object):
             # ignore. If something worse went wrong, we will find out very
             # soon when we try to extract the files.
             pass
+
         self.logfile.write("  unpacking to '%s'\n" % (local_path,))
         extract_archive(archive, local_path, strip_dirs)
         archive.close()
