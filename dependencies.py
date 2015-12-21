@@ -69,7 +69,7 @@ DEPENDENCY_TYPES = {
         'archive-extension': '.tar.gz',
         'archive-prefix': '',
         'archive-suffix': '',
-        'binary-repo': 'http://openhome.org/releases/artifacts',
+        'binary-repo': 'http://builds.openhome.org/releases/artifacts',
         'mirror-repo': 'http://PC868/mirror.openhome.org/releases/artifacts',
         'archive-directory': '${binary-repo}/${name}/',
         'archive-filename': '${archive-prefix}${name}-${version}-${archive-platform}${archive-suffix}${archive-extension}',
@@ -126,7 +126,7 @@ DEPENDENCY_TYPES = {
     #     platform-specific
     #     configure-args
     'external' : {
-        'binary-repo': 'http://openhome.org/releases/artifacts',
+        'binary-repo': 'http://builds.openhome.org/releases/artifacts',
         'source-git': None,
         'any-platform': 'AnyPlatform',
         'platform-specific': True,
@@ -147,7 +147,7 @@ DEPENDENCY_TYPES = {
     #     version
     'exnuget' : {
         'archive-extension': '.tar.gz',
-        'binary-repo': 'http://openhome.org/releases/artifacts',
+        'binary-repo': 'http://builds.openhome.org/releases/artifacts',
         'archive-directory': '${binary-repo}/nuget/',
         'archive-filename': '${name}.${version}${archive-extension}',
         'archive-path': '${archive-directory}${archive-filename}',
