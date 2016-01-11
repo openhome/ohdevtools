@@ -83,6 +83,7 @@ DEPENDENCY_TYPES = {
         'tag': '${repo-name}_${version}',
         'any-platform': 'AnyPlatform',
         'platform-specific': True,
+        'host-platform': default_platform(),
         'archive-platform': '${platform-specific?platform:any-platform}',
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': [],
@@ -110,6 +111,7 @@ DEPENDENCY_TYPES = {
         'archive-platform': '${platform-specific?platform:any-platform}',
         'archive-path': '${binary-repo}/${name}/${archive-filename}',
         'mirror-path': None,
+        'host-platform': default_platform(),
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': [],
         'strip-archive-dirs': 0
@@ -133,6 +135,7 @@ DEPENDENCY_TYPES = {
         'archive-platform': '${platform-specific?platform:any-platform}',
         'archive-path': '${binary-repo}/${archive-platform}/${archive-filename}',
         'mirror-path': None,
+        'host-platform': default_platform(),
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': [],
         'strip-archive-dirs': 0
@@ -152,6 +155,7 @@ DEPENDENCY_TYPES = {
         'archive-filename': '${name}.${version}${archive-extension}',
         'archive-path': '${archive-directory}${archive-filename}',
         'mirror-path': None,
+        'host-platform': default_platform(),
         'dest': 'dependencies/nuget/',
         'configure-args': [],
         'strip-archive-dirs': 0
