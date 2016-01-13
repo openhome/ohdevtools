@@ -13,6 +13,7 @@ import stat
 import tempfile
 from glob import glob
 from default_platform import default_platform
+import deps_cross_checker
 
 # Master table of dependency types.
 
@@ -921,5 +922,13 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
                 if nuget_config is not None and os.path.isfile(nuget_config):
                     args += ['-ConfigFile', nuget_config]
                 cli(args)
-                
+
+    # Finally perform cross-check of (major.minor) dependency versions to ensure that these are in sync
+    # across this (current) repo and all its pulled-in dependencies. Done as totally seperate operation
+    # to isolate from the main fetcher code to assist with any future maintenance
+    xcheck = deps_cross_checker.DepsCrossChecker()
+    result = xcheck.execute()
+    if result != 0:
+        raise Exception( 'Failed: dependency cross-checker detected problem(s)' )
+
     return dependencies
