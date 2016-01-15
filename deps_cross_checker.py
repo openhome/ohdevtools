@@ -51,5 +51,10 @@ class DepsCrossChecker:
             items = json.load( f )
             f.close()
             for item in items:
-                deps[item['name'].encode( 'ascii' )] =  '.' . join( item['version'].split( '.' )[:-1] ).encode( 'ascii' )
+                try:
+                    name = item['name'].encode( 'ascii' )
+                    ver = '.' . join( item['version'].split( '.' )[:-1] ).encode( 'ascii' )
+                    deps[name] =  ver
+                except:
+                    pass
         return deps
