@@ -14,7 +14,7 @@ class DepsCrossChecker:
 
     def execute( self ):
         """Perform the check - return zero on success, number of mismatches on failure"""
-        print 'Cross-checking depency versions'
+        print 'Cross-checking dependency versions'
         print '  Finding %s dependency definition files...' % kDepsFilename
         for root, dirs, files in os.walk( os.getcwd() ):
             for name in files:
