@@ -14,6 +14,7 @@ from functools import wraps
 import version
 import filechecker
 import tarfile
+import glob
 
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
@@ -38,7 +39,7 @@ def get_vsvars_environment(architecture="x86"):
 
     if vscomntools is None:
         raise Exception('Couldn\'t find COMNTOOLS environment variable (tried %s)' % ', '.join(comntoolsVarNames))
-    
+
     vsvars32 = os.path.join(vscomntools, '..', '..', 'VC', 'vcvarsall.bat')
     python = sys.executable
     process = subprocess.Popen('("%s" %s>nul)&&"%s" -c "import os; print repr(os.environ)"' % (vsvars32, architecture, python), stdout=subprocess.PIPE, shell=True)
@@ -300,7 +301,7 @@ class Builder(object):
             kwargs['env'] = dict((key,str(value)) for (key, value) in kwargs['env'].items())
         argstring = [", ".join([repr(arg) for arg in args])]
         kwargstring = [", ".join(["%s=%r" % (k,v) for (k,v) in kwargs.items()])]
-        invocation = "subprocess.call({0})".format(", ".join(argstring+kwargstring)) 
+        invocation = "subprocess.call({0})".format(", ".join(argstring+kwargstring))
         if self._context.options.verbose:
             print invocation
         try:
@@ -741,7 +742,7 @@ class OpenHomeBuilder(object):
         '''
         cover = self.env.get('COVER',"false").lower() == "true"
         return (self.configuration == 'Release') and cover and (self.platform == 'Windows-x86')
-        
+
     def set_nuget_sln(self, sln):
         '''
         Set the solution file to be used for fetching nuget dependencies. If this is not set,
@@ -749,7 +750,7 @@ class OpenHomeBuilder(object):
         '''
         print "setting solution to use for nuget to  {0}".format(sln)
         self._builder.nuget_sln = sln
-        
+
     def msbuild(self, project, target='Build', platform=None, configuration=None, args=None, properties=None, verbosity=None):
         '''
         Invoke msbuild/xbuild to build a project/solution. Specify the path to
@@ -777,7 +778,7 @@ class OpenHomeBuilder(object):
         if args is not None:
             msbuild_args += args
         self._builder.shell(' '.join(msbuild_args))
-    
+
     def mdtool(self, project, target='build', configuration=None, bundle=None):
         '''
         Invoke mdtool to build a project/solution. Specify the path to
@@ -798,7 +799,7 @@ class OpenHomeBuilder(object):
         if bundle is not None:
             mdtool_args += [bundle]
         self._builder.shell(' '.join(mdtool_args))
-    
+
     def nunit(self, test_assembly):
         '''
         Run NUnit on a test assembly. Specify the name of the assembly (with
@@ -905,7 +906,7 @@ class OpenHomeBuilder(object):
 
     def publish_nuget(self, package, api_key=None, server=None, config_file='nuget.config'):
         '''
-        Packs the nuget packa
+        Publishes a nuget package to a specified NuGet server.
         '''
         args = ['../ohdevtools/nuget/nuget.exe', 'push', package]
         if api_key is not None:
@@ -915,6 +916,16 @@ class OpenHomeBuilder(object):
         if config_file is not None and os.path.isfile(config_file):
             args += ['-ConfigFile', config_file]
         self.cli(args)
+
+    def publish_package_curl(self, package, server=None):
+        '''
+        Publishes package(s) to the specified server using curl.
+        '''
+        for path in glob.glob(package):
+            self.cli(['curl',
+                      '-F',
+                      'package=@{0}'.format(path),
+                      server])
 
     def publish_package(self, packagename, uploadpath, package_location=None, package_upload=None):
         '''
