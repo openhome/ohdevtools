@@ -922,10 +922,10 @@ class OpenHomeBuilder(object):
         Publishes package(s) to the specified server using curl.
         '''
         for path in glob.glob(package):
-            self.cli(['curl',
-                      '-F',
-                      'package=@{0}'.format(path),
-                      server])
+            self.shell(['curl',
+                        '-F',
+                        'package=@{0}'.format(path),
+                        server])
 
     def publish_package(self, packagename, uploadpath, package_location=None, package_upload=None):
         '''
