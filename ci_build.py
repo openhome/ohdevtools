@@ -332,6 +332,9 @@ class Builder(object):
     def rsync(self, *args, **kwargs):
         args = flatten_string_list(args)
         self._check_call(["rsync"] + args, **kwargs)
+    def curl(self, *args, **kwargs):
+        args = flatten_string_list(args)
+        self._check_call(["curl"] + args, **kwargs)
     def _dependency_collection(self, env):
         return read_json_dependencies_from_filename(
                 os.path.join('projectdata', 'dependencies.json'),
@@ -922,8 +925,7 @@ class OpenHomeBuilder(object):
         Publishes package(s) to the specified server using curl.
         '''
         for path in glob.glob(package):
-            self.shell(['curl',
-                        '-F',
+            self.curl([ '-F',
                         'package=@{0}'.format(path),
                         server])
 
@@ -955,6 +957,7 @@ class OpenHomeBuilder(object):
     shell = _forward_to_builder("shell")
     cli = _forward_to_builder("cli")
     rsync = _forward_to_builder("rsync")
+    curl = _forward_to_builder("curl")
     #build_step = _forward_to_builder("build_step")
     #build_condition = _forward_to_builder("condition")
     modify_optional_steps = _forward_to_builder("modify_optional_steps")
@@ -985,6 +988,7 @@ def run(buildname="build", argv=None):
             'shell':builder.shell,
             'cli':builder.cli,
             'rsync':builder.rsync,
+            'curl':builder.curl,
             'build_step':builder.build_step,
             'build_condition':builder.build_condition,
             'default_platform':default_platform,
