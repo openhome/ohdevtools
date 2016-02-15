@@ -3,6 +3,7 @@ import json
 import os
 
 kDepsFilename = 'dependencies.json'
+kDepsPath     = 'dependencies'
 
 class DepsCrossChecker:
     """Ensure version consistency (at major.minor level) across all dependencies"""
