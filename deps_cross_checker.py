@@ -4,6 +4,7 @@ import os
 
 kDepsFilename = 'dependencies.json'
 kDepsPath     = 'dependencies'
+kProjDataPath = 'projectdata'
 
 class DepsCrossChecker:
     """Ensure version consistency (at major.minor level) across all dependencies"""
