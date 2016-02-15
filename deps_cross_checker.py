@@ -16,10 +16,11 @@ class DepsCrossChecker:
         """Perform the check - return zero on success, number of mismatches on failure"""
         print 'Cross-checking dependency versions'
         print '  Finding %s dependency definition files...' % kDepsFilename
-        for root, dirs, files in os.walk( os.getcwd() ):
+        for root, dirs, files in os.walk( os.path.join( os.getcwd(), kDepsPath )):
             for name in files:
                 if name == kDepsFilename:
                     self.artifacts[os.path.basename( root )] = self.parse_json( os.path.join( root, kDepsFilename ))
+        self.artifacts['projectdata'] = self.parse_json( os.path.join( kProjDataPath, kDepsFilename ))
 
         projects = self.artifacts.keys()
         for project1 in projects:
