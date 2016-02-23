@@ -870,10 +870,7 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
             os.unlink('dependencies/loadedDeps.json')
         except:
             pass
-        clean_dirs = [
-            'dependencies/AnyPlatform',
-            'dependencies/'+platform,
-            'dependencies/nuget']
+        clean_dirs = ['dependencies']
         clean_directories(clean_dirs)
 
     overrides_filename = '../dependency_overrides.json' if local_overrides else None
