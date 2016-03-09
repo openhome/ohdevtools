@@ -71,7 +71,7 @@ DEPENDENCY_TYPES = {
         'archive-prefix': '',
         'archive-suffix': '',
         'binary-repo': 'http://builds.openhome.org/releases/artifacts',
-        'mirror-repo': 'http://PC868/mirror.openhome.org/releases/artifacts',
+        'mirror-repo': 'http://PC868.linn.co.uk/mirror.openhome.org/releases/artifacts',
         'archive-directory': '${binary-repo}/${name}/',
         'archive-filename': '${archive-prefix}${name}-${version}-${archive-platform}${archive-suffix}${archive-extension}',
         'remote-archive-path': '${archive-directory}${archive-filename}',
