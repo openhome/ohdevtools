@@ -46,7 +46,12 @@ def get_vsvars_environment(architecture="x86"):
     stdout, _ = process.communicate()
     exitcode = process.wait()
     if exitcode != 0:
-        raise Exception("Got error code %s from subprocess!" % exitcode)
+        vsvars32 = os.path.join(vscomntools, 'vsvars32.bat')
+        process = subprocess.Popen('("%s" %s>nul)&&"%s" -c "import os; print repr(os.environ)"' % (vsvars32, architecture, python), stdout=subprocess.PIPE, shell=True)
+        stdout, _ = process.communicate()
+        exitcode = process.wait()
+        if exitcode != 0:
+            raise Exception("Got error code %s from subprocess!" % exitcode)
     return eval(stdout.strip())
 
 def default_platform(fail_on_unknown=True):
