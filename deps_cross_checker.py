@@ -55,9 +55,13 @@ class DepsCrossChecker:
             f.close()
             for item in items:
                 try:
-                    name = item['name'].encode( 'ascii' )
-                    ver = '.' . join( item['version'].split( '.' )[:-1] ).encode( 'ascii' )
-                    deps[name] =  ver
+                    xCheck = True
+                    if 'cross-check' in item:
+                        xCheck = item['cross-check']
+                    if xCheck:
+                        name = item['name'].encode( 'ascii' )
+                        ver = '.' . join( item['version'].split( '.' )[:-1] ).encode( 'ascii' )
+                        deps[name] =  ver
                 except:
                     pass
         return deps
