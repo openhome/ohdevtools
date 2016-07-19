@@ -924,7 +924,7 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
     # across this (current) repo and all its pulled-in dependencies. Done as totally seperate operation
     # to isolate from the main fetcher code to assist with any future maintenance
     if not clean:
-        xcheck = deps_cross_checker.DepsCrossChecker()
+        xcheck = deps_cross_checker.DepsCrossChecker( platform )
         result = xcheck.execute()
         if result != 0:
             raise Exception( 'Failed: dependency cross-checker detected problem(s)' )

@@ -9,8 +9,9 @@ kProjDataPath = 'projectdata'
 class DepsCrossChecker:
     """Ensure version consistency (at major.minor level) across all dependencies"""
 
-    def __init__( self ):
+    def __init__( self, aTargetPlatform=None ):
         """Initialise class data"""
+        self.targetPlatform = aTargetPlatform
         self.failures  = 0
         self.artifacts = {}
 
@@ -21,7 +22,8 @@ class DepsCrossChecker:
         for root, dirs, files in os.walk( os.path.join( os.getcwd(), kDepsPath )):
             for name in files:
                 if name == kDepsFilename:
-                    self.artifacts[os.path.basename( root )] = self.parse_json( os.path.join( root, kDepsFilename ))
+                    if self.targetPlatform in root or 'AnyPlatform' in root:
+                        self.artifacts[os.path.basename( root )] = self.parse_json( os.path.join( root, kDepsFilename ))
         self.artifacts['projectdata'] = self.parse_json( os.path.join( kProjDataPath, kDepsFilename ))
 
         projects = self.artifacts.keys()
