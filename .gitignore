@@ -60,4 +60,5 @@ webuitest.xml
 
 # Eclipse and PyCharm IDE control files
 .project
+.pydevproject
 .idea
