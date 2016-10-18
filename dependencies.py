@@ -583,6 +583,7 @@ class Dependency(object):
                 self.logfile.write("\n  FAILED\n")
                 return False
 
+        shutil.rmtree(local_path, True)
         try:
             os.makedirs(local_path)
         except OSError:
