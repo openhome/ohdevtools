@@ -104,6 +104,7 @@ DEPENDENCY_TYPES = {
 
     'internal' : {
         'binary-repo': 'http://core.linn.co.uk/~artifacts/artifacts',
+        'mirror-repo': 'http://PC868.linn.co.uk/mirror.core.linn.co.uk/artifacts',
         'source-git': None,
         'any-platform': 'AnyPlatform',
         'platform-specific': True,
@@ -111,7 +112,7 @@ DEPENDENCY_TYPES = {
         'archive-filename': '${name}-${version}-${platform}${archive-suffix}.tar.gz',
         'archive-platform': '${platform-specific?platform:any-platform}',
         'archive-path': '${binary-repo}/${name}/${archive-filename}',
-        'mirror-path': None,
+        'mirror-path': '${mirror-repo}/${name}/${archive-filename}',
         'host-platform': default_platform(),
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': [],
