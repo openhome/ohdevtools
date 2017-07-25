@@ -811,6 +811,8 @@ def clean_directories(directories):
                 if not os.path.isdir(directory):
                     continue
                 newname = directory + '.deleteme'
+                if os.path.isdir(newname):
+                    shutil.rmtree(newname)
                 lastdirectory = directory
                 os.rename(directory, newname)
                 lastdirectory = None
