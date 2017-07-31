@@ -29,30 +29,48 @@ def get_vsvars_environment(architecture="x86"):
 
     win32-specific
     """
-
-    comntoolsVarNames = ['VS100COMNTOOLS', 'VS110COMNTOOLS', 'VS120COMNTOOLS', 'VS140COMNTOOLS']
-
-    for varName in comntoolsVarNames:
-        vscomntools = os.getenv(varName)
-        if vscomntools is not None:
-            break
-
-    if vscomntools is None:
-        raise Exception('Couldn\'t find COMNTOOLS environment variable (tried %s)' % ', '.join(comntoolsVarNames))
-
-    vsvars32 = os.path.join(vscomntools, '..', '..', 'VC', 'vcvarsall.bat')
+    result = None
     python = sys.executable
-    process = subprocess.Popen('("%s" %s>nul)&&"%s" -c "import os; print repr(os.environ)"' % (vsvars32, architecture, python), stdout=subprocess.PIPE, shell=True)
-    stdout, _ = process.communicate()
-    exitcode = process.wait()
-    if exitcode != 0:
-        vsvars32 = os.path.join(vscomntools, 'vsvars32.bat')
-        process = subprocess.Popen('("%s" %s>nul)&&"%s" -c "import os; print repr(os.environ)"' % (vsvars32, architecture, python), stdout=subprocess.PIPE, shell=True)
-        stdout, _ = process.communicate()
-        exitcode = process.wait()
-        if exitcode != 0:
-            raise Exception("Got error code %s from subprocess!" % exitcode)
-    return eval(stdout.strip())
+
+    for vcvars32 in [
+        'C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\Common7\\Tools\\vsvars32.bat',                      # VS12 Express
+        'C:\\Program Files\Microsoft Visual Studio\\2017\\Professional\\Common7\\Tools\\vcvars32.bat'               # VS2017 Pro
+        'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\BuildTools\\VC\\Auxilliary\\Build\\vcvars32.bat']: # Build Tools for VS2017
+        if os.path.isfile( vcvars32 ):
+            process = subprocess.Popen('("%s" %s>nul)&&"%s" -c "import os; print repr(os.environ)"' % (vcvars32, architecture, python), stdout=subprocess.PIPE, shell=True)
+            stdout, _ = process.communicate()
+            exitcode = process.wait()
+            if exitcode == 0:
+                result = eval(stdout.strip())
+    if not result:
+        raise Exception('Couldn\'t find/process vcvars32 batch file' )
+    return result
+
+
+    # comntoolsVarNames = ['VS100COMNTOOLS', 'VS110COMNTOOLS', 'VS120COMNTOOLS', 'VS140COMNTOOLS']
+    #
+    # for varName in comntoolsVarNames:
+    #     vscomntools = os.getenv(varName)
+    #     if vscomntools is not None:
+    #         break
+    #
+    # if vscomntools is None:
+    #     raise Exception('Couldn\'t find COMNTOOLS environment variable (tried %s)' % ', '.join(comntoolsVarNames))
+    #
+    # vsvars32 = os.path.join(vscomntools, '..', '..', 'VC', 'vcvarsall.bat')
+    # python = sys.executable
+    # process = subprocess.Popen('("%s" %s>nul)&&"%s" -c "import os; print repr(os.environ)"' % (vsvars32, architecture, python), stdout=subprocess.PIPE, shell=True)
+    # stdout, _ = process.communicate()
+    # exitcode = process.wait()
+    # if exitcode != 0:
+    #     vsvars32 = os.path.join(vscomntools, 'vsvars32.bat')
+    #     process = subprocess.Popen('("%s" %s>nul)&&"%s" -c "import os; print repr(os.environ)"' % (vsvars32, architecture, python), stdout=subprocess.PIPE, shell=True)
+    #     stdout, _ = process.communicate()
+    #     exitcode = process.wait()
+    #     if exitcode != 0:
+    #         raise Exception("Got error code %s from subprocess!" % exitcode)
+    # return eval(stdout.strip())
+
 
 def default_platform(fail_on_unknown=True):
     p = _default_platform()
