@@ -26,7 +26,7 @@ kSupportedHostsAndUsers = { "core.linn.co.uk": "artifacts" }
 # Support utilities
 #------------------------------------------------------------------------------
     
-def PublishFile( aSource, aDest, aDryRun ):
+def PublishFile( aSource, aDest, aDryRun = False ):
     """ Copies aSource file to aDest directory (where aDest is an SSH address).
         REQUIRES senders SSH key to be stored on destination (or requests password) """
     print( 'Publishing %s to %s' % (aSource, aDest) )
@@ -80,6 +80,16 @@ def CreateJsonFile(aJsonObjs, aJsonFile, aSortKeys=True):
     
 def Cleanup( ):
     shutil.rmtree( kTempDir )
+    
+def PublishInfo( aDestUrl ):
+    host, path = aDestUrl.split("//")[-1].split("/", 1)
+    path = "/" + path
+    if host not in kSupportedHostsAndUsers:
+        print( "[FAIL]    %s: PublishComponent does not currently support this host" % host )
+        sys.exit(2)
+    user = kSupportedHostsAndUsers[host]
+    fullDest = "{0}@{1}:{2}".format( user, host, path )
+    return { "dest": fullDest, 'user': user, 'host': host, 'path': path }
 
 #------------------------------------------------------------------------------
 # The Good Stuff
@@ -89,16 +99,9 @@ def PublishComponent( aBuildOutputList, aDest, aDryRun = False ):
     """ Publish aBuildOutputList to aDest (aBuildOutput is a list of tuples pairing a logical name with a localfile)
         Publish corresponding json manifest as well """
         
-    host, path = aDest.split("//")[-1].split("/", 1)
-    path = "/" + path
-    if host not in kSupportedHostsAndUsers:
-        print( "[FAIL]    %s: PublishComponent does not currently support this host" % host )
-        sys.exit(2)
-    user = kSupportedHostsAndUsers[host]
-    fullDest = "{0}@{1}:{2}".format( user, host, path )
-        
-    #if not RemoteDirExists( fullDest ): # remove for now as it takes a long time, use mkdir with -p option instead
-    CreateRemoteDir( fullDest, aDryRun )
+    publishInfo = PublishInfo( aDest )
+    #if not RemoteDirExists( publishInfo['dest'] ): # remove for now as it takes a long time, use mkdir with -p option instead
+    CreateRemoteDir( publishInfo['dest'], aDryRun )
     
     jsonManifest = { kJsonManifestBaseTag: [] }
     for buildOutput in aBuildOutputList:
@@ -108,13 +111,13 @@ def PublishComponent( aBuildOutputList, aDest, aDryRun = False ):
         buildOutDict[kJsonManifestMd5Tag] = Md5Hash( localFile )
         buildOutDict[kJsonManifestSizeTag] = GetFileSize( localFile )
         buildOutDict[kJsonManifestUrlTag] = "./" + GetFileBasename( localFile )
-        #buildOutDict[kJsonManifestUrlTag] = "http://" + host + path + GetFileBasename( localFile )
+        #buildOutDict[kJsonManifestUrlTag] = "http://" + publishInfo['host'] + publishInfo['path'] + GetFileBasename( localFile )
         jsonManifest[kJsonManifestBaseTag].append( buildOutDict )
-        PublishFile( localFile, fullDest, aDryRun )
+        PublishFile( localFile, publishInfo['dest'], aDryRun )
     
     jsonManifest[kJsonManifestBaseTag] = sorted( jsonManifest[kJsonManifestBaseTag], key=lambda k: k['name'] ) # ensures json is always sorted by name
     CreateJsonFile( jsonManifest, kJsonManifestFileName )
-    PublishFile( kJsonManifestFileName, fullDest, aDryRun )
+    PublishFile( kJsonManifestFileName, publishInfo['dest'], aDryRun )
     Cleanup()
         
 #------------------------------------------------------------------------------
