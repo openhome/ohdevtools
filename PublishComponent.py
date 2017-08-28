@@ -110,7 +110,7 @@ def PublishComponent( aBuildOutputList, aDest, aDryRun = False ):
         buildOutDict[kJsonManifestNameTag] = buildOutput[0]
         buildOutDict[kJsonManifestMd5Tag] = Md5Hash( localFile )
         buildOutDict[kJsonManifestSizeTag] = GetFileSize( localFile )
-        buildOutDict[kJsonManifestUrlTag] = "./" + GetFileBasename( localFile )
+        buildOutDict[kJsonManifestUrlTag] = "../" + GetFileBasename( localFile )
         #buildOutDict[kJsonManifestUrlTag] = "http://" + publishInfo['host'] + publishInfo['path'] + GetFileBasename( localFile )
         jsonManifest[kJsonManifestBaseTag].append( buildOutDict )
         PublishFile( localFile, publishInfo['dest'], aDryRun )
