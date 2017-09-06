@@ -11,6 +11,7 @@ import shutil
 import cStringIO
 import stat
 import tempfile
+import time
 from glob import glob
 from default_platform import default_platform
 import deps_cross_checker
@@ -487,7 +488,11 @@ class ZipArchive(Archive):
             # symlinks are very poorly supported.
             os.symlink(linktext, os.path.join(localpath, entry.filename))
         else:
+            # Maintain file creation date on zipfile extraction
             self.zf.extract(entry, localpath)
+            dateTime = time.mktime( entry.date_time + (0, 0, -1) )
+            os.utime(os.path.join(localpath, entry.filename), (dateTime, dateTime))
+
 
     def isdir(self, entry):
         return entry.filename.endswith('/')
