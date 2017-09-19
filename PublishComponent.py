@@ -119,17 +119,35 @@ def PublishComponent( aBuildOutputList, aDest, aDryRun = False ):
     CreateJsonFile( jsonManifest, kJsonManifestFileName )
     PublishFile( kJsonManifestFileName, publishInfo['dest'], aDryRun )
     Cleanup()
+
+def CreateComponent( aBuildOutputList, aJsonFileName ):
+    """ Create a json manifest file for the given list of files """
+
+    jsonManifest = { kJsonManifestBaseTag: [] }
+    for buildOutput in aBuildOutputList:
+        localFile = buildOutput[1]
+        buildOutDict = {}
+        buildOutDict[kJsonManifestNameTag] = buildOutput[0]
+        buildOutDict[kJsonManifestMd5Tag] = Md5Hash( localFile )
+        buildOutDict[kJsonManifestSizeTag] = GetFileSize( localFile )
+        buildOutDict[kJsonManifestUrlTag] = localFile
+        jsonManifest[kJsonManifestBaseTag].append( buildOutDict )
+    
+    jsonManifest[kJsonManifestBaseTag] = sorted( jsonManifest[kJsonManifestBaseTag], key=lambda k: k['name'] ) # ensures json is always sorted by name
+    CreateJsonFile( jsonManifest, aJsonFileName )
+
         
 #------------------------------------------------------------------------------
 # A Quick Test
 #------------------------------------------------------------------------------
 
 testBuildOutput = [
-    ('dtb',    'output/images/imx6dl-core4dev.dtb'),
-    ('rootfs', 'output/images/rootfs.squashfs'),
-    ('kernel', 'output/images/zImage')
+    ('ver',  'version.py'),
+    ('cmd',  'commands/build_node.py'),
+    ('info', 'README')
 ]
 testDest = 'core.linn.co.uk/home/artifacts/public_html/testUpload/josh/hahn'
 
 #PublishComponent( testBuildOutput, testDest, False )
+#CreateComponent( testBuildOutput, "component.json" )
 
