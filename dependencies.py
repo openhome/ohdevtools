@@ -286,7 +286,7 @@ def is_trueish(value):
 
 
 class EnvironmentExpander(object):
-    # template_regex matches 
+    # template_regex matches
     template_regex = re.compile(r"""
         (?x)                                # Enable whitespace and comments
         (?P<dollar>\$\$)|                   # Match $$
@@ -864,8 +864,18 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
     nuget = nuget_packages is not None or nuget_sln is not None
     if env is None:
         env = {}
+
     if platform is not None:
-        env['platform'] = platform
+        env['platform'] = None
+        fName = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'platforms.txt')
+        f = open(fName, 'rt')
+        supported = f.readlines()
+        f.close()
+        for entry in supported:
+            if platform in entry:
+                env['platform'] = platform
+        if not env['platform']:
+            raise Exception('Platform not supported (%s) - see %s for list of supported platforms' % (platform, fName))
     if 'platform' not in env:
         platform = env['platform'] = default_platform()
     if '-' in platform:
