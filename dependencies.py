@@ -9,9 +9,7 @@ import subprocess
 import json
 import shutil
 import cStringIO
-import stat
 import tempfile
-import time
 from glob import glob
 from default_platform import default_platform
 import deps_cross_checker
@@ -51,9 +49,9 @@ import deps_cross_checker
 DEPENDENCY_TYPES = {
     # Label a dependency with the 'ignore' type to prevent it being considered at all.
     # Can be useful to include comments. (Json has no comment syntax.)
-    'ignore' : {
+    'ignore': {
         'ignore': True     # This causes the entire dependency entry to be ignored. Useful for comments.
-        },
+    },
 
     # Openhome dependencies generally have an associated git repo to allow us to
     # fetch source code. They also have a different directory layout to accomodate
@@ -67,7 +65,7 @@ DEPENDENCY_TYPES = {
     #     archive-suffix
     #     platform-specific
     #     configure-args
-    'openhome' : {
+    'openhome': {
         'archive-extension': '.tar.gz',
         'archive-prefix': '',
         'archive-suffix': '',
@@ -89,7 +87,7 @@ DEPENDENCY_TYPES = {
         'archive-platform': '${platform-specific?platform:any-platform}',
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': []
-        },
+    },
 
     # Internal dependencies are named and structured in a similar manner
     # to those of type 'openhome', but are considered private, and held
@@ -102,7 +100,7 @@ DEPENDENCY_TYPES = {
     # Commonly overridden:
     #       archive-suffix
 
-    'internal' : {
+    'internal': {
         'binary-repo': 'http://core.linn.co.uk/~artifacts/artifacts',
         'mirror-repo': 'http://PC868.linn.co.uk/mirror.core.linn.co.uk/artifacts',
         'source-git': None,
@@ -116,7 +114,7 @@ DEPENDENCY_TYPES = {
         'host-platform': default_platform(),
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': []
-        },
+    },
 
     # External dependencies generally don't have a git repo, and even if they do,
     # it won't conform to our conventions.
@@ -128,7 +126,7 @@ DEPENDENCY_TYPES = {
     # Commonly overriden:
     #     platform-specific
     #     configure-args
-    'external' : {
+    'external': {
         'binary-repo': 'http://builds.openhome.org/releases/artifacts',
         'source-git': None,
         'any-platform': 'AnyPlatform',
@@ -139,7 +137,7 @@ DEPENDENCY_TYPES = {
         'host-platform': default_platform(),
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': []
-        },
+    },
 
     # Ex-nuget dependencies don't have a git repo, but they are always
     # AnyPlatform and have a strict convention on location and structure
@@ -148,7 +146,7 @@ DEPENDENCY_TYPES = {
     # An exnuget dependency need only specify:
     #     name
     #     version
-    'exnuget' : {
+    'exnuget': {
         'archive-extension': '.tar.gz',
         'binary-repo': 'http://builds.openhome.org/releases/artifacts',
         'archive-directory': '${binary-repo}/nuget/',
@@ -158,39 +156,12 @@ DEPENDENCY_TYPES = {
         'host-platform': default_platform(),
         'dest': 'dependencies/nuget/',
         'configure-args': []
-        },
-    }
-
-
-
-
-
-
-
+    },
+}
 
 
 def default_log(logfile=None):
     return logfile if logfile is not None else open(os.devnull, "w")
-
-def windows_program_exists(program):
-    return subprocess.call(["which", "/q", program], shell=False)==0
-
-def other_program_exists(program):
-    return subprocess.call(["/bin/sh", "-c", "command -v "+program], shell=False, stdout=open(os.devnull), stderr=open(os.devnull))==0
-
-program_exists = windows_program_exists if platform.platform().startswith("Windows") else other_program_exists
-
-
-
-def scp(source, target):
-    program = None
-    for p in ["scp", "pscp"]:
-        if program_exists(p):
-            program = p
-            break
-    if program is None:
-        raise "Cannot find scp (or pscp) in the path."
-    subprocess.check_call([program, source, target])
 
 
 def open_file_url(url):
@@ -201,8 +172,8 @@ def open_file_url(url):
     elif url.startswith("file://"):
         url = url[7:]
     path = urllib.url2pathname(url).replace(os.path.sep, "/")
-    if path[0]=='/':
-        if path[1]=='/':
+    if path[0] == '/':
+        if path[1] == '/':
             # file:////hostname/path/file.ext
             # Bad remote path.
             remote = True
@@ -275,6 +246,7 @@ def urlopen(url):
         os.close( handle )
     return temppath
 
+
 def is_trueish(value):
     if hasattr(value, "upper"):
         value = value.upper()
@@ -299,22 +271,30 @@ class EnvironmentExpander(object):
         \]           # Match one close bracket: ]
         $
         """)
+
     def __init__(self, env_dict):
         self.env_dict = env_dict
         self.cache = {}
         self.expandset = set()
+
     def __getitem__(self, key):
         return self.expand(key)
+
     def getraw(self, key):
         return self.env_dict[key]
+
     def __contains__(self, key):
         return key in self.env_dict
+
     def keys(self):
         return self.env_dict.keys()
+
     def values(self):
         return [self.expand(key) for key in self.keys()]
+
     def items(self):
         return [(key, self.expand(key)) for key in self.keys()]
+
     def expand(self, key):
         if key in self.cache:
             return self.cache[key]
@@ -325,20 +305,23 @@ class EnvironmentExpander(object):
         self.cache[key] = result
         self.expandset.remove(key)
         return result
+
     def _expand(self, key):
         if key not in self.env_dict:
             raise KeyError("Key undefined:", key)
         value = self.env_dict[key]
         return self._expandvalue(value)
+
     def _expandvalue(self, value):
         if isinstance(value, (str, unicode)):
             return self.expandstring(value)
-            #return self.template_regex.sub(self.replacematch, value)
+            # return self.template_regex.sub(self.replacematch, value)
         elif isinstance(value, (list, tuple)):
             return [self._expandvalue(x) for x in value]
         elif isinstance(value, dict):
-            return dict((k, self._expandvalue(v)) for (k,v) in value.items())
+            return dict((k, self._expandvalue(v)) for (k, v) in value.items())
         return value
+
     def expandstring(self, value):
         firstmatch = self.template_regex.match(value)
         if firstmatch is not None and firstmatch.group(0) == value and value != "$$":
@@ -377,9 +360,9 @@ class EnvironmentExpander(object):
             key = keyname
         if not isinstance(table, dict):
             raise ValueError("lookup table must expand to a JSON object (got {0!r} instead)".format(table))
-        if not isinstance(key, (str,unicode)):
+        if not isinstance(key, (str, unicode)):
             raise ValueError("lookup index must expand to a JSON string (got {0!r} instead)".format(key))
-        if not key in table:
+        if key not in table:
             if '*' in table:
                 return table['*']
             raise KeyError("Key not in table, and no default '*' entry found: key={0!r}\ntable={1!r}".format(key, table))
@@ -467,6 +450,13 @@ class Dependency(object):
         self.logfile.write("  OK\n")
         return True
 
+        # for f in tf:
+        #     print f.name
+        #     try:
+        #         tf.extract(f.name, path=dest)
+        #     except IOError:
+        #         print 'Skipping==========================================================================='
+
     def untar(self, source, dest):
         tf = tarfile.open(source, 'r')
         tf.extractall(path=dest)
@@ -480,45 +470,53 @@ class Dependency(object):
     @property
     def name(self):
         return self['name']
+
     def __getitem__(self, key):
         return self.expander.expand(key)
+
     def __contains__(self, key):
         return key in self.expander
+
     def items(self):
         return self.expander.items()
+
     def checkout(self):
         name = self['name']
         sourcegit = self['source-git']
         if sourcegit is None:
             self.logfile.write('No git repo defined for {0}.\n'.format(name))
             return False
-        self.logfile.write("Fetching source for '%s'\n  into '%s'\n" % (name, os.path.abspath('../'+name)))
+        self.logfile.write("Fetching source for '%s'\n  into '%s'\n" % (name, os.path.abspath('../' + name)))
         tag = self['tag']
         try:
-            if not os.path.exists('../'+name):
+            if not os.path.exists('../' + name):
                 self.logfile.write('  git clone {0} {1}\n'.format(sourcegit, name))
                 subprocess.check_call(['git', 'clone', sourcegit, name], cwd='..', shell=False)
-            elif not os.path.isdir('../'+name):
+            elif not os.path.isdir('../' + name):
                 self.logfile.write('Cannot checkout {0}, because directory ../{0} already exists\n'.format(name))
                 return False
             else:
                 self.logfile.write('  git fetch origin\n')
-                subprocess.check_call(['git', 'fetch', 'origin'], cwd='../'+name, shell=False)
+                subprocess.check_call(['git', 'fetch', 'origin'], cwd='../' + name, shell=False)
             self.logfile.write("  git checkout {0}\n".format(tag))
-            subprocess.check_call(['git', 'checkout', tag], cwd='../'+name, shell=False)
+            subprocess.check_call(['git', 'checkout', tag], cwd='../' + name, shell=False)
         except subprocess.CalledProcessError as cpe:
-            self.logfile.write(str(cpe)+'\n')
+            self.logfile.write(str(cpe) + '\n')
             return False
         return True
+
     def expand_remote_path(self):
         return self.expander.expand('archive-path')
+
     def expand_local_path(self):
         return self.expander.expand('dest')
+
     def expand_configure_args(self):
         return self.expander.expand('configure-args')
 
 
 class DependencyCollection(object):
+
     def __init__(self, env, logfile=None):
         fetcher = FileFetcher()
         self.logfile = default_log(logfile)
@@ -526,6 +524,7 @@ class DependencyCollection(object):
         self.dependency_types = DEPENDENCY_TYPES
         self.dependencies = {}
         self.fetcher = fetcher
+
     def create_dependency(self, dependency_definition, overrides={}):
         defn = dependency_definition
         env = {}
@@ -546,12 +545,16 @@ class DependencyCollection(object):
         if 'ignore' in new_dependency and new_dependency['ignore']:
             return
         self.dependencies[name] = new_dependency
+
     def __contains__(self, key):
         return key in self.dependencies
+
     def __getitem__(self, key):
         return self.dependencies[key]
+
     def items(self):
         return self.dependencies.items()
+
     def _filter(self, subset=None):
         if subset is None:
             return self.dependencies.values()
@@ -559,10 +562,12 @@ class DependencyCollection(object):
         if len(missing_dependencies) > 0:
             raise Exception("No entries in dependency file named: " + ", ".join(missing_dependencies) + ".")
         return [self.dependencies[name] for name in subset]
+
     def get_args(self, subset=None):
         dependencies = self._filter(subset)
-        configure_args=sum((d.expand_configure_args() for d in dependencies), [])
+        configure_args = sum((d.expand_configure_args() for d in dependencies), [])
         return configure_args
+
     def fetch(self, subset=None):
         dependencies = self._filter(subset)
         failed_dependencies = []
@@ -594,6 +599,7 @@ class DependencyCollection(object):
             self.logfile.write("Failed to fetch some dependencies: " + ' '.join(failed_dependencies) + '\n')
             return False
         return True
+
     def fetched_deps_filename(self, deps):
         filename = None
         for d in deps:
@@ -601,6 +607,7 @@ class DependencyCollection(object):
                 filename = os.path.join(d.expander.expand('dest').split('/')[0], 'loadedDeps.json')
                 break
         return filename
+
     def load_fetched_deps(self, filename):
         loaded_deps = {}
         if filename and os.path.isfile(filename):
@@ -611,10 +618,12 @@ class DependencyCollection(object):
             except:
                 self.logfile.write("Error with current fetched dependency file: %s\n" % filename)
         return loaded_deps
+
     def save_fetched_deps(self, filename, deps):
         f = open(filename, 'wt')
         json.dump(deps, f)
         f.close()
+
     def checkout(self, subset=None):
         dependencies = self._filter(subset)
         failed_dependencies = []
@@ -626,6 +635,7 @@ class DependencyCollection(object):
             return False
         return True
 
+
 def read_json_dependencies(dependencyfile, overridefile, env, logfile):
     collection = DependencyCollection(env, logfile=logfile)
     dependencies = json.load(dependencyfile)
@@ -633,9 +643,10 @@ def read_json_dependencies(dependencyfile, overridefile, env, logfile):
     overrides_by_name = dict((dep['name'], dep) for dep in overrides)
     for d in dependencies:
         name = d['name']
-        override = overrides_by_name.get(name,{})
+        override = overrides_by_name.get(name, {})
         collection.create_dependency(d, override)
     return collection
+
 
 def read_json_dependencies_from_filename(dependencies_filename, overrides_filename, env, logfile):
     try:
@@ -651,10 +662,12 @@ def read_json_dependencies_from_filename(dependencies_filename, overrides_filena
             raise
         return DependencyCollection(env, logfile=logfile)
 
+
 def cli(args):
     if platform.system() != "Windows":
         args = ["mono", "--runtime=v4.0.30319"] + args
     subprocess.check_call(args, shell=False)
+
 
 def clean_directories(directories):
     """Remove the specified directories, trying very hard not to remove
@@ -703,7 +716,8 @@ def clean_directories(directories):
         if lastdirectory is not None:
             raise Exception("Failed to remove directory '{0}'. Try closing applications that might be using it. (E.g. Visual Studio.)".format(lastdirectory))
         else:
-            raise Exception("Failed to remove directory. Try closing applications that might be using it. (E.g. Visual Studio.)\n"+str(e))
+            raise Exception("Failed to remove directory. Try closing applications that might be using it. (E.g. Visual Studio.)\n" + str(e))
+
 
 def get_data_dir():
     userdata = os.environ.get('LOCALAPPDATA', None)
@@ -732,7 +746,6 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
     logfile:
         File-like object for log messages.
     '''
-    nuget = nuget_packages is not None or nuget_sln is not None
     if env is None:
         env = {}
 
@@ -750,7 +763,7 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
     if 'platform' not in env:
         platform = env['platform'] = default_platform()
     if '-' in platform:
-        env['system'], env['architecture'] = platform.split('-',2)
+        env['system'], env['architecture'] = platform.split('-', 2)
 
     if platform is None:
         raise Exception('Platform not specified and unable to guess.')
