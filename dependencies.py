@@ -88,8 +88,7 @@ DEPENDENCY_TYPES = {
         'host-platform': default_platform(),
         'archive-platform': '${platform-specific?platform:any-platform}',
         'dest': 'dependencies/${archive-platform}/',
-        'configure-args': [],
-        'strip-archive-dirs': 0
+        'configure-args': []
         },
 
     # Internal dependencies are named and structured in a similar manner
@@ -116,8 +115,7 @@ DEPENDENCY_TYPES = {
         'mirror-path': '${mirror-repo}/${name}/${archive-filename}',
         'host-platform': default_platform(),
         'dest': 'dependencies/${archive-platform}/',
-        'configure-args': [],
-        'strip-archive-dirs': 0
+        'configure-args': []
         },
 
     # External dependencies generally don't have a git repo, and even if they do,
@@ -140,8 +138,7 @@ DEPENDENCY_TYPES = {
         'mirror-path': None,
         'host-platform': default_platform(),
         'dest': 'dependencies/${archive-platform}/',
-        'configure-args': [],
-        'strip-archive-dirs': 0
+        'configure-args': []
         },
 
     # Ex-nuget dependencies don't have a git repo, but they are always
@@ -160,8 +157,7 @@ DEPENDENCY_TYPES = {
         'mirror-path': None,
         'host-platform': default_platform(),
         'dest': 'dependencies/nuget/',
-        'configure-args': [],
-        'strip-archive-dirs': 0
+        'configure-args': []
         },
     }
 
@@ -406,141 +402,6 @@ class EnvironmentExpander(object):
         return self.expand(alternative)
 
 
-class Archive(object):
-
-    def extract(self, local_path, strip_dirs=0):
-        # The general idea is to mutate the in-memory archive, changing the
-        # path of files to remove their prefix directories, before invoking
-        # extract repeatedly. This can solve the problem of archives that
-        # include a top-level directory whose name includes a variable value
-        # like version-number, which forces us to change assembly references
-        # in every project for every minor change.
-        infolist = self.getinfolist()
-        goodentries=[]
-        for entry in infolist:
-            path_fragments = self.getentryname(entry).split('/')
-            isgood = len(path_fragments) > strip_dirs
-            isdir = self.isdir(entry)
-            if isgood:
-                path_fragments = path_fragments[strip_dirs:]
-                if path_fragments == ['']:
-                    continue
-                filename = '/'.join(path_fragments)
-                self.setentryname(entry, filename)
-                goodentries.append(entry)
-            if (not isdir) and (not isgood):
-                raise ValueError('Attempted to strip more leading directories than contained in archive file:{0}, strip:{1}'.format(self.getentryname(entry), strip_dirs))
-        self.extract_many(goodentries, local_path)
-
-    def extract_files(self, entries, local_path):
-        for entry in entries:
-            if not self.isdir(entry):
-                self.extractentry(entry, local_path)
-
-    def extract_directories(self, entries, local_path):
-        for entry in entries:
-            if self.isdir(entry):
-                self.extractentry(entry, local_path)
-
-class ZipArchive(Archive):
-
-    def __init__(self, path):
-        self.zf = zipfile.ZipFile(path, "r")
-
-    def getinfolist(self):
-        return self.zf.infolist()
-
-    def getentryname(self, entry):
-        return entry.filename
-
-    def setentryname(self, entry, name):
-        entry.filename = name
-
-    def extract_many(self, entries, localpath):
-        # Extract the directories first, as zipfile doesn't create
-        # them on demand.
-        self.extract_directories(entries, localpath)
-        self.extract_files(entries, localpath)
-
-    def extractentry(self, entry, localpath):
-        permission_bits = entry.external_attr >> 16
-        is_dir = stat.S_ISDIR(permission_bits)
-        is_symlink = stat.S_ISLNK(permission_bits)
-        if is_dir:
-            # Zipfile directory handling is broken in Python 2.6
-            # We need to do it ourselves
-            dirpath = os.path.join(localpath, entry.filename)
-            try:
-                os.mkdir(dirpath)
-                # We don't currently restore directory permissions
-            except OSError:
-                # Python makes it unnecessarily hard only to ignore
-                # failure to create the directory due to it already
-                # existing. Easier to ignore everything. In the
-                # rare cases when it would fail for other reasons,
-                # it's very likely that another operation will fail
-                # shortly anyway.
-                pass
-        elif is_symlink and platform.system() != 'Windows':
-            linktext = self.zf.read(entry)
-            # Symlink handling broken in zipfile
-            # Create symlinks manually, except on Windows, where
-            # symlinks are very poorly supported.
-            os.symlink(linktext, os.path.join(localpath, entry.filename))
-        else:
-            # Maintain file creation date on zipfile extraction
-            self.zf.extract(entry, localpath)
-            dateTime = time.mktime( entry.date_time + (0, 0, -1) )
-            os.utime(os.path.join(localpath, entry.filename), (dateTime, dateTime))
-
-
-    def isdir(self, entry):
-        return entry.filename.endswith('/')
-
-    def close(self):
-        self.zf.close()
-
-
-class TarArchive(Archive):
-
-    def __init__(self, path):
-        self.tf = tarfile.open(path, mode="r:*")
-
-    def getinfolist(self):
-        return list(self.tf)
-
-    def getentryname(self, entry):
-        return entry.name
-
-    def setentryname(self, entry, name):
-        entry.name = name
-
-    def extract_many(self, entries, localpath):
-        # Extract files first (directories will be created as needed):
-        self.extract_files(entries, localpath)
-        # Extract directories to update their attributes:
-        self.extract_directories(entries, localpath)
-
-    def extractentry(self, entry, localpath):
-        self.tf.extract(entry, localpath)
-
-    def isdir(self, entry):
-        return entry.isdir()
-
-    def close(self):
-        self.tf.close()
-
-
-def openarchive( name, temppath ):
-    if os.path.splitext(name)[1].upper() in ['.ZIP', '.NUPKG', '.JAR']:
-        return ZipArchive( temppath )
-    else:
-        return TarArchive( temppath )
-
-def extract_archive(archive, local_path, strip_dirs=0):
-    archive.extract(local_path, strip_dirs)
-
-
 class Dependency(object):
 
     def __init__(self, name, environment, fetcher, logfile=None, has_overrides=False):
@@ -554,7 +415,6 @@ class Dependency(object):
         mirror_path = self.expander.expand('mirror-path')
         local_path = os.path.abspath(self.expander.expand('dest'))
         fetched_path = None
-        strip_dirs = self.expander.expand('strip-archive-dirs')
         success = False
 
         if mirror_path:
@@ -564,7 +424,6 @@ class Dependency(object):
                 statinfo = os.stat(fetched_path)
                 if statinfo.st_size:
                     self.logfile.write(" (" + method + ")\n")
-                    archive = openarchive(mirror_path, fetched_path)
                     success = True
                 else:
                     self.logfile.write("\n  .... not found on mirror\n" )
@@ -580,7 +439,6 @@ class Dependency(object):
                 statinfo = os.stat(fetched_path)
                 if statinfo.st_size:
                     self.logfile.write(" (" + method + ")\n")
-                    archive = openarchive(remote_path, fetched_path)
                 else:
                     os.unlink(fetched_path)
                     self.logfile.write("\n**** WARNING - failed to fetch %s ****\n" % remote_path)
@@ -598,13 +456,26 @@ class Dependency(object):
             pass
 
         self.logfile.write("  unpacking to '%s'\n" % (local_path,))
-        extract_archive(archive, local_path, strip_dirs)
-        archive.close()
+        if os.path.splitext(remote_path)[1].upper() in ['.ZIP', '.NUPKG', '.JAR']:
+            self.unzip(fetched_path, local_path)
+        else:
+            self.untar(fetched_path, local_path)
+
         if fetched_path:
             if fetched_path != remote_path:
                 os.unlink(fetched_path)
         self.logfile.write("  OK\n")
         return True
+
+    def untar(self, source, dest):
+        tf = tarfile.open(source, 'r')
+        tf.extractall(path=dest)
+        tf.close()
+
+    def unzip(self, source, dest):
+        zf = zipfile.ZipFile(source, mode='r')
+        zf.extractall(path=dest)
+        zf.close()
 
     @property
     def name(self):
