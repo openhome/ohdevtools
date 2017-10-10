@@ -450,19 +450,19 @@ class Dependency(object):
         self.logfile.write("  OK\n")
         return True
 
-        # for f in tf:
-        #     print f.name
-        #     try:
-        #         tf.extract(f.name, path=dest)
-        #     except IOError:
-        #         print 'Skipping==========================================================================='
-
-    def untar(self, source, dest):
+    @staticmethod
+    def untar(source, dest):
         tf = tarfile.open(source, 'r')
-        tf.extractall(path=dest)
+        for f in tf:
+            try:
+                tf.extract(f.name, path=dest)
+            except IOError:
+                os.unlink( os.path.join(dest, f.name ))
+                tf.extract(f.name, path=dest)
         tf.close()
 
-    def unzip(self, source, dest):
+    @staticmethod
+    def unzip(source, dest):
         zf = zipfile.ZipFile(source, mode='r')
         zf.extractall(path=dest)
         zf.close()
