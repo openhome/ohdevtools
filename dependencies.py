@@ -164,49 +164,6 @@ def default_log(logfile=None):
     return logfile if logfile is not None else open(os.devnull, "w")
 
 
-def open_file_url(url):
-    smb = False
-    if url.startswith("smb://"):
-        url = url[6:]
-        smb = True
-    elif url.startswith("file://"):
-        url = url[7:]
-    path = urllib.url2pathname(url).replace(os.path.sep, "/")
-    if path[0] == '/':
-        if path[1] == '/':
-            # file:////hostname/path/file.ext
-            # Bad remote path.
-            remote = True
-            legacy = True
-            final_path = path.replace("/", os.path.sep)
-        else:
-            # file:///path/file.ext
-            # Good local path.
-            remote = False
-            legacy = False
-            if smb:
-                raise Exception("Bad smb:// path")
-            final_path = path[1:].replace("/", os.path.sep)
-    else:
-        if path[0].isalpha() and path[1] == ':':
-            # file:///x:/foo/bar/baz
-            # Good absolute local path.
-            remote = False
-            legacy = False
-            final_path = path.replace('/', os.path.sep)
-        else:
-            # file://hostname/path/file.ext
-            # Good remote path.
-            remote = True
-            legacy = False
-            final_path = "\\\\" + path.replace("/", os.path.sep)
-    if smb and (legacy or not remote):
-        raise Exception("Bad smb:// path. Use 'smb://hostname/path/to/file.ext'")
-    if (smb or remote) and not platform.platform().startswith("Windows"):
-        raise Exception("SMB file access not supported on non-Windows platforms.")
-    return final_path
-
-
 class FileFetcher(object):
 
     def __init__(self):
@@ -222,35 +179,66 @@ class FileFetcher(object):
     def fetch_local(self, path):
         return path, 'file'
 
-    def fetch_file_url(self, path):
-        return open_file_url(path), 'file'
+    @staticmethod
+    def fetch_file_url(url):
+        smb = False
+        if url.startswith("smb://"):
+            url = url[6:]
+            smb = True
+        elif url.startswith("file://"):
+            url = url[7:]
+        path = urllib.url2pathname(url).replace(os.path.sep, "/")
+        if path[0] == '/':
+            if path[1] == '/':
+                # file:////hostname/path/file.ext
+                # Bad remote path.
+                remote = True
+                legacy = True
+                final_path = path.replace("/", os.path.sep)
+            else:
+                # file:///path/file.ext
+                # Good local path.
+                remote = False
+                legacy = False
+                if smb:
+                    raise Exception("Bad smb:// path")
+                final_path = path[1:].replace("/", os.path.sep)
+        else:
+            if path[0].isalpha() and path[1] == ':':
+                # file:///x:/foo/bar/baz
+                # Good absolute local path.
+                remote = False
+                legacy = False
+                final_path = path.replace('/', os.path.sep)
+            else:
+                # file://hostname/path/file.ext
+                # Good remote path.
+                remote = True
+                legacy = False
+                final_path = "\\\\" + path.replace("/", os.path.sep)
+        if smb and (legacy or not remote):
+            raise Exception("Bad smb:// path. Use 'smb://hostname/path/to/file.ext'")
+        if (smb or remote) and not platform.platform().startswith("Windows"):
+            raise Exception("SMB file access not supported on non-Windows platforms.")
+        return final_path, 'file'
 
-    def fetch_url(self, path):
-        return urlopen(path), 'web'
-
-
-def urlopen(url):
-    handle, temppath = tempfile.mkstemp( suffix='.tmp' )
-    try:
-        req = urllib2.Request(url=url, headers={'Accept-Encoding': 'identity'})
-        remotefile = urllib2.urlopen( req, timeout=10 )
-        localfile = os.fdopen( handle, 'wb' )
-        chunk = remotefile.read( 1000000 )      # chunk size optimised for download speed
-        while len( chunk ):
-            localfile.write( chunk )
-            chunk = remotefile.read( 1000000 )
-        localfile.close()
-        remotefile.close()
-    except:
-        # errors handled in caller to permit execution to continue after errored dependency
-        os.close( handle )
-    return temppath
-
-
-def is_trueish(value):
-    if hasattr(value, "upper"):
-        value = value.upper()
-    return value in [1, "1", "YES", "Y", "TRUE", "ON", True]
+    @staticmethod
+    def fetch_url(url):
+        handle, temppath = tempfile.mkstemp( suffix='.tmp' )
+        try:
+            req = urllib2.Request(url=url, headers={'Accept-Encoding': 'identity'})
+            remotefile = urllib2.urlopen( req, timeout=10 )
+            localfile = os.fdopen( handle, 'wb' )
+            chunk = remotefile.read( 1000000 )      # chunk size optimised for download speed
+            while len( chunk ):
+                localfile.write( chunk )
+                chunk = remotefile.read( 1000000 )
+            localfile.close()
+            remotefile.close()
+        except:
+            # errors handled in caller to permit execution to continue after errored dependency
+            os.close( handle )
+        return temppath, 'web'
 
 
 class EnvironmentExpander(object):
@@ -380,9 +368,15 @@ class EnvironmentExpander(object):
             conditionvalue = self.expand(condition)
         except KeyError:
             conditionvalue = False
-        if is_trueish(conditionvalue):
+        if self.is_trueish(conditionvalue):
             return self.expand(primary)
         return self.expand(alternative)
+
+    @staticmethod
+    def is_trueish(value):
+        if hasattr(value, "upper"):
+            value = value.upper()
+        return value in [1, "1", "YES", "Y", "TRUE", "ON", True]
 
 
 class Dependency(object):
@@ -450,23 +444,6 @@ class Dependency(object):
         self.logfile.write("  OK\n")
         return True
 
-    @staticmethod
-    def untar(source, dest):
-        tf = tarfile.open(source, 'r')
-        for f in tf:
-            try:
-                tf.extract(f.name, path=dest)
-            except IOError:
-                os.unlink( os.path.join(dest, f.name ))
-                tf.extract(f.name, path=dest)
-        tf.close()
-
-    @staticmethod
-    def unzip(source, dest):
-        zf = zipfile.ZipFile(source, mode='r')
-        zf.extractall(path=dest)
-        zf.close()
-
     @property
     def name(self):
         return self['name']
@@ -505,14 +482,22 @@ class Dependency(object):
             return False
         return True
 
-    def expand_remote_path(self):
-        return self.expander.expand('archive-path')
+    @staticmethod
+    def untar(source, dest):
+        tf = tarfile.open(source, 'r')
+        for f in tf:
+            try:
+                tf.extract(f.name, path=dest)
+            except IOError:
+                os.unlink( os.path.join(dest, f.name ))
+                tf.extract(f.name, path=dest)
+        tf.close()
 
-    def expand_local_path(self):
-        return self.expander.expand('dest')
-
-    def expand_configure_args(self):
-        return self.expander.expand('configure-args')
+    @staticmethod
+    def unzip(source, dest):
+        zf = zipfile.ZipFile(source, mode='r')
+        zf.extractall(path=dest)
+        zf.close()
 
 
 class DependencyCollection(object):
@@ -600,7 +585,8 @@ class DependencyCollection(object):
             return False
         return True
 
-    def fetched_deps_filename(self, deps):
+    @staticmethod
+    def fetched_deps_filename(deps):
         filename = None
         for d in deps:
             if 'dest' in d.expander:
@@ -619,7 +605,8 @@ class DependencyCollection(object):
                 self.logfile.write("Error with current fetched dependency file: %s\n" % filename)
         return loaded_deps
 
-    def save_fetched_deps(self, filename, deps):
+    @staticmethod
+    def save_fetched_deps(filename, deps):
         f = open(filename, 'wt')
         json.dump(deps, f)
         f.close()
@@ -717,14 +704,6 @@ def clean_directories(directories):
             raise Exception("Failed to remove directory '{0}'. Try closing applications that might be using it. (E.g. Visual Studio.)".format(lastdirectory))
         else:
             raise Exception("Failed to remove directory. Try closing applications that might be using it. (E.g. Visual Studio.)\n" + str(e))
-
-
-def get_data_dir():
-    userdata = os.environ.get('LOCALAPPDATA', None)
-    if userdata is not None:
-        return userdata + '/ohDevTools'
-    userdata = os.environ.get('HOME', '.')
-    return userdata + '/.ohdevtools'
 
 
 def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=True, nuget_packages=None, nuget_sln=None, nuget_config='nuget.config', clean=True, source=False, logfile=None, list_details=False, local_overrides=True, verbose=False):
