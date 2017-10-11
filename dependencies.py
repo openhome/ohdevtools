@@ -499,6 +499,15 @@ class Dependency(object):
         zf.extractall(path=dest)
         zf.close()
 
+    def expand_remote_path(self):
+        return self.expander.expand('archive-path')
+
+    def expand_local_path(self):
+        return self.expander.expand('dest')
+
+    def expand_configure_args(self):
+        return self.expander.expand('configure-args')
+
 
 class DependencyCollection(object):
 
