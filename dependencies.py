@@ -665,54 +665,24 @@ def cli(args):
     subprocess.check_call(args, shell=False)
 
 
-def clean_directories(directories):
-    """Remove the specified directories, trying very hard not to remove
-    anything if a failure occurs."""
-
-    # Some explanation is in order. Windows locks DLLs while they are in
-    # use. You can't just unlink them like in Unix and create a new
-    # directory entry in their place - the lock isn't just on the file
-    # contents, but on the directory entry (and the parent's directory
-    # entry, etc.)
-    # The scenario we really want to avoid is to start deleting stuff
-    # and then fail half-way through with a random selection of files
-    # deleted. It's preferable to fail before any file has actually been
-    # deleted, so that a user can, for example, decide that they don't
-    # really want to run a fetch after all, rather than leaving them in
-    # a state where they're forced to close down the app with the locks
-    # (probably Visual Studio) and run another fetch.
-    # We achieve this by first doing a bunch of top-level directory
-    # renames. These will generally fail if any of the subsequent deletes
-    # would have failed. If one fails, we just undo the previous renames
-    # and report an error. It's not bulletproof, but it should be good
-    # enough for the most common scenarios.
-
-    try:
-        directories = list(directories)
-        moved = []
-        try:
-            lastdirectory = None
-            for directory in directories:
-                if not os.path.isdir(directory):
-                    continue
-                newname = directory + '.deleteme'
-                if os.path.isdir(newname):
-                    shutil.rmtree(newname)
-                lastdirectory = directory
-                os.rename(directory, newname)
-                lastdirectory = None
-                moved.append((directory, newname))
-        except:
-            for original, newname in reversed(moved):
-                os.rename(newname, original)
-            raise
-        for original, newname in moved:
-            shutil.rmtree(newname)
-    except Exception as e:
-        if lastdirectory is not None:
-            raise Exception("Failed to remove directory '{0}'. Try closing applications that might be using it. (E.g. Visual Studio.)".format(lastdirectory))
+def clean_dirs(dir):
+    """Remove the specified directory tree - don't remove anything if it would fail"""
+    if os.path.isdir( dir ):
+        locked = []
+        for dirName, subdirList, fileList in os.walk(dir):
+            for fileName in fileList:
+                filePath = os.path.join(dirName, fileName)
+                try:
+                    f = open(filePath, 'w')
+                    f.close()
+                except:
+                    locked.append(filePath)
+        if locked:
+            for f in locked:
+                print 'Locked file:- ', f
+            raise Exception('Failed to clean dependencies\n')
         else:
-            raise Exception("Failed to remove directory. Try closing applications that might be using it. (E.g. Visual Studio.)\n" + str(e))
+            shutil.rmtree(dir)
 
 
 def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=True, nuget_packages=None, nuget_sln=None, nuget_config='nuget.config', clean=True, source=False, logfile=None, list_details=False, local_overrides=True, verbose=False):
@@ -760,8 +730,7 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
             os.unlink('dependencies/loadedDeps.json')
         except:
             pass
-        clean_dirs = ['dependencies']
-        clean_directories(clean_dirs)
+        clean_dirs('dependencies')
 
     overrides_filename = '../dependency_overrides.json' if local_overrides else None
     dependencies = read_json_dependencies_from_filename('projectdata/dependencies.json', overrides_filename, env=env, logfile=logfile)
