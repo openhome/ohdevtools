@@ -130,7 +130,7 @@ def CreateComponent( aBuildOutputList, aJsonFileName ):
         buildOutDict[kJsonManifestNameTag] = buildOutput[0]
         buildOutDict[kJsonManifestMd5Tag] = Md5Hash( localFile )
         buildOutDict[kJsonManifestSizeTag] = GetFileSize( localFile )
-        buildOutDict[kJsonManifestUrlTag] = localFile
+        buildOutDict[kJsonManifestUrlTag] = "../" + localFile
         jsonManifest[kJsonManifestBaseTag].append( buildOutDict )
     
     jsonManifest[kJsonManifestBaseTag] = sorted( jsonManifest[kJsonManifestBaseTag], key=lambda k: k['name'] ) # ensures json is always sorted by name
