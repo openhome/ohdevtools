@@ -1,6 +1,7 @@
 Android-anycpu
 Core-ppc32
 Linux-armhf
+Linux-rpi
 Linux-x64
 Linux-x86
 Mac-x64
