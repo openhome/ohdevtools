@@ -673,7 +673,7 @@ def clean_dirs(dir):
             for fileName in fileList:
                 filePath = os.path.join(dirName, fileName)
                 try:
-                    f = open(filePath, 'w')
+                    f = open(filePath, 'a')
                     f.close()
                 except:
                     locked.append(filePath)
