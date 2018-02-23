@@ -75,7 +75,6 @@ def main():
                 clean=options.clean and not args,
                 fetch=(options.all or bool(args)) and not options.source,
                 source=options.source,
-                logfile=sys.stdout,
                 list_details=options.list,
                 verbose=options.verbose,
                 local_overrides=not options.no_overrides)
@@ -88,7 +87,7 @@ def main():
     '''
     dependencies = read_json_dependencies_from_filename('projectdata/dependencies.json', env={
         'linn-git-user':linn_git_user,
-        'platform':platform}, logfile=sys.stdout)
+        'platform':platform})
     try:
         dependencies.fetch(args or None)
     except Exception as e:

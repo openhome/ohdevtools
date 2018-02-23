@@ -14,6 +14,30 @@ from glob import glob
 from default_platform import default_platform
 import deps_cross_checker
 
+try:
+    import boto3
+except:
+    print( '\nAWS fetch requires boto3 module' )
+    print( "Please install this using 'pip install boto3'\n" )
+else:
+    # create AWS credentials file (if not already present)
+    home = None
+    if 'HOMEPATH' in os.environ and 'HOMEDRIVE' in os.environ:
+        home = os.path.join(os.environ['HOMEDRIVE'], os.environ['HOMEPATH'])
+    elif 'HOME' in os.environ:
+        home = os.environ['HOME']
+    if home:
+        awsCreds = os.path.join(home, '.aws', 'credentials')
+        if not os.path.exists(awsCreds):
+            try:
+                os.mkdir(os.path.join(home, '.aws'))
+            except:
+                pass
+            credsFile = urllib2.urlopen('http://core.linn.co.uk/~artifacts/artifacts/aws-credentials' )
+            creds = credsFile.read()
+            with open(awsCreds, 'wt') as f:
+                f.write(creds)
+
 # Master table of dependency types.
 
 # A dependency definition can specify 'type' to inherit definitions from one of these.
@@ -70,13 +94,11 @@ DEPENDENCY_TYPES = {
         'archive-prefix': '',
         'archive-suffix': '',
         'binary-repo': 'http://builds.openhome.org/releases/artifacts',
-        'mirror-repo': 'http://PC868.linn.co.uk/mirror.openhome.org/releases/artifacts',
         'archive-directory': '${binary-repo}/${name}/',
         'archive-filename': '${archive-prefix}${name}-${version}-${archive-platform}${archive-suffix}${archive-extension}',
         'remote-archive-path': '${archive-directory}${archive-filename}',
         'use-local-archive': False,
         'archive-path': '${use-local-archive?local-archive-path:remote-archive-path}',
-        'mirror-path': '${mirror-repo}/${name}/${archive-filename}',
         'source-path': '${linn-git-user}@core.linn.co.uk:/home/git',
         'repo-name': '${name}',
         'source-git': '${source-path}/${repo-name}.git',
@@ -91,7 +113,7 @@ DEPENDENCY_TYPES = {
 
     # Internal dependencies are named and structured in a similar manner
     # to those of type 'openhome', but are considered private, and held
-    # on core.linn.co.uk
+    # in a non-public location
     #
     # Must define, at minimum:
     #       name
@@ -102,7 +124,6 @@ DEPENDENCY_TYPES = {
 
     'internal': {
         'binary-repo': 'http://core.linn.co.uk/~artifacts/artifacts',
-        'mirror-repo': 'http://PC868.linn.co.uk/mirror.core.linn.co.uk/artifacts',
         'source-git': None,
         'any-platform': 'AnyPlatform',
         'platform-specific': True,
@@ -110,7 +131,6 @@ DEPENDENCY_TYPES = {
         'archive-filename': '${name}-${version}-${platform}${archive-suffix}.tar.gz',
         'archive-platform': '${platform-specific?platform:any-platform}',
         'archive-path': '${binary-repo}/${name}/${archive-filename}',
-        'mirror-path': '${mirror-repo}/${name}/${archive-filename}',
         'host-platform': default_platform(),
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': []
@@ -133,7 +153,6 @@ DEPENDENCY_TYPES = {
         'platform-specific': True,
         'archive-platform': '${platform-specific?platform:any-platform}',
         'archive-path': '${binary-repo}/${archive-platform}/${archive-filename}',
-        'mirror-path': None,
         'host-platform': default_platform(),
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': []
@@ -152,16 +171,12 @@ DEPENDENCY_TYPES = {
         'archive-directory': '${binary-repo}/nuget/',
         'archive-filename': '${name}.${version}${archive-extension}',
         'archive-path': '${archive-directory}${archive-filename}',
-        'mirror-path': None,
         'host-platform': default_platform(),
         'dest': 'dependencies/nuget/',
         'configure-args': []
     },
 }
-
-
-def default_log(logfile=None):
-    return logfile if logfile is not None else open(os.devnull, "w")
+AWS_BUCKET = 'linn.artifacts.private'
 
 
 class FileFetcher(object):
@@ -173,14 +188,37 @@ class FileFetcher(object):
         if path.startswith("file:") or path.startswith("smb:"):
             return self.fetch_file_url(path)
         if re.match("[^\W\d]{2,8}:", path):
-            return self.fetch_url(path)
+            if DEPENDENCY_TYPES['internal']['binary-repo'] in path:   # fetch from AWS
+                rc = self.fetch_aws(path)
+                if rc:
+                    return rc
+            return self.fetch_url(path)     # fetch from core (fall thru if AWS fails)
         return self.fetch_local(path)
 
-    def fetch_local(self, path):
-        return path, 'file'
+    @staticmethod
+    def fetch_aws(path):
+        awspath = path.replace(DEPENDENCY_TYPES['internal']['binary-repo'] + '/', '')
+        awspath = os.path.normpath(awspath).replace('\\', '/')
+        print( '  from AWS s3://%s/%s' % (AWS_BUCKET, awspath))
+        try:
+            s3 = boto3.resource('s3')
+            bucket = s3.Bucket(AWS_BUCKET)
+            obj = bucket.Object(awspath)
+            temppath = tempfile.mktemp( suffix='.tmp' )
+            with open(temppath, 'wb') as data:
+                obj.download_fileobj(data)
+            return temppath
+        except:
+            return None
+
+    @staticmethod
+    def fetch_local(path):
+        print( '  from %s' % path)
+        return path
 
     @staticmethod
     def fetch_file_url(url):
+        print( '  from %s' % url)
         smb = False
         if url.startswith("smb://"):
             url = url[6:]
@@ -220,10 +258,11 @@ class FileFetcher(object):
             raise Exception("Bad smb:// path. Use 'smb://hostname/path/to/file.ext'")
         if (smb or remote) and not platform.platform().startswith("Windows"):
             raise Exception("SMB file access not supported on non-Windows platforms.")
-        return final_path, 'file'
+        return final_path
 
     @staticmethod
     def fetch_url(url):
+        print("  from '%s'" % url)
         handle, temppath = tempfile.mkstemp( suffix='.tmp' )
         try:
             req = urllib2.Request(url=url, headers={'Accept-Encoding': 'identity'})
@@ -238,7 +277,7 @@ class FileFetcher(object):
         except:
             # errors handled in caller to permit execution to continue after errored dependency
             os.close( handle )
-        return temppath, 'web'
+        return temppath
 
 
 class EnvironmentExpander(object):
@@ -381,48 +420,27 @@ class EnvironmentExpander(object):
 
 class Dependency(object):
 
-    def __init__(self, name, environment, fetcher, logfile=None, has_overrides=False):
+    def __init__(self, name, environment, fetcher, has_overrides=False):
         self.expander = EnvironmentExpander(environment)
-        self.logfile = default_log(logfile)
         self.has_overrides = has_overrides
         self.fetcher = fetcher
 
     def fetch(self):
         remote_path = self.expander.expand('archive-path')
-        mirror_path = self.expander.expand('mirror-path')
         local_path = os.path.abspath(self.expander.expand('dest'))
         fetched_path = None
-        success = False
 
-        if mirror_path:
-            self.logfile.write("\nFetching '%s'\n  from '%s'" % (self.name, mirror_path))
-            try:
-                fetched_path, method = self.fetcher.fetch(mirror_path)
-                statinfo = os.stat(fetched_path)
-                if statinfo.st_size:
-                    self.logfile.write(" (" + method + ")\n")
-                    success = True
-                else:
-                    self.logfile.write("\n  .... not found on mirror\n" )
-                    os.unlink(fetched_path)
-            except:
-                # something went wrong - we'll just fall thru to remote fetch
-                pass
-
-        if not success:
-            self.logfile.write("\nFetching '%s'\n  from '%s'" % (self.name, remote_path))
-            try:
-                fetched_path, method = self.fetcher.fetch(remote_path)
-                statinfo = os.stat(fetched_path)
-                if statinfo.st_size:
-                    self.logfile.write(" (" + method + ")\n")
-                else:
-                    os.unlink(fetched_path)
-                    self.logfile.write("\n**** WARNING - failed to fetch %s ****\n" % remote_path)
-                    return False
-            except IOError:
-                self.logfile.write("\n  FAILED\n")
+        print("\nFetching '%s'" % self.name)
+        try:
+            fetched_path = self.fetcher.fetch(remote_path)
+            statinfo = os.stat(fetched_path)
+            if not statinfo.st_size:
+                os.unlink(fetched_path)
+                print("  **** WARNING - failed to fetch %s ****" % remote_path)
                 return False
+        except IOError:
+            print("  **** FAILED ****")
+            return False
 
         try:
             os.makedirs(local_path)
@@ -432,7 +450,7 @@ class Dependency(object):
             # soon when we try to extract the files.
             pass
 
-        self.logfile.write("  unpacking to '%s'\n" % (local_path,))
+        print("  unpacking to '%s'" % (local_path,))
         if os.path.splitext(remote_path)[1].upper() in ['.ZIP', '.NUPKG', '.JAR']:
             self.unzip(fetched_path, local_path)
         else:
@@ -441,7 +459,7 @@ class Dependency(object):
         if fetched_path:
             if fetched_path != remote_path:
                 os.unlink(fetched_path)
-        self.logfile.write("  OK\n")
+        print("OK")
         return True
 
     @property
@@ -461,24 +479,24 @@ class Dependency(object):
         name = self['name']
         sourcegit = self['source-git']
         if sourcegit is None:
-            self.logfile.write('No git repo defined for {0}.\n'.format(name))
+            print('No git repo defined for {0}'.format(name))
             return False
-        self.logfile.write("Fetching source for '%s'\n  into '%s'\n" % (name, os.path.abspath('../' + name)))
+        print("Fetching source for '%s'\n  into '%s'" % (name, os.path.abspath('../' + name)))
         tag = self['tag']
         try:
             if not os.path.exists('../' + name):
-                self.logfile.write('  git clone {0} {1}\n'.format(sourcegit, name))
+                print('  git clone {0} {1}'.format(sourcegit, name))
                 subprocess.check_call(['git', 'clone', sourcegit, name], cwd='..', shell=False)
             elif not os.path.isdir('../' + name):
-                self.logfile.write('Cannot checkout {0}, because directory ../{0} already exists\n'.format(name))
+                print('Cannot checkout {0}, because directory ../{0} already exists'.format(name))
                 return False
             else:
-                self.logfile.write('  git fetch origin\n')
+                print('  git fetch origin')
                 subprocess.check_call(['git', 'fetch', 'origin'], cwd='../' + name, shell=False)
-            self.logfile.write("  git checkout {0}\n".format(tag))
+            print("  git checkout {0}".format(tag))
             subprocess.check_call(['git', 'checkout', tag], cwd='../' + name, shell=False)
         except subprocess.CalledProcessError as cpe:
-            self.logfile.write(str(cpe) + '\n')
+            print(str(cpe))
             return False
         return True
 
@@ -511,9 +529,8 @@ class Dependency(object):
 
 class DependencyCollection(object):
 
-    def __init__(self, env, logfile=None):
+    def __init__(self, env):
         fetcher = FileFetcher()
-        self.logfile = default_log(logfile)
         self.base_env = env
         self.dependency_types = DEPENDENCY_TYPES
         self.dependencies = {}
@@ -535,7 +552,7 @@ class DependencyCollection(object):
         if 'name' not in env:
             raise ValueError('Dependency definition contains no name')
         name = env['name']
-        new_dependency = Dependency(name, env, self.fetcher, logfile=self.logfile, has_overrides=len(overrides) > 0)
+        new_dependency = Dependency(name, env, self.fetcher, has_overrides=len(overrides) > 0)
         if 'ignore' in new_dependency and new_dependency['ignore']:
             return
         self.dependencies[name] = new_dependency
@@ -565,8 +582,8 @@ class DependencyCollection(object):
     def fetch(self, subset=None):
         dependencies = self._filter(subset)
         failed_dependencies = []
-        filename = self.fetched_deps_filename( dependencies )
-        prefetch_deps = self.load_fetched_deps( filename  )
+        filename = self.fetched_deps_filename(dependencies)
+        prefetch_deps = self.load_fetched_deps(filename)
         postfetch_deps = {}
         for d in dependencies:
             do_fetch = True
@@ -576,21 +593,22 @@ class DependencyCollection(object):
                 name = d.expander.expand('name')
             if 'archive-path' in d.expander:
                 path = d.expander.expand('archive-path')
+            version = os.path.basename(path)
             if name in prefetch_deps.keys():
-                if prefetch_deps[name] == path:
-                    self.logfile.write("Skipping fetch of %s as unchanged (%s)\n" % (name, path))
-                    postfetch_deps[name] = path
+                if prefetch_deps[name] == version:
+                    print("Skipping fetch of %s as unchanged (%s)" % (name, version))
+                    postfetch_deps[name] = version
                     do_fetch = False
             if do_fetch:
                 if not d.fetch():
                     failed_dependencies.append(d.name)
                 else:
                     if name and path:
-                        postfetch_deps[name] = path
+                        postfetch_deps[name] = version
         if filename:
             self.save_fetched_deps(filename, postfetch_deps)
         if failed_dependencies:
-            self.logfile.write("Failed to fetch some dependencies: " + ' '.join(failed_dependencies) + '\n')
+            print("Failed to fetch some dependencies: " + ' '.join(failed_dependencies))
             return False
         return True
 
@@ -611,7 +629,7 @@ class DependencyCollection(object):
                 loaded_deps = json.load(f)
                 f.close()
             except:
-                self.logfile.write("Error with current fetched dependency file: %s\n" % filename)
+                print("Error with current fetched dependency file: %s" % filename)
         return loaded_deps
 
     @staticmethod
@@ -627,13 +645,13 @@ class DependencyCollection(object):
             if not d.checkout():
                 failed_dependencies.append(d.name)
         if failed_dependencies:
-            self.logfile.write("Failed to check out some dependencies: " + ' '.join(failed_dependencies) + '\n')
+            print("Failed to check out some dependencies: " + ' '.join(failed_dependencies))
             return False
         return True
 
 
-def read_json_dependencies(dependencyfile, overridefile, env, logfile):
-    collection = DependencyCollection(env, logfile=logfile)
+def read_json_dependencies(dependencyfile, overridefile, env):
+    collection = DependencyCollection(env)
     dependencies = json.load(dependencyfile)
     overrides = json.load(overridefile)
     overrides_by_name = dict((dep['name'], dep) for dep in overrides)
@@ -644,19 +662,19 @@ def read_json_dependencies(dependencyfile, overridefile, env, logfile):
     return collection
 
 
-def read_json_dependencies_from_filename(dependencies_filename, overrides_filename, env, logfile):
+def read_json_dependencies_from_filename(dependencies_filename, overrides_filename, env):
     try:
         dependencyfile = open(dependencies_filename, "r")
         with open(dependencies_filename) as dependencyfile:
             if overrides_filename is not None and os.path.isfile(overrides_filename):
                 with open(overrides_filename) as overridesfile:
-                    return read_json_dependencies(dependencyfile, overridesfile, env, logfile)
+                    return read_json_dependencies(dependencyfile, overridesfile, env)
             else:
-                return read_json_dependencies(dependencyfile, cStringIO.StringIO('[]'), env, logfile)
+                return read_json_dependencies(dependencyfile, cStringIO.StringIO('[]'), env)
     except (OSError, IOError) as e:
         if e.errno != 2:
             raise
-        return DependencyCollection(env, logfile=logfile)
+        return DependencyCollection(env)
 
 
 def cli(args):
@@ -685,7 +703,7 @@ def clean_dirs(dir):
             shutil.rmtree(dir)
 
 
-def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=True, nuget_packages=None, nuget_sln=None, nuget_config='nuget.config', clean=True, source=False, logfile=None, list_details=False, local_overrides=True, verbose=False):
+def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=True, nuget_packages=None, nuget_sln=None, nuget_config='nuget.config', clean=True, source=False, list_details=False, local_overrides=True, verbose=False):
     '''
     Fetch all the dependencies defined in projectdata/dependencies.json and in
     projectdata/packages.config.
@@ -701,8 +719,6 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
         True to clean out directories before fetching, False to skip.
     source:
         True to fetch source for the listed dependencies, False to skip.
-    logfile:
-        File-like object for log messages.
     '''
     if env is None:
         env = {}
@@ -722,9 +738,9 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
         platform = env['platform'] = default_platform()
     if '-' in platform:
         env['system'], env['architecture'] = platform.split('-', 2)
-
     if platform is None:
         raise Exception('Platform not specified and unable to guess.')
+
     if clean and not list_details:
         try:
             os.unlink('dependencies/loadedDeps.json')
@@ -733,7 +749,7 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
         clean_dirs('dependencies')
 
     overrides_filename = '../dependency_overrides.json' if local_overrides else None
-    dependencies = read_json_dependencies_from_filename('projectdata/dependencies.json', overrides_filename, env=env, logfile=logfile)
+    dependencies = read_json_dependencies_from_filename('projectdata/dependencies.json', overrides_filename, env=env)
     if list_details:
         for name, dependency in dependencies.items():
             print "Dependency '{0}':".format(name)
