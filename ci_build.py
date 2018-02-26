@@ -78,16 +78,14 @@ def default_platform(fail_on_unknown=True):
         fail('No platform specified and unable to guess.')
     return p
 
-def delete_directory(path, logfile=None):
-    if logfile is None:
-        logfile = open(os.devnull, "w")
+def delete_directory(path):
     path = os.path.abspath(path)
-    logfile.write('Deleting "'+path+'"... ')
+    print('Deleting "'+path+'"... ')
     shutil.rmtree(path, ignore_errors=True)
     if os.path.isdir(path):
-        logfile.write('\nFailed.\n')
+        print('\nFailed.\n')
         raise Exception('Failed to delete "%s"' % path)
-    logfile.write('\nDone.\n')
+    print('\nDone.\n')
 
 class BuildStep(object):
     def __init__(self, name, action):
@@ -362,7 +360,7 @@ class Builder(object):
         return read_json_dependencies_from_filename(
                 os.path.join('projectdata', 'dependencies.json'),
                 os.path.join('..', 'dependency_overrides.json'),
-                env, logfile=sys.stdout)
+                env)
     def _process_dependency_args(self, *selected, **kwargs):
         kwargs = process_kwargs(
             "fetch_dependencies",
@@ -393,7 +391,7 @@ class Builder(object):
                     selected or None, platform=self._context.env["OH_PLATFORM"], env=env, fetch=True,
                     nuget_packages='projectdata/packages.config' if not self.nuget_sln else None,
                     nuget_sln=self.nuget_sln,
-                    clean=clean, source=False, logfile=sys.stdout,
+                    clean=clean, source=False,
                     local_overrides=not self._context.options.no_overrides)
         except Exception as e:
             print e
