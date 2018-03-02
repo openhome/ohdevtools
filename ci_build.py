@@ -14,8 +14,34 @@ from functools import wraps
 import version
 import filechecker
 import tarfile
+import urllib2
 import glob
 
+try:
+    import boto3
+except:
+    print( '\nAWS publish requires boto3 module' )
+    print( "Please install this using 'pip install boto3'\n" )
+else:
+    # create AWS credentials file (if not already present)
+    home = None
+    if 'HOMEPATH' in os.environ and 'HOMEDRIVE' in os.environ:
+        home = os.path.join(os.environ['HOMEDRIVE'], os.environ['HOMEPATH'])
+    elif 'HOME' in os.environ:
+        home = os.environ['HOME']
+    if home:
+        awsCreds = os.path.join(home, '.aws', 'credentials')
+        if not os.path.exists(awsCreds):
+            try:
+                os.mkdir(os.path.join(home, '.aws'))
+            except:
+                pass
+            credsFile = urllib2.urlopen('http://core.linn.co.uk/~artifacts/artifacts/aws-credentials' )
+            creds = credsFile.read()
+            with open(awsCreds, 'wt') as f:
+                f.write(creds)
+
+AWS_BUCKET = 'linn.artifacts.private'
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
 ILLEGAL_STEP_NAMES = [DEFAULT_STEPS, ALL_STEPS]
@@ -964,7 +990,17 @@ class OpenHomeBuilder(object):
             package_upload = self.package_upload
         sourcepath = self._expand_template(package_location, packagename=packagename)
         destinationpath = self._expand_template(package_upload, uploadpath=uploadpath)
-        scp(sourcepath, destinationpath)
+        print '\n\n', sourcepath, destinationpath
+        if 'core.linn.co.uk' in destinationpath:
+            # reroute to AWS
+            awspath = destinationpath.split('/artifacts/')[2]
+            print( 'Upload %s to AWS s3://%s/%s' % (sourcepath, AWS_BUCKET, awspath))
+            s3 = boto3.resource('s3')
+            bucket = s3.Bucket(AWS_BUCKET)
+            with open(sourcepath, 'rb') as data:
+                bucket.upload_fileobj(data, awspath)
+        else:
+            scp(sourcepath, destinationpath)
 
     # This just sets up forwarding methods for a bunch of methods on the Builder, to
     # allow sub-classes access to them.
