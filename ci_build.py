@@ -993,7 +993,7 @@ class OpenHomeBuilder(object):
         print '\n\n', sourcepath, destinationpath
         if 'core.linn.co.uk' in destinationpath:
             # reroute to AWS
-            awspath = destinationpath.split('/artifacts/')[2]
+            awspath = destinationpath.split('artifacts/')[2]
             print( 'Upload %s to AWS s3://%s/%s' % (sourcepath, AWS_BUCKET, awspath))
             s3 = boto3.resource('s3')
             bucket = s3.Bucket(AWS_BUCKET)
