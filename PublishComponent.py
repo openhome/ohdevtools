@@ -39,7 +39,7 @@ def PublishFile( aSource, aDest, aDryRun=False ):   # NOQA
             s3 = boto3.resource( 's3' )
             bucket = s3.Bucket( 'linn.artifacts.private' )
             with open( aSource, 'rb' ) as data:
-                bucket.upload_fileobj( data, '%s/%s' % (dest, aSource.split( '/')))
+                bucket.upload_fileobj( data, dest )
     else:
         flags = ''
         if aDryRun:
