@@ -32,12 +32,14 @@ def PublishFile( aSource, aDest, aDryRun=False ):   # NOQA
     print( 'Publishing %s to %s' % (aSource, aDest) )
     if CORE_LCU in aDest:
         dest = aDest.split( 'artifacts/' )[-1]
+        dest += '/'
+        dest += aSource.split( '/' )[-1]
         print( 'Upload %s to AWS s3://linn.artifacts.private/%s' % (aSource, dest) )
         if not aDryRun:
             s3 = boto3.resource( 's3' )
             bucket = s3.Bucket( 'linn.artifacts.private' )
             with open( aSource, 'rb' ) as data:
-                bucket.upload_fileobj( data, dest )
+                bucket.upload_fileobj( data, '%s/%s' % (dest, aSource.split( '/'))
     else:
         flags = ''
         if aDryRun:
