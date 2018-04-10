@@ -12,7 +12,7 @@ from userlocks import userlock
 from default_platform import default_platform as _default_platform
 from functools import wraps
 import version
-import filechecker
+# import filechecker
 import tarfile
 import urllib2
 import glob
@@ -714,15 +714,16 @@ class OpenHomeBuilder(object):
         self._builder.specify_optional_steps(self.steps_to_run)
 
     def check_source(self):
-        '''
-        Check files in the source tree according to source_check_rules.
-        See filechecker.py for possible rules to apply.
-        '''
-        if self.source_check_rules == []:
-            print 'No rules defined.'
-            return
-        if not filechecker.apply_rules(self.source_check_rules):
-            self.fail('Source tree failed automated checks. Use --steps="default,-check_source" to suppress these checks temporarily.')
+        pass
+        # '''
+        # Check files in the source tree according to source_check_rules.
+        # See filechecker.py for possible rules to apply.
+        # '''
+        # if self.source_check_rules == []:
+        #     print 'No rules defined.'
+        #     return
+        # if not filechecker.apply_rules(self.source_check_rules):
+        #     self.fail('Source tree failed automated checks. Use --steps="default,-check_source" to suppress these checks temporarily.')
 
     def fetch(self):
         '''
