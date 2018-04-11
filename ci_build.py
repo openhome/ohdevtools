@@ -16,30 +16,8 @@ import version
 import tarfile
 import urllib2
 import glob
+import aws
 
-try:
-    import boto3
-except:
-    print( '\nAWS publish requires boto3 module' )
-    print( "Please install this using 'pip install boto3'\n" )
-else:
-    # create AWS credentials file (if not already present)
-    home = None
-    if 'HOMEPATH' in os.environ and 'HOMEDRIVE' in os.environ:
-        home = os.path.join(os.environ['HOMEDRIVE'], os.environ['HOMEPATH'])
-    elif 'HOME' in os.environ:
-        home = os.environ['HOME']
-    if home:
-        awsCreds = os.path.join(home, '.aws', 'credentials')
-        if not os.path.exists(awsCreds):
-            try:
-                os.mkdir(os.path.join(home, '.aws'))
-            except:
-                pass
-            credsFile = urllib2.urlopen('http://core.linn.co.uk/~artifacts/artifacts/aws-credentials' )
-            creds = credsFile.read()
-            with open(awsCreds, 'wt') as f:
-                f.write(creds)
 
 AWS_BUCKET = 'linn.artifacts.private'
 DEFAULT_STEPS = "default"
@@ -994,12 +972,9 @@ class OpenHomeBuilder(object):
         print '\n\n', sourcepath, destinationpath
         if 'core.linn.co.uk' in destinationpath:
             # reroute to AWS
-            awspath = destinationpath.split('artifacts/')[2]
-            print( 'Upload %s to AWS s3://%s/%s' % (sourcepath, AWS_BUCKET, awspath))
-            s3 = boto3.resource('s3')
-            bucket = s3.Bucket(AWS_BUCKET)
-            with open(sourcepath, 'rb') as data:
-                bucket.upload_fileobj(data, awspath)
+            awspath = 's3://%s/%s' % (AWS_BUCKET, destinationpath.split('artifacts/')[2])
+            print( 'Upload %s to AWS %s' % (sourcepath, awspath))
+            aws.copy(sourcepath, awspath)
         else:
             scp(sourcepath, destinationpath)
 
