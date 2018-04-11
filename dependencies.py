@@ -13,30 +13,7 @@ import tempfile
 from glob import glob
 from default_platform import default_platform
 import deps_cross_checker
-
-try:
-    import boto3
-except:
-    print( '\nAWS fetch requires boto3 module' )
-    print( "Please install this using 'pip install boto3'\n" )
-else:
-    # create AWS credentials file (if not already present)
-    home = None
-    if 'HOMEPATH' in os.environ and 'HOMEDRIVE' in os.environ:
-        home = os.path.join(os.environ['HOMEDRIVE'], os.environ['HOMEPATH'])
-    elif 'HOME' in os.environ:
-        home = os.environ['HOME']
-    if home:
-        awsCreds = os.path.join(home, '.aws', 'credentials')
-        if not os.path.exists(awsCreds):
-            try:
-                os.mkdir(os.path.join(home, '.aws'))
-            except:
-                pass
-            credsFile = urllib2.urlopen('http://core.linn.co.uk/~artifacts/artifacts/aws-credentials' )
-            creds = credsFile.read()
-            with open(awsCreds, 'wt') as f:
-                f.write(creds)
+import aws
 
 # Master table of dependency types.
 
@@ -176,7 +153,8 @@ DEPENDENCY_TYPES = {
         'configure-args': []
     },
 }
-AWS_BUCKET = 'linn.artifacts.private'
+AWS_BUCKET = {'private': 'linn.artifacts.private',
+              'public':  'linn.artifacts.public'}
 
 
 class FileFetcher(object):
@@ -187,26 +165,25 @@ class FileFetcher(object):
     def fetch(self, path):
         if path.startswith("file:") or path.startswith("smb:"):
             return self.fetch_file_url(path)
-        if re.match("[^\W\d]{2,8}:", path):
-            if DEPENDENCY_TYPES['internal']['binary-repo'] in path:   # fetch from AWS
-                rc = self.fetch_aws(path)
-                if rc:
-                    return rc
-            return self.fetch_url(path)     # fetch from core (fall thru if AWS fails)
+        elif path.startswith("s3:"):
+            return self.fetch_aws(path)
+        elif re.match("[^\W\d]{2,8}:", path):
+            if DEPENDENCY_TYPES['internal']['binary-repo'] in path:
+                awspath = 's3://' + AWS_BUCKET['private'] + '/' + path.replace(DEPENDENCY_TYPES['internal']['binary-repo'] + '/', '')
+            elif DEPENDENCY_TYPES['openhome']['binary-repo'] in path:
+                awspath = 's3://' + AWS_BUCKET['public'] + '/artifacts/' + path.replace(DEPENDENCY_TYPES['openhome']['binary-repo'] + '/', '')
+            rc = self.fetch_aws(awspath)
+            if rc:
+                return rc
+            return self.fetch_url(path)
         return self.fetch_local(path)
 
     @staticmethod
-    def fetch_aws(path):
-        awspath = path.replace(DEPENDENCY_TYPES['internal']['binary-repo'] + '/', '')
-        awspath = os.path.normpath(awspath).replace('\\', '/')
-        print( '  from AWS s3://%s/%s' % (AWS_BUCKET, awspath))
+    def fetch_aws(awspath):
+        print('  from AWS %s' % awspath)
+        temppath = tempfile.mktemp( suffix='.tmp' )
         try:
-            s3 = boto3.resource('s3')
-            bucket = s3.Bucket(AWS_BUCKET)
-            obj = bucket.Object(awspath)
-            temppath = tempfile.mktemp( suffix='.tmp' )
-            with open(temppath, 'wb') as data:
-                obj.download_fileobj(data)
+            aws.copy(awspath, temppath)
             return temppath
         except:
             return None

@@ -1,4 +1,4 @@
-import boto3
+import aws
 import json
 import os
 import sys
@@ -31,15 +31,13 @@ def PublishFile( aSource, aDest, aDryRun=False ):   # NOQA
         REQUIRES senders SSH key to be stored on destination (or requests password) """
     print( 'Publishing %s to %s' % (aSource, aDest) )
     if CORE_LCU in aDest:
-        dest = aDest.split( 'artifacts/' )[-1]
+        dest = 's3://' + AWS_BUCKET + '/'
+        dest += aDest.split( 'artifacts/' )[-1]
         dest += '/'
         dest += aSource.split( '/' )[-1]
-        print( 'Upload %s to AWS s3://linn.artifacts.private/%s' % (aSource, dest) )
+        print( 'Upload %s to AWS %s' % (aSource, dest) )
         if not aDryRun:
-            s3 = boto3.resource( 's3' )
-            bucket = s3.Bucket( 'linn.artifacts.private' )
-            with open( aSource, 'rb' ) as data:
-                bucket.upload_fileobj( data, dest )
+            aws.copy( aSource, dest )
     else:
         flags = ''
         if aDryRun:
@@ -173,7 +171,7 @@ def CreateComponent( aBuildOutputList, aJsonFileName ):
 
 testBuildOutput = [
     ('ver',  'version.py'),
-    ('cmd',  'commands/build_node.py'),
+    ('cmd',  'commands/hudson_build.py'),
     ('info', 'README')
 ]
 testDest = 'core.linn.co.uk/home/artifacts/public_html/testUpload/josh/hahn'
