@@ -1,4 +1,5 @@
 """ Interface to AWS S3 storage"""
+import json
 import os
 import urllib2
 try:
@@ -28,13 +29,32 @@ else:
 
 def copy(aSrc, aDst):
     """Copy objects to/from AWS. AWS uri in form s3://<bucket>/<key>"""
-    s3 = boto3.resource('s3')
+    resource = boto3.resource('s3')
     if 's3://' in aSrc:
-        bucket = s3.Bucket(aSrc.split('/')[2])
+        bucket = resource.Bucket(aSrc.split('/')[2])
         obj = bucket.Object('/'.join(aSrc.split('/')[3:]))
         with open(aDst, 'wb') as data:
             obj.download_fileobj(data)
     elif 's3://' in aDst:
-        bucket = s3.Bucket(aDst.split('/')[2])
+        bucket = resource.Bucket(aDst.split('/')[2])
         with open( aSrc, 'rb' ) as data:
             bucket.upload_fileobj(data, '/'.join(aDst.split('/')[3:]))
+
+
+def ls(aUri):
+    """Return directory listing of contents of specified URI"""
+    entries = []
+    fields = aUri.split('/')
+    bucket = fields[2]
+    prefix = '/'.join(fields[3:])
+    if prefix[-1] != '/':
+        prefix += '/'
+    client = boto3.client('s3')
+    objects = client.list_objects_v2(Bucket=bucket, Delimiter='/', Prefix=prefix)
+    if 'CommonPrefixes' in objects:
+        for item in objects['CommonPrefixes']:
+            entries.append(item['Prefix'])
+    if 'Contents' in objects:
+        for item in objects['Contents']:
+            entries.append(item['Key'])
+    return entries
