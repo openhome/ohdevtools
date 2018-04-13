@@ -1,7 +1,7 @@
 """ Interface to AWS S3 storage"""
-import json
 import os
-import urllib2
+import sys
+
 try:
     import boto3
 except:
@@ -17,11 +17,15 @@ else:
     if home:
         awsCreds = os.path.join(home, '.aws', 'credentials')
         if not os.path.exists(awsCreds):
+            if sys.version_info[0] == 2:
+                from urllib2 import urlopen
+            else:
+                from urllib.request import urlopen
             try:
                 os.mkdir(os.path.join(home, '.aws'))
             except:
                 pass
-            credsFile = urllib2.urlopen('http://core.linn.co.uk/~artifacts/artifacts/aws-credentials' )
+            credsFile = urlopen('http://core.linn.co.uk/~artifacts/artifacts/aws-credentials' )
             creds = credsFile.read()
             with open(awsCreds, 'wt') as f:
                 f.write(creds)
