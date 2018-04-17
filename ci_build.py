@@ -19,7 +19,8 @@ import glob
 import aws
 
 
-AWS_BUCKET = 'linn.artifacts.private'
+AWS_BUCKET_PRIVATE = 'linn.artifacts.private'
+AWS_BUCKET_PUBLIC = 'linn.artifacts.public'
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
 ILLEGAL_STEP_NAMES = [DEFAULT_STEPS, ALL_STEPS]
@@ -971,11 +972,17 @@ class OpenHomeBuilder(object):
         destinationpath = self._expand_template(package_upload, uploadpath=uploadpath)
         print '\n\n', sourcepath, destinationpath
         if 'core.linn.co.uk' in destinationpath:
-            # reroute to AWS
-            awspath = 's3://%s/%s' % (AWS_BUCKET, destinationpath.split('artifacts/')[2])
+            # reroute to AWS (private)
+            awspath = 's3://%s/%s' % (AWS_BUCKET_PRIVATE, destinationpath.split('artifacts/')[2])
+            print( 'Upload %s to AWS %s' % (sourcepath, awspath))
+            aws.copy(sourcepath, awspath)
+        elif 'openhome.org' in destinationpath:
+            # reroute to AWS (public)
+            awspath = 's3://%s/artifacts/%s' % (AWS_BUCKET_PUBLIC, destinationpath.split('artifacts/')[1])
             print( 'Upload %s to AWS %s' % (sourcepath, awspath))
             aws.copy(sourcepath, awspath)
         else:
+            print( sourcepath, destinationpath )
             scp(sourcepath, destinationpath)
 
     # This just sets up forwarding methods for a bunch of methods on the Builder, to
