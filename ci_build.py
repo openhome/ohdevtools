@@ -488,14 +488,27 @@ def other_program_exists(program):
 program_exists = windows_program_exists if platform.platform().startswith("Windows") else other_program_exists
 
 def scp(*args):
-    program = None
-    for p in ["scp", "pscp"]:
-        if program_exists(p):
-            program = p
-            break
-    if program is None:
-        raise "Cannot find scp (or pscp) in the path."
-    subprocess.check_call([program] + list(args))
+    sourcepath = args[0]
+    destinationpath = args[1]
+    if 'core.linn.co.uk' in destinationpath:
+        # reroute to AWS (private)
+        awspath = 's3://%s/%s' % (AWS_BUCKET_PRIVATE, destinationpath.split('artifacts/')[2])
+        print( 'Upload %s to AWS %s' % (sourcepath, awspath))
+        aws.copy(sourcepath, awspath)
+    elif 'openhome.org' in destinationpath:
+        # reroute to AWS (public)
+        awspath = 's3://%s/artifacts/%s' % (AWS_BUCKET_PUBLIC, destinationpath.split('artifacts/')[1])
+        print( 'Upload %s to AWS %s' % (sourcepath, awspath))
+        aws.copy(sourcepath, awspath)
+    else:
+        program = None
+        for p in ["scp", "pscp"]:
+            if program_exists(p):
+                program = p
+                break
+        if program is None:
+            raise "Cannot find scp (or pscp) in the path."
+        subprocess.check_call([program] + list(args))
 
 
 def _forward_to_builder(name):
