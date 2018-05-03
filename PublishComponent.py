@@ -7,7 +7,7 @@ import subprocess
 import tempfile
 
 CORE_LCU = 'core.linn.co.uk'
-AWS_BUCKET = 'linn.artifacts.private'
+AWS_BUCKET = 'linn-artifacts-private'
 
 # ------------------------------------------------------------------------------
 # Constants

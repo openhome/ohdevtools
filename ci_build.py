@@ -19,8 +19,8 @@ import glob
 import aws
 
 
-AWS_BUCKET_PRIVATE = 'linn.artifacts.private'
-AWS_BUCKET_PUBLIC = 'linn.artifacts.public'
+AWS_BUCKET_PRIVATE = 'linn-artifacts-private'
+AWS_BUCKET_PUBLIC = 'linn-artifacts-public'
 DEFAULT_STEPS = "default"
 ALL_STEPS = "all"
 ILLEGAL_STEP_NAMES = [DEFAULT_STEPS, ALL_STEPS]
