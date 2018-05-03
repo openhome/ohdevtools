@@ -153,8 +153,8 @@ DEPENDENCY_TYPES = {
         'configure-args': []
     },
 }
-AWS_BUCKET = {'private': 'linn.artifacts.private',
-              'public':  'linn.artifacts.public'}
+AWS_BUCKET = {'private': 'linn-artifacts-private',
+              'public':  'linn-artifacts-public'}
 
 
 class FileFetcher(object):
