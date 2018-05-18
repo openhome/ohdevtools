@@ -560,30 +560,31 @@ class DependencyCollection(object):
         dependencies = self._filter(subset)
         failed_dependencies = []
         filename = self.fetched_deps_filename(dependencies)
-        prefetch_deps = self.load_fetched_deps(filename)
-        postfetch_deps = {}
+        fetched_deps = self.load_fetched_deps(filename)
         for d in dependencies:
             do_fetch = True
             name = ''
             path = ''
+            dest = ''
             if 'name' in d.expander:
                 name = d.expander.expand('name')
             if 'archive-path' in d.expander:
                 path = d.expander.expand('archive-path')
+            if 'dest' in d.expander:
+                dest = d.expander.expand('dest')
+            lookup = dest.rstrip( '/' ) + '/' + name
             version = os.path.basename(path)
-            if name in prefetch_deps.keys():
-                if prefetch_deps[name] == version:
+            if lookup in fetched_deps:
+                if fetched_deps[lookup] == version:
                     print("Skipping fetch of %s as unchanged (%s)" % (name, version))
-                    postfetch_deps[name] = version
                     do_fetch = False
             if do_fetch:
                 if not d.fetch():
                     failed_dependencies.append(d.name)
                 else:
-                    if name and path:
-                        postfetch_deps[name] = version
+                    fetched_deps[lookup] = version
         if filename:
-            self.save_fetched_deps(filename, postfetch_deps)
+            self.save_fetched_deps(filename, fetched_deps)
         if failed_dependencies:
             print("Failed to fetch some dependencies: " + ' '.join(failed_dependencies))
             return False
