@@ -134,28 +134,12 @@ def PublishComponent( aBuildOutputList, aSubDependenciesList, aDest, aDryRun=Fal
     # if not RemoteDirExists( publishInfo['dest'] ): # remove for now as it takes a long time, use mkdir with -p option instead
     CreateRemoteDir( publishInfo['dest'], aDryRun )
 
-    jsonManifest = { kJsonManifestBaseTag: [] }
-    if aSubDependenciesList != None and len(aSubDependenciesList) > 0:
-        jsonManifest[kJsonManifestSubdepsTag] = []
-        for subdep in aSubDependenciesList:
-            subdepDict = {}
-            subdepDict[kJsonManifestNameTag] = subdep[0]
-            subdepDict[kJsonManifestTokenTag] = subdep[1]
-            jsonManifest[kJsonManifestSubdepsTag].append( subdepDict )
-    for buildOutput in aBuildOutputList:
-        localFile = buildOutput[1]
-        buildOutDict = {}
-        buildOutDict[kJsonManifestNameTag] = buildOutput[0]
-        buildOutDict[kJsonManifestMd5Tag] = Md5Hash( localFile )
-        buildOutDict[kJsonManifestSizeTag] = GetFileSize( localFile )
-        buildOutDict[kJsonManifestUrlTag] = "../" + GetFileBasename( localFile )
-        # buildOutDict[kJsonManifestUrlTag] = "http://" + publishInfo['host'] + publishInfo['path'] + GetFileBasename( localFile )
-        jsonManifest[kJsonManifestBaseTag].append( buildOutDict )
-        PublishFile( localFile, publishInfo['dest'], aDryRun )
+    CreateComponent( aBuildOutputList, aSubDependenciesList, kJsonManifestFileName )
 
-    jsonManifest[kJsonManifestBaseTag] = sorted( jsonManifest[kJsonManifestBaseTag], key=lambda k: k['name'] )  # ensures json is always sorted by name
-    CreateJsonFile( jsonManifest, kJsonManifestFileName )
+    for buildOutput in aBuildOutputList:
+        PublishFile( buildOutput[1], publishInfo['dest'], aDryRun )
     PublishFile( kJsonManifestFileName, publishInfo['dest'], aDryRun )
+
     Cleanup()
 
 def CreateComponent( aBuildOutputList, aSubDependenciesList, aJsonFileName ):
@@ -175,7 +159,8 @@ def CreateComponent( aBuildOutputList, aSubDependenciesList, aJsonFileName ):
         buildOutDict[kJsonManifestNameTag] = buildOutput[0]
         buildOutDict[kJsonManifestMd5Tag] = Md5Hash( localFile )
         buildOutDict[kJsonManifestSizeTag] = GetFileSize( localFile )
-        buildOutDict[kJsonManifestUrlTag] = "../" + localFile
+        buildOutDict[kJsonManifestUrlTag] = "../" + GetFileBasename( localFile )
+        # buildOutDict[kJsonManifestUrlTag] = "http://" + publishInfo['host'] + publishInfo['path'] + GetFileBasename( localFile )
         jsonManifest[kJsonManifestBaseTag].append( buildOutDict )
 
     jsonManifest[kJsonManifestBaseTag] = sorted( jsonManifest[kJsonManifestBaseTag], key=lambda k: k['name'] )  # ensures json is always sorted by name
@@ -194,7 +179,7 @@ testBuildOutput = [
 testSubDependencies = [
     ('exakt', 3)
 ]
-testDest = 'core.linn.co.uk/home/artifacts/public_html/testUpload/josh/hahn'
+testDest = 'core.linn.co.uk/home/artifacts/public_html/testUpload/joshie/hahn'
 
 #PublishComponent( testBuildOutput, testSubDependencies, testDest, False )
 #CreateComponent( testBuildOutput, testSubDependencies, "component.json" )
