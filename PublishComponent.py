@@ -127,7 +127,7 @@ def PublishInfo( aDestUrl ):
 def PublishComponent( aBuildOutputList, aSubDependenciesList, aDest, aDryRun=False ):     # NOQA
     """ Publish aBuildOutputList and aSubDependenciesList to aDest
         aBuildOutput: a list of tuples pairing a logical name with a localfile
-        aSubDependenciesList: list of tuples pairing a name and token that will become the "subdeps" list
+        aSubDependenciesList: list of tuples pairing a name and token that will become the "subdeps" list (can be None)
         Publish corresponding json manifest as well """
 
     publishInfo = PublishInfo( aDest )
