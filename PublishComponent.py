@@ -18,6 +18,8 @@ kJsonManifestNameTag    = "name"
 kJsonManifestMd5Tag     = "md5"
 kJsonManifestSizeTag    = "bytes"
 kJsonManifestUrlTag     = "url"
+kJsonManifestSubdepsTag = "subdeps"
+kJsonManifestTokenTag   = "token"
 kTempDir                = tempfile.mkdtemp()
 kJsonManifestFileName   = os.path.join( kTempDir, "component.json" )
 kSupportedHostsAndUsers = { "core.linn.co.uk": "artifacts" }
@@ -122,8 +124,10 @@ def PublishInfo( aDestUrl ):
 # The Good Stuff
 # ------------------------------------------------------------------------------
 
-def PublishComponent( aBuildOutputList, aDest, aDryRun=False ):     # NOQA
-    """ Publish aBuildOutputList to aDest (aBuildOutput is a list of tuples pairing a logical name with a localfile)
+def PublishComponent( aBuildOutputList, aSubDependenciesList, aDest, aDryRun=False ):     # NOQA
+    """ Publish aBuildOutputList and aSubDependenciesList to aDest
+        aBuildOutput: a list of tuples pairing a logical name with a localfile
+        aSubDependenciesList: list of tuples pairing a name and token that will become the "subdeps" list
         Publish corresponding json manifest as well """
 
     publishInfo = PublishInfo( aDest )
@@ -131,6 +135,13 @@ def PublishComponent( aBuildOutputList, aDest, aDryRun=False ):     # NOQA
     CreateRemoteDir( publishInfo['dest'], aDryRun )
 
     jsonManifest = { kJsonManifestBaseTag: [] }
+    if aSubDependenciesList != None and len(aSubDependenciesList) > 0:
+        jsonManifest[kJsonManifestSubdepsTag] = []
+        for subdep in aSubDependenciesList:
+            subdepDict = {}
+            subdepDict[kJsonManifestNameTag] = subdep[0]
+            subdepDict[kJsonManifestTokenTag] = subdep[1]
+            jsonManifest[kJsonManifestSubdepsTag].append( subdepDict )
     for buildOutput in aBuildOutputList:
         localFile = buildOutput[1]
         buildOutDict = {}
@@ -147,11 +158,17 @@ def PublishComponent( aBuildOutputList, aDest, aDryRun=False ):     # NOQA
     PublishFile( kJsonManifestFileName, publishInfo['dest'], aDryRun )
     Cleanup()
 
-
-def CreateComponent( aBuildOutputList, aJsonFileName ):
+def CreateComponent( aBuildOutputList, aSubDependenciesList, aJsonFileName ):
     """ Create a json manifest file for the given list of files """
 
     jsonManifest = { kJsonManifestBaseTag: [] }
+    if aSubDependenciesList != None and len(aSubDependenciesList) > 0:
+        jsonManifest[kJsonManifestSubdepsTag] = []
+        for subdep in aSubDependenciesList:
+            subdepDict = {}
+            subdepDict[kJsonManifestNameTag] = subdep[0]
+            subdepDict[kJsonManifestTokenTag] = subdep[1]
+            jsonManifest[kJsonManifestSubdepsTag].append( subdepDict )
     for buildOutput in aBuildOutputList:
         localFile = buildOutput[1]
         buildOutDict = {}
@@ -174,7 +191,10 @@ testBuildOutput = [
     ('cmd',  'commands/hudson_build.py'),
     ('info', 'README')
 ]
+testSubDependencies = [
+    ('exakt', 3)
+]
 testDest = 'core.linn.co.uk/home/artifacts/public_html/testUpload/josh/hahn'
 
-# PublishComponent( testBuildOutput, testDest, False )
-# CreateComponent( testBuildOutput, "component.json" )
+#PublishComponent( testBuildOutput, testSubDependencies, testDest, False )
+#CreateComponent( testBuildOutput, testSubDependencies, "component.json" )
