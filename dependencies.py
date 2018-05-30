@@ -14,6 +14,7 @@ from glob import glob
 from default_platform import default_platform
 import deps_cross_checker
 import aws
+import platform
 
 # Master table of dependency types.
 
@@ -669,8 +670,12 @@ def clean_dirs(dir):
             for fileName in fileList:
                 filePath = os.path.join(dirName, fileName)
                 try:
-                    f = open(filePath, 'a')
-                    f.close()
+                    if not os.path.islink( filePath ):
+                        openAtt = 'r'
+                        if platform.system().lower() == 'windows':
+                            openAtt = 'a'
+                        f = open(filePath, openAtt)
+                        f.close()
                 except:
                     locked.append(filePath)
         if locked:
