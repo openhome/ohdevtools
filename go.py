@@ -1,4 +1,9 @@
-import sys, os, subprocess, version
+import os
+import subprocess
+import sys
+import traceback
+import version
+
 
 HELP_SYNONYMS = ["--help", "-h", "/h", "/help", "/?", "-?", "h", "help", "commands"]
 
@@ -8,7 +13,7 @@ def get_command_details(modulename):
         commands_module = __import__('commands.'+command)
         command_module = getattr(commands_module, command)
     except:
-        #print sys.exc_info()
+        traceback.print_exc()
         return Command(command, command, "", "[There was an error processing this command]", "", False)
     description = getattr(command_module, 'description', '[No description available]')
     group = getattr(command_module, 'command_group', '')
@@ -126,4 +131,3 @@ def main():
 
 if __name__=="__main__":
     main()
-
