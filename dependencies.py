@@ -156,6 +156,8 @@ DEPENDENCY_TYPES = {
 }
 AWS_BUCKET = {'private': 'linn-artifacts-private',
               'public':  'linn-artifacts-public'}
+AWS_URL    = {'private': 's3-eu-west-1.amazonaws.com/linn-artifacts-private',
+              'public':  's3-eu-west-1.amazonaws.com/linn-artifacts-public'}
 
 
 class FileFetcher(object):
@@ -169,14 +171,17 @@ class FileFetcher(object):
         elif path.startswith("s3:"):
             return self.fetch_aws(path)
         elif re.match("[^\W\d]{2,8}:", path):
+            urlpath = path
             if DEPENDENCY_TYPES['internal']['binary-repo'] in path:
                 awspath = 's3://' + AWS_BUCKET['private'] + '/' + path.replace(DEPENDENCY_TYPES['internal']['binary-repo'] + '/', '')
+                urlpath = 'https://' + AWS_URL['private'] + '/' + path.replace(DEPENDENCY_TYPES['internal']['binary-repo'] + '/', '')
             elif DEPENDENCY_TYPES['openhome']['binary-repo'] in path:
                 awspath = 's3://' + AWS_BUCKET['public'] + '/artifacts/' + path.replace(DEPENDENCY_TYPES['openhome']['binary-repo'] + '/', '')
+                urlpath = 'https://' + AWS_URL['public'] + '/artifacts/' + path.replace(DEPENDENCY_TYPES['openhome']['binary-repo'] + '/', '')
             rc = self.fetch_aws(awspath)
             if rc:
                 return rc
-            return self.fetch_url(path)
+            return self.fetch_url(urlpath)
         return self.fetch_local(path)
 
     @staticmethod
