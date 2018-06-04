@@ -104,13 +104,13 @@ def Cleanup( ):
 # The Good Stuff
 # ------------------------------------------------------------------------------
     
-def PublishComponent( aBuildOutputList, aSubDependenciesList, aDest, aDryRun=False ):     # NOQA
+def PublishComponent( aBuildOutputList, aDest, aSubDependenciesList=None, aDryRun=False ):     # NOQA
     """ Publish aBuildOutputList and aSubDependenciesList to aDest
         aBuildOutput: a list of tuples pairing a logical name with a localfile
         aSubDependenciesList: list of tuples pairing a name and token that will become the "subdeps" list (can be None)
         Publish corresponding json manifest as well """
 
-    CreateComponent( aBuildOutputList, aSubDependenciesList, kJsonManifestFileName )
+    CreateComponent( aBuildOutputList, kJsonManifestFileName, aSubDependenciesList )
 
     if any(x in aDest for x in [kLinnHostPublic, kLinnHostPrivate, kAwsHostPublic, kAwsHostPrivate]):
         # use AWS
@@ -125,7 +125,7 @@ def PublishComponent( aBuildOutputList, aSubDependenciesList, aDest, aDryRun=Fal
 
     Cleanup()
 
-def CreateComponent( aBuildOutputList, aSubDependenciesList, aJsonFileName, aDryRun=False ):
+def CreateComponent( aBuildOutputList, aJsonFileName, aSubDependenciesList=None, aDryRun=False ):
     """ Create a json manifest file for the given list of files """
 
     jsonManifest = { kJsonManifestBaseTag: [] }
@@ -152,6 +152,15 @@ def CreateComponent( aBuildOutputList, aSubDependenciesList, aJsonFileName, aDry
         print json.dumps(jsonManifest, indent=4, sort_keys=True)
         print "---------------"
 
+def PublishFiles( aFileList, aDest, aDryRun=False ):
+    if any(x in aDest for x in [kLinnHostPublic, kLinnHostPrivate, kAwsHostPublic, kAwsHostPrivate]):
+        # use AWS
+        for f in aFileList:
+            PublishFileToAws( f, aDest, aDryRun )
+    else:
+        for f in aFileList:
+            PublishFile( f, aDest, aDryRun )
+
 # ------------------------------------------------------------------------------
 # A Quick Test
 # ------------------------------------------------------------------------------
@@ -166,5 +175,5 @@ testSubDependencies = [
 ]
 testDest = 'core.linn.co.uk/home/artifacts/public_html/testUpload/joshie/hahn'
 
-#PublishComponent( testBuildOutput, testSubDependencies, testDest, False )
-#CreateComponent( testBuildOutput, testSubDependencies, "component.json" )
+#PublishComponent( testBuildOutput, testDest, testSubDependencies, False )
+#CreateComponent( testBuildOutput, "component.json", testSubDependencies )
