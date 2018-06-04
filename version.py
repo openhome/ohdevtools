@@ -4,7 +4,7 @@ import sys
 
 # The version number of the API. Incremented whenever there
 # are new features or bug fixes.
-VERSION = 107
+VERSION = 108
 
 # The earliest API version that we're still compatible with.
 # Changed only when a change breaks an existing API.

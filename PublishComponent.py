@@ -28,7 +28,7 @@ kAwsHostPrivate         = "s3://linn-artifacts-private"
 # Support utilities
 # ------------------------------------------------------------------------------
 
-def PublishFile( aSource, aDest, aDryRun=False ):   # NOQA
+def PublishFileToSsh( aSource, aDest, aDryRun=False ):   # NOQA
     """ Copies aSource file to aDest directory (where aDest is an SSH address).
         REQUIRES senders SSH key to be stored on destination (or requests password) """
     print( 'Publishing %s to %s' % (aSource, aDest) )
@@ -120,8 +120,8 @@ def PublishComponent( aBuildOutputList, aDest, aSubDependenciesList=None, aDryRu
     else:
         CreateRemoteDir( aDest, aDryRun )    
         for buildOutput in aBuildOutputList:
-            PublishFile( buildOutput[1], aDest, aDryRun )
-        PublishFile( kJsonManifestFileName, aDest, aDryRun )
+            PublishFileToSsh( buildOutput[1], aDest, aDryRun )
+        PublishFileToSsh( kJsonManifestFileName, aDest, aDryRun )
 
     Cleanup()
 
@@ -152,14 +152,18 @@ def CreateComponent( aBuildOutputList, aJsonFileName, aSubDependenciesList=None,
         print json.dumps(jsonManifest, indent=4, sort_keys=True)
         print "---------------"
 
+def PublishFile( aFile, aDest, aDryRun=False ):
+    PublishFiles( [aFile], aDest, aDryRun )
+
 def PublishFiles( aFileList, aDest, aDryRun=False ):
     if any(x in aDest for x in [kLinnHostPublic, kLinnHostPrivate, kAwsHostPublic, kAwsHostPrivate]):
         # use AWS
         for f in aFileList:
             PublishFileToAws( f, aDest, aDryRun )
     else:
+        CreateRemoteDir( aDest, aDryRun )
         for f in aFileList:
-            PublishFile( f, aDest, aDryRun )
+            PublishFileToSsh( f, aDest, aDryRun )
 
 # ------------------------------------------------------------------------------
 # A Quick Test
