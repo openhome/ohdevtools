@@ -19,8 +19,8 @@ kJsonManifestSubdepsTag = "subdeps"
 kJsonManifestTokenTag   = "token"
 kTempDir                = tempfile.mkdtemp()
 kJsonManifestFileName   = os.path.join( kTempDir, "component.json" )
-kLinnHostPublic         = "https://cloud.linn.co.uk"
-kLinnHostPrivate        = "https://beta-cloud.linn.co.uk"
+kLinnHostPublic         = "https://cloud.linn.co.uk" # "https://beta-cloud.linn.co.uk"
+kLinnHostPrivate        = "https://artifacts.linn.co.uk"
 kAwsHostPublic          = "s3://linn-artifacts-public"
 kAwsHostPrivate         = "s3://linn-artifacts-private"
 
