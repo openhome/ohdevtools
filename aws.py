@@ -45,7 +45,11 @@ def copy(aSrc, aDst):
     elif 's3://' in aDst:
         bucket = resource.Bucket(aDst.split('/')[2])
         with open( aSrc, 'rb' ) as data:
-            bucket.upload_fileobj(data, '/'.join(aDst.split('/')[3:]))
+            ext = aSrc.split(".")[-1]
+            if ext in  ["txt", "json", "xml"]:
+                bucket.upload_fileobj(data, '/'.join(aDst.split('/')[3:]), ExtraArgs={'ContentType': 'text/plain'})
+            else:
+                bucket.upload_fileobj(data, '/'.join(aDst.split('/')[3:]))
 
 
 def ls(aUri):
