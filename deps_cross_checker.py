@@ -27,7 +27,8 @@ class DepsCrossChecker:
         self.artifacts['projectdata'] = self.parse_json( os.path.join( kProjDataPath, kDepsFilename ))
 
         projects = self.artifacts.keys()
-        for project1 in projects:
+        while len(projects):
+            project1 = projects[0]
             for project2 in projects:
                 if project1 != project2:
                     self.check_versions( project1, project2 )
