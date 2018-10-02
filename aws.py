@@ -69,3 +69,10 @@ def ls(aUri):
         for item in objects['Contents']:
             entries.append(item['Key'])
     return entries
+
+def delete(aBucket, aKey):
+    if aKey != None and len(aKey) > 0:
+        s3 = boto3.resource('s3')
+        bucket = s3.Bucket(aBucket)
+        # this allows a single file to be deleted or an entire directory, so be careful!
+        bucket.objects.filter(Prefix=aKey).delete()
