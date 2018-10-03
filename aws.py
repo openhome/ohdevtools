@@ -111,3 +111,13 @@ def ls(aUri, aSort=None):
     elif 'desc' in aSort.lower():
         entries = sorted(entries, cmp=CompareVersions, reverse=True)
     return entries
+
+def exists(aUri):
+    bucket = aUri.split('/')[2]
+    key = '/'.join(aUri.split('/')[3:])
+    resource = boto3.resource('s3')
+    try:
+        resource.Object(bucket, key).load()
+        return True
+    except:
+        return False
