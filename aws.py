@@ -106,10 +106,11 @@ def ls(aUri, aSort=None):
     if 'Contents' in objects:
         for item in objects['Contents']:
             entries.append(item['Key'])
-    if 'asc' in aSort.lower():
-        entries = sorted(entries, cmp=CompareVersions)
-    elif 'desc' in aSort.lower():
-        entries = sorted(entries, cmp=CompareVersions, reverse=True)
+    if aSort != None:
+        if 'asc' in aSort.lower():
+            entries = sorted(entries, cmp=CompareVersions)
+        elif 'desc' in aSort.lower():
+            entries = sorted(entries, cmp=CompareVersions, reverse=True)
     return entries
 
 def exists(aUri):
