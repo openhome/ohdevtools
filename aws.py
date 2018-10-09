@@ -33,7 +33,6 @@ else:
             except:
                 pass
 
-
 def copy(aSrc, aDst):
     """Copy objects to/from AWS. AWS uri in form s3://<bucket>/<key>"""
     resource = boto3.resource('s3')
@@ -122,3 +121,11 @@ def exists(aUri):
         return True
     except:
         return False
+
+kAwsBucketPrivate = 'linn-artifacts-private'
+def download( aKey, aDestinationFile, aBucket=kAwsBucketPrivate ):
+    print( 'Download from AWS s3://%s/%s to %s' % ( aBucket, aKey.strip("/"), os.path.abspath( aDestinationFile ) ) )
+    s3 = boto3.resource( 's3' )
+    bucket = s3.Bucket( aBucket )
+    with open( aDestinationFile, 'wb' ) as data:
+        bucket.download_fileobj( aKey.strip("/"), data)
