@@ -38,9 +38,10 @@ def get_vsvars_environment(architecture="x86"):
     python = sys.executable
 
     for vcvars32 in [
-        'C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\Common7\\Tools\\vsvars32.bat',                      # VS12 Express
-        'C:\\Program Files\\Microsoft Visual Studio\\2017\\Professional\\Common7\\Tools\\vcvars32.bat',               # VS2017 Pro
-        'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\BuildTools\\VC\\Auxiliary\\Build\\vcvars32.bat']: # Build Tools for VS2017
+        'C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\Common7\\Tools\\vsvars32.bat',                     # VS12 Express
+        'C:\\Program Files\\Microsoft Visual Studio\\2017\\Professional\\Common7\\Tools\\vcvars32.bat',            # VS2017 Pro
+        'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\BuildTools\\VC\\Auxiliary\\Build\\vcvars32.bat', # Build Tools for VS2017
+        'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\Auxiliary\\Build\\vcvars32.bat']:   # VS2017 Community edition
         if os.path.isfile(vcvars32):
             process = subprocess.Popen('("%s" %s>nul)&&"%s" -c "import os; print repr(os.environ)"' % (vcvars32, architecture, python), stdout=subprocess.PIPE, shell=True)
             stdout, _ = process.communicate()
