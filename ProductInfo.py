@@ -9,10 +9,6 @@ import argparse
 import random
 import socket
 from collections import OrderedDict
-sys.path.append( os.path.abspath( 'ohdevtools' ))
-sys.path.append( os.path.abspath( '../ohdevtools' ))
-sys.path.append( os.path.abspath( '../../ohdevtools' ))
-sys.path.append( os.path.normpath( os.path.abspath( 'common_utils' )) )
 import Common
 
 kPcasLookupTable = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'product_info.json')
