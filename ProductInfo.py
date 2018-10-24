@@ -17,15 +17,9 @@ kPcasTableName      = 'pcasinfo'
 kLegalObj           = 'legal'
 kReleaseNotesUriObj = 'releasenotesuri'
 
-def GetJsonObjects(aJsonFile):
-    f = open(aJsonFile, 'rt')
-    data = f.read()
-    f.close()
-    return json.loads(data)  # performs validation as well
-
 def GetPcas( aProductName ):
     pcas = ""
-    jsonObjs = GetJsonObjects( kPcasLookupTable )
+    jsonObjs = Common.GetJsonObjects( kPcasLookupTable )
     pcasList = jsonObjs[kTargetTableName][aProductName]
     for entry in pcasList:
         pcas = entry
@@ -49,7 +43,7 @@ def GetTarget( aPcas ):
     name = ""
     pcasStr = str(aPcas)
     pcasNum = pcasStr.lower().replace("pcas", "").replace("fw", "")
-    jsonObjs = GetJsonObjects( kPcasLookupTable )
+    jsonObjs = Common.GetJsonObjects( kPcasLookupTable )
     pcasTable = jsonObjs[kTargetTableName]
     for target, pcasList in pcasTable.iteritems():
         for entry in pcasList:
@@ -59,11 +53,11 @@ def GetTarget( aPcas ):
     return name
 
 def GetLegal():
-    jsonObjs = GetJsonObjects( kPcasLookupTable )
+    jsonObjs = Common.GetJsonObjects( kPcasLookupTable )
     return jsonObjs[kLegalObj]
 
 def GetReleaseNotesUri():
-    jsonObjs = GetJsonObjects( kPcasLookupTable )
+    jsonObjs = Common.GetJsonObjects( kPcasLookupTable )
     return jsonObjs[kReleaseNotesUriObj]
 
 def GetPlatform( aPcas ):
@@ -83,7 +77,7 @@ def GetDescription( aPcas ):
 def GetPlatformAndDescription( aPcas ):
     pcasStr = str(aPcas)
     pcasNum = pcasStr.lower().replace("pcas", "").replace("fw", "")
-    jsonObjs = GetJsonObjects( kPcasLookupTable )
+    jsonObjs = Common.GetJsonObjects( kPcasLookupTable )
     if jsonObjs[kPcasTableName].has_key( pcasNum ):
         pcasInfo = jsonObjs[kPcasTableName]
         return pcasInfo[pcasNum]["platform"], pcasInfo[pcasNum]["description"]
@@ -101,7 +95,7 @@ def GetTargets( aPlatform, aType='pcas', aIncRenew=False ):
     # aType = 'target', 'pcas', 'fw'
     devList = []
     prefix = "Fw" if aType == 'fw' else ""
-    jsonObjs = GetJsonObjects( kPcasLookupTable )
+    jsonObjs = Common.GetJsonObjects( kPcasLookupTable )
     for pcas, pcasinfo in jsonObjs[kPcasTableName].iteritems():
         if pcasinfo["platform"] == aPlatform:
             if aType == 'target':

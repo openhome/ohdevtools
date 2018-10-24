@@ -69,6 +69,12 @@ def Info( aMsg ):
     """Display information message"""
     print( aMsg )
 
+def GetJsonObjects( aJsonFile ):
+    f = open(aJsonFile, 'rt')
+    data = f.read()
+    f.close()
+    return json.loads(data)  # performs validation as well
+
 def CompareVersions(aVersion1, aVersion2):
     # if aVersion1 > aVersion2 return true, otherwise return false
 
@@ -202,11 +208,6 @@ def PushNewTag( aRepo, aNewTag, aExistingTag, aDryRun ):
 
 
 def GetDependenciesJson( aRepo, aVersion ):
-    def GetJsonObjects( aJsonFile ):
-        f = open(aJsonFile, 'rt')
-        data = f.read()
-        f.close()
-        return json.loads(data)  # performs validation as well
     from git import Repo
     clonePath = tempfile.mkdtemp()
     Info( "Locally clone %s to %s" % ( aRepo, clonePath ) )
