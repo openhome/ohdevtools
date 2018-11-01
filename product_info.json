@@ -50,6 +50,7 @@
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Akurate_Renew_DS",
             "legacytarget": "AkurateDsMk1",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2007 variant",
             "variants": {
                 "826": "Akurate Renew DS"
@@ -62,6 +63,7 @@
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Akurate_Renew_DS",
             "legacytarget": "AkurateDsMk2",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2010 variant",
             "note": "850 and 851 were known internally as 'NoDig': Mk2 main board in Mk1 enclosure",
             "variants": {
@@ -77,6 +79,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Akurate_DS_(Exakt_Variant)",
             "legacytarget": "AkurateDsMk3",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2015 variant",
             "variants": {
                 "914": "2015 variant, Klean"
@@ -88,6 +91,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Akurate_DS_(Katalyst)",
             "legacytarget": "AkurateDsMk4",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2018 variant",
             "variants": {
                 "990": "2018 variant, Klean"
@@ -100,6 +104,7 @@
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Akurate_Renew_DSM",
             "legacytarget": "AkurateDsmMk1",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2011 variant",
             "variants": {
                 "826": "Akurate Renew DSM"
@@ -112,6 +117,7 @@
             "urlhdmi2": "http://docs.linn.co.uk/wiki/index.php/Akurate_DSM_(4K_compatible)",
             "legacytarget": "AkurateDsmMk2",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2014 variant",
             "volkano1": true
         },
@@ -120,6 +126,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Akurate_DSM_(Katalyst)",
             "legacytarget": "AkurateDsmMk3",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2018 variant",
             "volkano1": false
         },
@@ -128,6 +135,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Akurate_Exakt_DSM",
             "legacytarget": "AkurateExaktDsm",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2014 variant",
             "volkano1": true
         },
@@ -136,6 +144,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Akurate_Exakt_DSM",
             "legacytarget": "AkurateExaktDsmMk2",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2018 variant",
             "volkano1": false
         },
@@ -144,6 +153,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Akurate_Exakt_DSM",
             "legacytarget": "AkurateSystemHub",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2018 variant",
             "volkano1": false
         },
@@ -152,6 +162,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Kiko_DSM",
             "legacytarget": "KikoDsm",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2012 variant",
             "volkano1": true
         },
@@ -160,6 +171,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Kiko_DSM",
             "legacytarget": "KikoDsmMk2",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2018 variant",
             "volkano1": false
         },
@@ -169,6 +181,7 @@
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Klimax_Renew_DS",
             "legacytarget": "KlimaxDsMk1",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2007 variant",
             "variants": {
                 "826": "Klimax Renew DS"
@@ -181,6 +194,7 @@
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Klimax_Renew_DS",
             "legacytarget": "KlimaxDsMk2",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2011 variant",
             "variants": {
                 "826": "Klimax Renew DS",
@@ -194,6 +208,7 @@
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Klimax_Renew_DS",
             "legacytarget": "KlimaxDsMk3",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2015 variant",
             "variants": {
                 "826": "Klimax Renew DS"
@@ -205,6 +220,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Klimax_DS_(KATALYST)",
             "legacytarget": "KlimaxDsMk4",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2016 variant",
             "volkano1": false
         },
@@ -213,6 +229,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Klimax_DS_(KATALYST)",
             "legacytarget": "KlimaxDsMk5",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2018 variant",
             "volkano1": false
         },
@@ -222,6 +239,7 @@
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Klimax_Renew_DSM",
             "legacytarget": "KlimaxDsmMk1",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2011 variant",
             "variants": {
                 "826": "Klimax Renew DSM"
@@ -234,6 +252,7 @@
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Klimax_Renew_DSM",
             "legacytarget": "KlimaxDsmMk2",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2014 variant",
             "variants": {
                 "826": "Klimax Renew DSM"
@@ -245,6 +264,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Klimax_DSM_(KATALYST_Variant)",
             "legacytarget": "KlimaxDsmMk3",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2016 variant",
             "volkano1": false
         },
@@ -253,6 +273,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Klimax_DSM_(KATALYST_Variant)",
             "legacytarget": "KlimaxDsmMk4",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2018 variant",
             "volkano1": false
         },
@@ -261,6 +282,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Klimax_Exakt_DSM",
             "legacytarget": "KlimaxExaktDsm",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2013 variant",
             "volkano1": true
         },
@@ -269,6 +291,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Klimax_Exakt_DSM",
             "legacytarget": "KlimaxExaktDsmMk2",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2018 variant",
             "volkano1": false
         },
@@ -277,6 +300,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Klimax_Exakt_DSM",
             "legacytarget": "KlimaxSystemHub",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2018 variant",
             "volkano1": false
         },
@@ -285,6 +309,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Majik_DS",
             "legacytarget": "MajikDsMk1",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2008 variant",
             "volkano1": true
         },
@@ -293,6 +318,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Majik_DS_(Exakt_Variant)",
             "legacytarget": "MajikDsMk2",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2015 variant",
             "volkano1": true
         },
@@ -301,6 +327,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Majik_DS_(Exakt_Variant)",
             "legacytarget": "MajikDsMk3",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2018 variant",
             "volkano1": false
         },
@@ -309,6 +336,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Majik_DS-I",
             "legacytarget": "MajikDsi",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2009 variant",
             "volkano1": true
         },
@@ -317,6 +345,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Majik_DS-I",
             "legacytarget": "MajikDsmMk1",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2009 variant",
             "volkano1": true
         },
@@ -325,6 +354,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Majik_DSM",
             "legacytarget": "MajikDsmMk2",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2012 variant",
             "volkano1": true
         },
@@ -334,6 +364,7 @@
             "urlhdmi2": "http://docs.linn.co.uk/wiki/index.php/Majik_DSM_(HDMI_2_Variant)",
             "legacytarget": "MajikDsmMk3",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2015 variant",
             "volkano1": true
         },
@@ -343,6 +374,7 @@
             "urlhdmi2": "http://docs.linn.co.uk/wiki/index.php/Majik_DSM_(HDMI_2_Variant)",
             "legacytarget": "MajikDsmMk4",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2018 variant",
             "volkano1": false
         },
@@ -351,6 +383,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Sneaky_Music_DS",
             "legacytarget": "SneakyMusicDs",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2008 variant",
             "volkano1": true
         },
@@ -359,6 +392,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Sekrit_DS",
             "legacytarget": "SekritDs",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2017 variant",
             "volkano1": false
         },
@@ -367,6 +401,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Sekrit_DS",
             "legacytarget": "SekritDsMk2",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2018 variant",
             "volkano1": false
         },
@@ -375,6 +410,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Sekrit_DS-I",
             "legacytarget": "SekritDsi",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2009 variant",
             "volkano1": true
         },
@@ -383,6 +419,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Sekrit_DSM",
             "legacytarget": "SekritDsm",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2012 variant",
             "volkano1": true
         },
@@ -391,6 +428,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Sekrit_DSM",
             "legacytarget": "SekritDsmMk2",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2018 variant",
             "volkano1": false
         },
@@ -399,6 +437,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Selekt_DSM",
             "legacytarget": "SelektDsm",
             "platform": "core4",
+            "lateststable": "4.65.245",
             "description": "2018 variant",
             "volkano1": false
         },
@@ -407,6 +446,7 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Sneaky_DSM",
             "legacytarget": "SneakyDsm",
             "platform": "core1",
+            "lateststable": "4.64.238",
             "description": "2013 variant",
             "volkano1": true
         }
@@ -418,6 +458,96 @@
 		"privacyuri": "https://products.linn.co.uk/VersionInfo/PrivacyV1.json",
         "privacyurl": "https://www.linn.co.uk/privacy",
 		"privacyversion": 1
-	},
-	"releasenotesuri": "http://docs.linn.co.uk/wiki/index.php/ReleaseNotes"
+    },
+    "releasenotes":
+    {
+        "beta": "http://docs.linn.co.uk/wiki/index.php/Beta:DsDavaar#Release_Notes",
+        "dev": "http://docs.linn.co.uk/wiki/index.php/Beta:DsDavaar#Release_Notes",
+        "stable": "http://docs.linn.co.uk/wiki/index.php/ReleaseNotes"
+    },
+    "releaseinfoV1":
+    {
+        "downloadurlbase": "http://products.linn.co.uk/VersionInfo/Downloads",
+        "downloadbetadir": "Beta",
+        "downloaddevdir": "Development",
+        "downloadstabledir": "Releases",
+        "downloadnightlydir": "NightlyBuilds",
+        "minkonfigversion": "4.36.106",
+        "exaktlink": "3"
+    },
+    "stablereleases": {
+        "core1": {
+            "4.50.110": {"date": "19 Sep 2016 10:00:00", "minkonfigversion": "4.36.106", "exaktlink": "3"},
+            "4.51.115": {"date": "30 Sep 2016 10:00:00", "minkonfigversion": "4.36.106", "exaktlink": "3"},
+            "4.52.119": {"date": "11 Oct 2016 10:00:00", "minkonfigversion": "4.36.106", "exaktlink": "3"},
+            "4.53.128": {"date": "03 Nov 2016 10:00:00", "minkonfigversion": "4.36.106", "exaktlink": "3"},
+            "4.54.135": {"date": "29 Nov 2016 10:00:00", "minkonfigversion": "4.36.106", "exaktlink": "3"},
+            "4.55.172": {"date": "30 Mar 2017 10:47:16", "minkonfigversion": "4.36.106", "exaktlink": "3"},
+            "4.56.177": {"date": "06 Jun 2017 09:48:22", "minkonfigversion": "4.36.106", "exaktlink": "3"},
+            "4.57.178": {"date": "29 Jun 2017 09:29:51", "minkonfigversion": "4.36.106", "exaktlink": "3"},
+            "4.58.182": {"date": "15 Aug 2017 09:45:29", "minkonfigversion": "4.36.106", "exaktlink": "3"},
+            "4.59.185": {"date": "30 Aug 2017 13:56:35", "minkonfigversion": "4.36.106", "exaktlink": "3"},
+            "4.60.193": {"date": "14 Dec 2017 14:57:23", "minkonfigversion": "4.36.106", "exaktlink": "3"},
+            "4.61.196": {"date": "29 Jan 2018 10:37:09", "minkonfigversion": "4.36.106", "exaktlink": "3"},
+            "4.62.200": {"date": "07 Mar 2018 10:12:41", "minkonfigversion": "4.36.106", "exaktlink": "3"},
+            "4.63.223": {"date": "09 May 2018 15:43:18", "minkonfigversion": "4.36.106", "exaktlink": "3"},
+            "4.64.238": {"date": "25 Sep 2018 17:08:52", "minkonfigversion": "4.36.106", "exaktlink": "3"}
+        },
+        "core4": {
+            "4.64.238": {"date": "25 Sep 2018 17:08:52", "minkonfigversion": "4.36.106", "exaktlink": "3"},
+            "4.65.245": {"date": "27 Sep 2018 15:35:42", "minkonfigversion": "4.36.106", "exaktlink": "3"}
+        }
+    },
+    "latestreleases": {
+        "core1": {
+            "beta": {
+                "version": "4.66.252",
+                "date": "25 Oct 2018 16:46:31",
+                "minkonfigversion": "4.36.106",
+                "exaktlink": "3",
+                "suppress": []
+            },
+            "dev": {
+                "version": "4.66.252",
+                "date": "25 Oct 2018 16:46:31",
+                "minkonfigversion": "4.36.106",
+                "exaktlink": "3",
+                "suppress": []
+            },
+            "nightly": {
+                "version": "4.0.691",
+                "date": "31 Oct 2018 19:12:50",
+                "minkonfigversion": "4.36.106",
+                "exaktlink": "3"
+            },
+            "stable": {
+                "version": "4.64.238",
+                "date": "25 Sep 2018 17:08:52",
+                "minkonfigversion": "4.36.106",
+                "exaktlink": "3",
+                "suppress": []
+            }
+        },
+        "core4": {
+            "beta": {
+                "version": "4.66.252",
+                "date": "25 Oct 2018 16:46:31",
+                "suppress": []
+            },
+            "dev": {
+                "version": "4.66.252",
+                "date": "25 Oct 2018 16:46:31",
+                "suppress": []
+            },
+            "nightly": {
+                "version": "4.0.691",
+                "date": "31 Oct 2018 19:12:50"
+            },
+            "stable": {
+                "version": "4.65.245",
+                "date": "27 Sep 2018 15:35:42",
+                "suppress": []
+            }
+        }
+    }
 }
