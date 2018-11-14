@@ -164,7 +164,7 @@ def GetPlatformAndDescription( aPcas ):
                 for pcas, variantInfo in pcasinfo["variants"].iteritems():
                     if pcas == pcasNum:
                         return pcasinfo["platform"], variantInfo
-    print "WARNING: could night find platform/description for: " + pcasStr
+    #print "WARNING: could night find platform/description for: " + pcasStr
     raise ValueError("MissingInfo")
 
 def GetLatestStableRelease( aPcas ):
