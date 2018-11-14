@@ -195,10 +195,14 @@ def CommitAndPushFiles( aRepo, aFileList, aCommitMessage, aDryRun, aBranch=None 
         Info( "Locally clone %s to %s" % ( aRepo, clonePath ) )
         localRepo = Repo.clone_from( aRepo, clonePath )
 
+    repoName = os.path.basename( aRepo ).split('.')[0]
     for file in aFileList:
         # copy locally changed files to clone
         parentDir = os.path.abspath(os.path.join(file, os.pardir))
-        relPath = os.path.join( os.path.basename( parentDir ), os.path.basename( file ) )
+        fileDir = os.path.basename( parentDir )
+        if fileDir == repoName:
+            fileDir = ""
+        relPath = os.path.join( fileDir, os.path.basename( file ) )
         fullPath = os.path.join( clonePath, relPath )
         Info( "Copy %s to %s " % ( file, fullPath ) )
         shutil.copy2( file, fullPath )
