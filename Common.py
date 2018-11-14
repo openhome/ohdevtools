@@ -28,6 +28,7 @@ kLocalDevCloudTempFileName  = 'ExaktMinimalDevTemp.json'
 kExaktRepo                  = "ssh://joshh@core.linn.co.uk/home/git/exakt.git" # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
 kProductRepo                = "ssh://joshh@core.linn.co.uk/home/git/product.git" # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
 kReleaseUtilsRepo           = "ssh://joshh@core.linn.co.uk/home/git/releaseUtils.git" # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
+kOhDevToolsRepo             = "ssh://joshh@core.linn.co.uk/home/git/ohdevtools.git" # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
 # Kiboko details
 kRemoteHost                 = 'products@kiboko.linn.co.uk'
 kDevFileLocation            = '/var/www.products/VersionInfo/Downloads/Development/'
@@ -37,12 +38,12 @@ kFeedLocation               = kRemoteHost + ':/var/www.products/VersionInfo/'
 kDevMasterFeedFileName      = 'DevelopmentMasterFeed.json'
 kDevFeedFileName            = 'DevelopmentVersionInfoV2.json'
 kBetaFeedFileName           = 'LatestVersionInfoV2.json'
+kReleaseUrlBase             = 'http://products.linn.co.uk/VersionInfo/'
 # Misc
 kDateAndTime                = time.strftime('%d %b %Y %H:%M:%S', time.localtime()) # returns: 25 Aug 2014 15:38:11
 kProductSuppressedString    = 'DISABLED'
 kExaktSuppressedString      = 'suppress'
 # crash report related
-kDeviceFeedJsonUrl          = "http://products.linn.co.uk/VersionInfo/LatestVersionInfoV2.json"
 kTicketUrlBase              = "http://core.linn.co.uk/network/ticket/"
 kReportUrlBase              = "http://products.linn.co.uk/restricted/site/device/exception/"
 # Aws S3
@@ -74,6 +75,31 @@ def GetJsonObjects( aJsonFile ):
     data = f.read()
     f.close()
     return json.loads(data)  # performs validation as well
+
+def CreateJsonFile(aJsonObjs, aJsonFile, aSortKeys=True):
+    data = json.dumps(aJsonObjs, sort_keys=aSortKeys, indent=4, separators=(',', ': '))  # creates formatted json file and validates
+    # print( os.path.basename( aJsonFile ) + ":\n" + data )
+    f = open(aJsonFile, 'wt')
+    f.write(data)
+    f.close()
+    os.chmod(aJsonFile, 0664)  # allow group to write this file as it may be manually updated occasionally
+
+def ReadJson(aJsonFile):
+    return GetJsonObjects(aJsonFile)
+
+def WriteJson(aData, aJsonFile, aSortKeys=True):
+    CreateJsonFile(aData, aJsonFile, aSortKeys)
+
+def GetLines(aTextFile):
+    f = open(aTextFile, 'rt')
+    data = f.readlines()
+    f.close()
+    return data
+
+def CreateTextFile(aLines, aTextFile):
+    f = open(aTextFile, 'wt')
+    f.writelines(aLines)
+    f.close()
 
 def CompareVersions(aVersion1, aVersion2):
     # if aVersion1 > aVersion2 return true, otherwise return false
@@ -266,32 +292,6 @@ def GetBitstreamVersion(aBitstreamFile, aMajorNumber):
     if ver:
         return ver.group(0)
     return 'Unknown'
-
-
-def GetLatestVersions( aFeedUrl, aIncludeReleaseList ):
-    data = urllib2.urlopen( aFeedUrl ).read()
-    jsonData = json.loads( data )
-    beta = ""
-    stable = ""
-    for jsonObj in jsonData['releases']:
-        # find first (unsuppressed) beta variant and use this version
-        if jsonObj['quality'] == 'beta' and kProductSuppressedString not in jsonObj['variantids'][0] and len( beta ) == 0:
-            beta = jsonObj['version']
-        elif jsonObj['quality'] == 'release' and kProductSuppressedString not in jsonObj['variantids'][0] and len( stable ) == 0:
-            stable = jsonObj['version']
-    if len( beta ) == 0:
-        Info( '[WARNING]    No valid beta release version found in %s' % ( aFeedUrl ) )
-    if len( stable ) == 0:
-        Info( '[FAIL]    No valid stable release version found in %s' % ( aFeedUrl ) )
-        sys.exit(2)
-    rlsList = jsonData['VersionQuality']['release']
-    print( "Latest device versions: %s (beta), %s (stable)" % ( beta if len(beta) > 0 else "None", stable ) )
-    if aIncludeReleaseList:
-        print( "Release version List: %s" % ( rlsList ) )
-        return { 'beta': beta, 'stable': stable, 'releaseList': rlsList }
-    else:
-        return { 'beta': beta, 'stable': stable }
-
 
 def CreateHtmlFile( aHtml, aHtmlFile, aPrintToScreen ):
     print ( "Created html output file: %s" % aHtmlFile )
@@ -537,7 +537,7 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
         
         os.remove( tarOutputFile )
 
-        to = [ 'Barry.Williams@linn.co.uk', 'Simon.Chisholm@linn.co.uk' ]
+        to = [ 'Robbie.Singer@linn.co.uk', 'Gareth.Griffiths@linn.co.uk', 'Simon.Chisholm@linn.co.uk' ]
         subj = "TestDs Emulator for %s Now Available" % aVersion
         text = "Download here: https://s3-eu-west-1.amazonaws.com/linn-artifacts-private/%s" % uploadKey
         SendEmail( subj, text, to, aDryRun )

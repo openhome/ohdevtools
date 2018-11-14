@@ -5,6 +5,7 @@ import sys
 import shutil
 import subprocess
 import tempfile
+import Common
 
 # ------------------------------------------------------------------------------
 # Constants
@@ -69,33 +70,6 @@ def GetFileSize( aFilePath ):
 def GetFileBasename( aFilePath ):
     return os.path.basename( os.path.normpath( aFilePath ) )
 
-
-def Md5Hash(aFile):
-    cmdLineMd5 = ['/usr/bin/md5sum', aFile]
-    p = subprocess.Popen(args=cmdLineMd5, stdout=subprocess.PIPE)
-    md5Hash = p.stdout.read().split()[0]  # disregard filename
-    retVal = p.wait()
-    if retVal:
-        raise ToolError(cmdLineMd5)
-    return md5Hash
-
-
-def GetJsonObjects(aJsonFile):
-    f = open(aJsonFile, 'rt')
-    data = f.read()
-    f.close()
-    return json.loads(data)  # performs validation as well
-
-
-def CreateJsonFile(aJsonObjs, aJsonFile, aSortKeys=True):
-    data = json.dumps(aJsonObjs, sort_keys=aSortKeys, indent=4, separators=(',', ': '))  # creates formatted json file and validates
-    # print( os.path.basename( aJsonFile ) + ":\n" + data )
-    f = open(aJsonFile, 'wt')
-    f.write(data)
-    f.close()
-    os.chmod(aJsonFile, 0664)  # allow group to write this file as it may be manually updated occasionally
-
-
 def Cleanup( ):
     shutil.rmtree( kTempDir )
 
@@ -140,13 +114,13 @@ def CreateComponent( aBuildOutputList, aJsonFileName, aSubDependenciesList=None,
         localFile = buildOutput[1]
         buildOutDict = {}
         buildOutDict[kJsonManifestNameTag] = buildOutput[0]
-        buildOutDict[kJsonManifestMd5Tag] = Md5Hash( localFile )
+        buildOutDict[kJsonManifestMd5Tag] = Common.Md5Hash( localFile )
         buildOutDict[kJsonManifestSizeTag] = GetFileSize( localFile )
         buildOutDict[kJsonManifestUrlTag] = "../" + GetFileBasename( localFile )
         jsonManifest[kJsonManifestBaseTag].append( buildOutDict )
 
     jsonManifest[kJsonManifestBaseTag] = sorted( jsonManifest[kJsonManifestBaseTag], key=lambda k: k['name'] )  # ensures json is always sorted by name
-    CreateJsonFile( jsonManifest, aJsonFileName )
+    Common.CreateJsonFile( jsonManifest, aJsonFileName )
     if aDryRun:
         print "--- %s ---" % aJsonFileName
         print json.dumps(jsonManifest, indent=4, sort_keys=True)
