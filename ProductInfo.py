@@ -286,7 +286,8 @@ def GetLatestVersions( aPlatform ):
     
     rlsInfo = GetLatestReleaseInfo(aPlatform, 'beta')
     if rlsInfo != None:
-        beta = rlsInfo["version"]
+        # if beta is identical to stable, don't report it
+        beta = rlsInfo["version"] if rlsInfo["version"] != stable else None
     else:
         Common.Info( '[WARNING]    No valid beta release version found for %s' % ( aPlatform ) )
 
