@@ -552,11 +552,11 @@
                 "version": "4.67.258"
             },
             "nightly": {
-                "date": "05 Dec 2018 18:55:13",
+                "date": "06 Dec 2018 18:55:20",
                 "exaktlink": "3",
                 "minkonfigversion": "4.36.106",
                 "suppress": null,
-                "version": "4.0.721"
+                "version": "4.0.722"
             },
             "stable": {
                 "date": "09 Nov 2018 10:04:27",
