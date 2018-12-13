@@ -538,18 +538,18 @@
     "latestreleases": {
         "core1": {
             "beta": {
-                "date": "05 Dec 2018 16:55:00",
+                "date": "13 Dec 2018 16:24:53",
                 "exaktlink": "3",
                 "minkonfigversion": "4.36.106",
                 "suppress": [],
-                "version": "4.67.258"
+                "version": "4.67.260"
             },
             "dev": {
-                "date": "05 Dec 2018 16:55:00",
+                "date": "13 Dec 2018 16:24:53",
                 "exaktlink": "3",
                 "minkonfigversion": "4.36.106",
                 "suppress": [],
-                "version": "4.67.258"
+                "version": "4.67.260"
             },
             "nightly": {
                 "date": "12 Dec 2018 18:55:18",
@@ -568,18 +568,18 @@
         },
         "core4": {
             "beta": {
-                "date": "05 Dec 2018 16:55:00",
+                "date": "13 Dec 2018 16:24:53",
                 "exaktlink": "3",
                 "minkonfigversion": "4.36.106",
                 "suppress": [],
-                "version": "4.67.258"
+                "version": "4.67.260"
             },
             "dev": {
-                "date": "05 Dec 2018 16:55:00",
+                "date": "13 Dec 2018 16:24:53",
                 "exaktlink": "3",
                 "minkonfigversion": "4.36.106",
                 "suppress": [],
-                "version": "4.67.258"
+                "version": "4.67.260"
             },
             "nightly": {
                 "date": "12 Dec 2018 19:07:41",
