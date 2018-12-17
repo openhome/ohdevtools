@@ -51,8 +51,10 @@
             "legacytarget": "KlimaxDsMk1",
             "name": "Klimax DS",
             "platform": "core1",
+            "renewname": "Klimax Renew DS",
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Klimax_Renew_DS",
             "url": "http://docs.linn.co.uk/wiki/index.php/Klimax_DS",
+            "v1sources": 5,
             "variants": {
                 "826": "Klimax Renew DS"
             },
@@ -64,8 +66,10 @@
             "legacytarget": "AkurateDsMk1",
             "name": "Akurate DS",
             "platform": "core1",
+            "renewname": "Akurate Renew DS",
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Akurate_Renew_DS",
             "url": "http://docs.linn.co.uk/wiki/index.php/Akurate_DS",
+            "v1sources": 5,
             "variants": {
                 "826": "Akurate Renew DS"
             },
@@ -78,6 +82,7 @@
             "name": "Majik DS",
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Majik_DS",
+            "v1sources": 5,
             "volkano1": true
         },
         "723": {
@@ -87,6 +92,7 @@
             "name": "Sneaky Music DS",
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Sneaky_Music_DS",
+            "v1sources": 5,
             "volkano1": true
         },
         "750": {
@@ -96,6 +102,7 @@
             "name": "Sekrit DS-I",
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Sekrit_DS-I",
+            "v1sources": 8,
             "volkano1": true
         },
         "765": {
@@ -105,6 +112,7 @@
             "name": "Majik DS-I",
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Majik_DS-I",
+            "v1sources": 16,
             "volkano1": true
         },
         "792": {
@@ -113,8 +121,10 @@
             "legacytarget": "KlimaxDsmMk1",
             "name": "Klimax DSM",
             "platform": "core1",
+            "renewname": "Klimax Renew DSM",
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Klimax_Renew_DSM",
             "url": "http://docs.linn.co.uk/wiki/index.php/Klimax_DSM",
+            "v1sources": 13,
             "variants": {
                 "826": "Klimax Renew DSM"
             },
@@ -126,8 +136,10 @@
             "legacytarget": "AkurateDsmMk1",
             "name": "Akurate DSM",
             "platform": "core1",
+            "renewname": "Akurate Renew DSM",
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Akurate_Renew_DSM",
             "url": "http://docs.linn.co.uk/wiki/index.php/Akurate_DSM",
+            "v1sources": 19,
             "variants": {
                 "826": "Akurate Renew DSM"
             },
@@ -140,8 +152,10 @@
             "name": "Akurate DS",
             "note": "850 and 851 were known internally as 'NoDig': Mk2 main board in Mk1 enclosure",
             "platform": "core1",
+            "renewname": "Akurate Renew DS",
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Akurate_Renew_DS",
             "url": "http://docs.linn.co.uk/wiki/index.php/Akurate_DS_(2010_Variant)",
+            "v1sources": 5,
             "variants": {
                 "810": "2010 variant, Klean",
                 "826": "Akurate Renew DS",
@@ -156,8 +170,10 @@
             "legacytarget": "KlimaxDsMk2",
             "name": "Klimax DS",
             "platform": "core1",
+            "renewname": "Klimax Renew DS",
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Klimax_Renew_DS",
             "url": "http://docs.linn.co.uk/wiki/index.php/Klimax_DS",
+            "v1sources": 5,
             "variants": {
                 "826": "Klimax Renew DS",
                 "833": "2011 variant, Klean"
@@ -171,6 +187,7 @@
             "name": "Kiko DSM",
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Kiko_DSM",
+            "v1sources": 10,
             "volkano1": true
         },
         "840": {
@@ -180,6 +197,7 @@
             "name": "Majik DSM",
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Majik_DSM",
+            "v1sources": 20,
             "volkano1": true
         },
         "842": {
@@ -189,6 +207,7 @@
             "name": "Majik DSM",
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Majik_DS-I",
+            "v1sources": 16,
             "volkano1": true
         },
         "858": {
@@ -198,6 +217,7 @@
             "name": "Sekrit DSM",
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Sekrit_DSM",
+            "v1sources": 11,
             "volkano1": true
         },
         "867": {
@@ -206,8 +226,10 @@
             "legacytarget": "KlimaxDsmMk2",
             "name": "Klimax DSM",
             "platform": "core1",
+            "renewname": "Klimax Renew DSM",
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Klimax_Renew_DSM",
             "url": "http://docs.linn.co.uk/wiki/index.php/Klimax_DSM_(Exakt_Variant)",
+            "v1sources": 12,
             "variants": {
                 "826": "Klimax Renew DSM"
             },
@@ -220,6 +242,7 @@
             "name": "Sneaky DSM",
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Sneaky_DSM",
+            "v1sources": 11,
             "volkano1": true
         },
         "889": {
@@ -228,7 +251,9 @@
             "legacytarget": "KlimaxExaktDsm",
             "name": "Klimax Exakt DSM",
             "platform": "core1",
+            "rcafirst": true,
             "url": "http://docs.linn.co.uk/wiki/index.php/Klimax_Exakt_DSM",
+            "v1sources": 14,
             "volkano1": true
         },
         "901": {
@@ -238,6 +263,7 @@
             "name": "Akurate Exakt DSM",
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Akurate_Exakt_DSM",
+            "v1sources": 18,
             "volkano1": true
         },
         "903": {
@@ -248,6 +274,7 @@
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Akurate_DSM_(Exakt_Variant)",
             "urlhdmi2": "http://docs.linn.co.uk/wiki/index.php/Akurate_DSM_(4K_compatible)",
+            "v1sources": 19,
             "volkano1": true
         },
         "911": {
@@ -257,6 +284,7 @@
             "name": "Majik DS",
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Majik_DS_(Exakt_Variant)",
+            "v1sources": 5,
             "volkano1": true
         },
         "912": {
@@ -266,6 +294,7 @@
             "name": "Akurate DS",
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Akurate_DS_(Exakt_Variant)",
+            "v1sources": 5,
             "variants": {
                 "914": "2015 variant, Klean"
             },
@@ -277,8 +306,10 @@
             "legacytarget": "KlimaxDsMk3",
             "name": "Klimax DS",
             "platform": "core1",
+            "renewname": "Klimax Renew DS",
             "renewurl": "http://docs.linn.co.uk/wiki/index.php/Klimax_Renew_DS",
             "url": "http://docs.linn.co.uk/wiki/index.php/Klimax_DS_(Exakt_Variant)",
+            "v1sources": 5,
             "variants": {
                 "826": "Klimax Renew DS"
             },
@@ -292,6 +323,7 @@
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Majik_DSM_(Exakt_Variant)",
             "urlhdmi2": "http://docs.linn.co.uk/wiki/index.php/Majik_DSM_(HDMI_2_Variant)",
+            "v1sources": 20,
             "volkano1": true
         },
         "960": {
@@ -537,20 +569,8 @@
     },
     "latestreleases": {
         "core1": {
-            "beta": {
-                "date": "09 Nov 2018 09:54:48",
-                "exaktlink": "3",
-                "minkonfigversion": "4.36.106",
-                "suppress": [],
-                "version": "4.66.255"
-            },
-            "dev": {
-                "date": "09 Nov 2018 09:54:48",
-                "exaktlink": "3",
-                "minkonfigversion": "4.36.106",
-                "suppress": [],
-                "version": "4.66.255"
-            },
+            "beta": null,
+            "dev": null,
             "nightly": {
                 "date": "03 Dec 2018 18:55:19",
                 "exaktlink": "3",
@@ -559,7 +579,7 @@
                 "version": "4.0.719"
             },
             "stable": {
-                "date": "09 Nov 2018 10:04:27",
+                "date": "17 Dec 2018 16:31:19",
                 "exaktlink": "3",
                 "minkonfigversion": "4.36.106",
                 "suppress": [],
@@ -690,7 +710,7 @@
                 "minkonfigversion": "4.36.106"
             },
             "4.66.255": {
-                "date": "09 Nov 2018 10:04:27",
+                "date": "17 Dec 2018 16:31:19",
                 "exaktlink": "3",
                 "minkonfigversion": "4.36.106"
             }

@@ -11,11 +11,27 @@ import socket
 from collections import OrderedDict
 import Common
 import time
+import shutil
 
 kDateTime         = time.strftime( '%d %b %Y %H:%M:%S', time.localtime() )
 kPcasLookupTable  = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'product_info.json')
-kTargetTableName  = 'Target2Pcas'
 kPcasTableName    = 'PcasInfo'
+# keys from PcasInfo
+kDescKey = "description"
+kVerKey = "lateststable"
+kTargetKey = "legacytarget"
+kNameKey = "name"
+kPlatKey = "platform"
+kRenewNameKey = "renewname"
+kRenewUrlKey = "renewurl"
+kUrlKey = "url"
+kVolkano1Key = "volkano1"
+kVolkano1SourcesKey = "v1sources"
+kSourceMapRcaFirst = "rcafirst"
+kVarsKey = "variants"
+kPcasInfoKeys = [kDescKey, kVerKey, kTargetKey, kNameKey, kPlatKey, kRenewNameKey, kRenewUrlKey, kUrlKey, kVolkano1Key, kVolkano1SourcesKey, kSourceMapRcaFirst]
+
+kTargetTableName  = 'Target2Pcas'
 kLegalObj         = 'legal'
 kReleaseNotesObj  = 'releasenotes'
 kReleaseInfoV1Obj = 'releaseinfoV1'
@@ -25,11 +41,21 @@ kLatestInfoObj    = 'latestreleases'
 def GetPcas( aProductName ):
     pcas = ""
     jsonObjs = Common.GetJsonObjects( kPcasLookupTable )
-    pcasList = jsonObjs[kTargetTableName][aProductName]
+    pcasList = GetPcasList( aProductName )
     for entry in pcasList:
         pcas = entry
         break # not sure if/how to handle multiple entries
     return pcas
+
+def GetPcasList( aProductName ):
+    pcas = ""
+    jsonObjs = Common.GetJsonObjects( kPcasLookupTable )
+    pcasList = []
+    try:
+         pcasList = jsonObjs[kTargetTableName][aProductName]
+    except KeyError:
+         pcasList = jsonObjs[kTargetTableName][aProductName.replace( "Mk1", "" )]
+    return pcasList
 
 def GetOutputNames( aTarget ):
     names = []
@@ -226,6 +252,17 @@ def GetTargetType( aTarget ):
         listType = 'fw'
     return listType
 
+def GetFirmwareVariant( aPcas ):
+    pcasStr = str(aPcas)
+    pcasNum = pcasStr.lower().replace("pcas", "").replace("fw", "")
+    platform =  GetPlatform( pcasNum )
+    if platform == "core1":
+        fwVar = "Fw%s" % pcasNum
+    elif platform == "core4":
+        fwVar = "%s" % pcasNum
+    else:
+        raise ValueError("PcasInvalid")
+    return fwVar
 
 def GetAllTargets():
     # returns a full integer list of pcas targets available, sorted by pcas number
@@ -244,6 +281,26 @@ def GetCore1TargetsIncRenew():
     core1 = GetTargets( "core1", "pcas", True )
     core1.sort(key=lambda e: int(e.split('_')[0]))
     return core1
+
+def HasRenew( aPcas ):
+    pcasStr = str(aPcas)
+    pcasNum = pcasStr.lower().replace("pcas", "").replace("fw", "")
+    core1 = GetTargets( "core1", "pcas", True )
+    return (pcasNum + "_826") in core1
+
+def GetRenewName( aPcas ):
+    pcasStr = str(aPcas)
+    pcasNum = pcasStr.lower().replace("pcas", "").replace("fw", "")
+    jsonObjs = Common.GetJsonObjects( kPcasLookupTable )
+    if jsonObjs[kPcasTableName].has_key( pcasNum ):
+        pcasInfo = jsonObjs[kPcasTableName]
+        return pcasInfo[pcasNum]["renewname"]
+    else:
+        for pcasinfo in jsonObjs[kPcasTableName].itervalues():
+            if pcasinfo.has_key( "variants" ):
+                for pcas, variantInfo in pcasinfo["variants"].iteritems():
+                    if pcas == pcasNum:
+                        return pcasinfo["renewname"]
 
 def GetCore4Targets():
     # returns a full integer list of pcas targets available, sorted by pcas number
@@ -463,7 +520,7 @@ def CreateV1ReleaseFeed(aFile, aVersion, aIsPromotionFromDev):
         rlsInfo = GetLatestReleaseInfo('core1', 'dev')
     else:
         rlsInfo = GetLatestReleaseInfo('core1', 'beta')
-    if rlsInfo == None or rlsInfo['version'] != aVersion:
+    if rlsInfo == None or rlsInfo['version'] == aVersion:
         return False
     
     CreateV1Feed(aFile, aVersion, GetV1DownloadStableDir(), rlsInfo['suppress'], rlsInfo['minkonfigversion'], rlsInfo['exaktlink'])
@@ -511,11 +568,237 @@ def UpdateLatestReleaseInfo(aPlatform, aReleaseType, aVersion, aSuppressionList,
 
 def CommitAndPushReleaseInfo( aVersion, aDryRun ):
     Common.CommitAndPushFiles( Common.kOhDevToolsRepo, [kPcasLookupTable], "Upated product info for release %s" % aVersion, aDryRun )
+    # also publish to cloud location
+
+def CreateCppPcasInfo( aFilePath=None ):
+    jsonObjs = Common.GetJsonObjects( kPcasLookupTable )
+    kKeyFirmwareVariant = "fwvar"
+    cpp = """#pragma once
+
+#include <OpenHome/OhNetTypes.h>
+#include <OpenHome/Private/Standard.h>
+#include <map>
+#include <string>
+
+EXCEPTION(PcasNotFound);
+
+using namespace OpenHome;
+
+namespace Linn
+{
+namespace Target
+{
+    typedef std::map<std::string, std::string> PcasData;
+    typedef std::map<TUint, PcasData> PcasDict;\n
+"""
+    cpp += "    static const TChar* kKeyPcasDescription = \"%s\";\n" % kDescKey
+    cpp += "    static const TChar* kKeyPcasLatestStable = \"%s\";\n" % kVerKey
+    cpp += "    static const TChar* kKeyPcasLegacyTarget = \"%s\";\n" % kTargetKey
+    cpp += "    static const TChar* kKeyPcasName = \"%s\";\n" % kNameKey
+    cpp += "    static const TChar* kKeyPcasPlatform = \"%s\";\n" % kPlatKey
+    cpp += "    static const TChar* kKeyPcasRenewName = \"%s\";\n" % kRenewNameKey
+    cpp += "    static const TChar* kKeyPcasRenewUrl = \"%s\";\n" % kRenewUrlKey
+    cpp += "    static const TChar* kKeyPcasUrl = \"%s\";\n" % kUrlKey
+    cpp += "    static const TChar* kKeyPcasVolkano1 = \"%s\";\n" % kVolkano1Key
+    cpp += "    static const TChar* kKeyPcasVolkano1Sources = \"%s\";\n" % kVolkano1SourcesKey
+    cpp += "    static const TChar* kKeyPcasSourceMapRcaFirst = \"%s\";\n" % kSourceMapRcaFirst
+    cpp += "    static const TChar* kKeyPcasFirmwareVariant = \"%s\";\n" % kKeyFirmwareVariant
+
+    cpp += """
+    static const PcasDict kPcasDict = {
+"""
+    for pcas, pcasinfo in jsonObjs[kPcasTableName].iteritems():
+        pcasNum = int(pcas)
+        varList = [pcasNum]
+        descList = {pcasNum:pcasinfo[kDescKey]}
+        if kVarsKey in pcasinfo:
+            for varpcas, vardesc in pcasinfo[kVarsKey].iteritems():
+                varNum = int(varpcas)
+                if varNum != 826:
+                    varList.append( varNum )
+                    descList[varNum] = vardesc
+        for var in varList:
+            cpp += "        { %d, {" % var
+            for key in kPcasInfoKeys:
+                if key in pcasinfo:
+                    val = pcasinfo[key] if key != kDescKey else descList[var]
+                    cpp += "{\"%s\", \"%s\"}, " % (key, val)
+            cpp += "{\"%s\", \"%s\"}" % (kKeyFirmwareVariant, GetFirmwareVariant(var))
+            cpp += "} },\n"
     
+    cpp += """
+    };
+
+    class PcasInfo
+    {
+    public:
+        static const TChar* GetModelName(TUint aPcas, TBool aIsRenew)
+        {
+            if (aIsRenew) {
+                return Get(kKeyPcasRenewName, aPcas);
+            }
+            else {
+                return Get(kKeyPcasName, aPcas);
+            }
+        }
+
+        static const TChar* GetUrl(TUint aPcas, TBool aIsRenew)
+        {
+            if (aIsRenew) {
+                return Get(kKeyPcasRenewUrl, aPcas);
+            }
+            else {
+                return Get(kKeyPcasUrl, aPcas);
+            }
+        }
+
+        static const TChar* GetDescription(TUint aPcas)
+        {
+            return Get(kKeyPcasDescription, aPcas);
+        }
+
+        static const TChar* GetLegacyVariantStr(TUint aPcas)
+        {
+            return Get(kKeyPcasLegacyTarget, aPcas);
+        }
+
+        static const TChar* GetFirmwareVariant(TUint aPcas)
+        {
+            return Get(kKeyPcasFirmwareVariant, aPcas);
+        }
+
+        static const TChar* GetLatestStableSoftwareVersion(TUint aPcas)
+        {
+            return Get(kKeyPcasLatestStable, aPcas);
+        }
+
+        static TBool IsCore1(TUint aPcas)
+        {
+            return  strcmp(Get(kKeyPcasPlatform, aPcas), "core1") == 0;
+        }
+
+        static TBool IsCore4(TUint aPcas)
+        {
+            return  strcmp(Get(kKeyPcasPlatform, aPcas), "core4") == 0;
+        }
+
+        static TBool IsVolkano1(TUint aPcas)
+        {
+            return  strcmp(Get(kKeyPcasVolkano1, aPcas), "True") == 0;
+        }
+
+        static TUint Volkano1Sources(TUint aPcas)
+        {
+            if (IsVolkano1(aPcas)) {
+                return GetNum(kKeyPcasVolkano1Sources, aPcas);
+            }
+            else {
+                return 0;
+            }
+        }
+
+        static TBool SourceMapRcaFirst(TUint aPcas)
+        {
+            TBool rcaFirst = false;
+            try {
+                rcaFirst = strcmp(Get(kKeyPcasSourceMapRcaFirst, aPcas), "True") == 0;
+            }
+            catch (const std::out_of_range&) { }
+            return rcaFirst;
+        }
+
+        static const TChar* Get(const TChar* aKey, TUint aPcas)
+        {
+            std::string key = aKey;
+            for (auto& x: kPcasDict) {
+                if (x.first == aPcas) {
+                    return x.second.at(key).c_str();
+                }
+            }
+            THROW(PcasNotFound);
+        }
+
+        static const TUint GetNum(const TChar* aKey, TUint aPcas)
+        {
+            return TUint(atoi(Get(aKey, aPcas)));
+        }
+    };
+} // namespace Target
+} // namespace Linn
+"""
+
+    if aFilePath != None:
+        Common.CreateTextFile( cpp, os.path.join( aFilePath, "PcasInfo.h" ) )
+    else:    
+        print cpp
+    return cpp
+
+def TargetToPcasFileConversion( aFilePath ):
+    # filter out renew files
+    for f in os.listdir( aFilePath ):
+        fullPath = os.path.join( aFilePath, f )
+        if os.path.isfile( fullPath ):
+            fname = f.lower()
+            if "renew" in fname:
+                if "akurate" in fname:
+                    if "dsm" in fname:
+                        adsmRenewFile = fullPath
+                    elif "ds" in fname:
+                        adsRenewFile = fullPath
+                elif "klimax" in fname:
+                    if "dsm" in fname:
+                        kdsmRenewFile = fullPath
+                    elif "ds" in fname:
+                        kdsRenewFile = fullPath
+
+    for f in os.listdir( aFilePath ):
+        fullPath = os.path.join( aFilePath, f )
+        if os.path.isfile( fullPath ):
+            [name, ext] = os.path.basename( fullPath ).split('.')
+            pcasList = []
+            try:
+                pcasList = GetPcasList( name )
+            except:
+                if "renew" not in f.lower():
+                    print "SKIP %s" %  fullPath
+                continue
+
+            for entry in pcasList:
+                newFile = os.path.join( aFilePath, GetFirmwareVariant( entry ) + "." + ext )
+                print "COPY %s to %s" % ( fullPath, newFile )
+                shutil.copy2( fullPath, newFile )
+                if HasRenew( entry ):
+                    newFile = os.path.join( aFilePath, GetFirmwareVariant( entry ) + "Renew." + ext )
+                    renewName = GetRenewName( entry ).lower()
+                    srcFile = None
+                    if "akurate" in renewName:
+                        if "dsm" in renewName:
+                            srcFile = adsmRenewFile
+                        elif "ds" in renewName:
+                            srcFile = adsRenewFile
+                    elif "klimax" in renewName:
+                        if "dsm" in renewName:
+                            srcFile = kdsmRenewFile
+                        elif "ds" in renewName:
+                            srcFile = kdsRenewFile
+                    print "COPY %s to %s" % ( srcFile, newFile )
+                    shutil.copy2( srcFile, newFile )
+            os.remove( fullPath )
+    
+    # delete unused renew files
+    os.remove( adsmRenewFile )
+    os.remove( adsRenewFile )
+    os.remove( kdsmRenewFile )
+    os.remove( kdsRenewFile )
 
 #print SuppressioStringForJenkins()
 #CreateV1DevelopmentFeed("tempV1devFeed.json", "4.66.250", ["Fw913", "Fw1015"])
-#CreateV1ReleaseFeed("tempV1stableFeed.json", "4.66.259", False)
+#CreateV1ReleaseFeed("tempV1stableFeed.json", "4.66.255", False)
 #CreateV1NightlyFeed("tempV1nightlyFeed.json", "4.0.699")
 #CreateV1BetaFeed("tempV1betaFeed.json", "4.66.259", ["Fw913", "Fw1015"])
 #CommitAndPushReleaseInfo( "1.2.3", True )
+#CreateCppPcasInfo(".")
+#TargetToPcasFileConversion("T:\\volkano2\\product\\Linn\\res\\icons")
+
+#for f in os.listdir( "T:\\volkano2\\product\\Linn\\res\\icons" ):
+#    print "  <entry    type=\"file\"   key=\"res/icons/{0}\">res/icons/{0}</entry>".format( f )
