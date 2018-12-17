@@ -514,7 +514,7 @@ def CreateV1NightlyFeed(aFile, aVersion):
     CreateV1Feed(aFile, aVersion, GetV1DownloadNightlyDir(), None)
     UpdateLatestReleaseInfoCore1('nightly', aVersion, None)
 
-def CreateV1ReleaseFeed(aFile, aVersion, aIsPromotionFromDev):
+def CreateV1ReleaseFeed(aFile, aVersion, aIsPromotionFromDev, aUpdateReleaseInfo):
     rlsInfo = None
     if aIsPromotionFromDev:
         rlsInfo = GetLatestReleaseInfo('core1', 'dev')
@@ -524,7 +524,8 @@ def CreateV1ReleaseFeed(aFile, aVersion, aIsPromotionFromDev):
         return False
     
     CreateV1Feed(aFile, aVersion, GetV1DownloadStableDir(), rlsInfo['suppress'], rlsInfo['minkonfigversion'], rlsInfo['exaktlink'])
-    UpdateLatestReleaseInfoCore1('stable', aVersion, rlsInfo['suppress'], rlsInfo['minkonfigversion'], rlsInfo['exaktlink'])
+    if aUpdateReleaseInfo:
+        UpdateLatestReleaseInfoCore1('stable', aVersion, rlsInfo['suppress'], rlsInfo['minkonfigversion'], rlsInfo['exaktlink'])
     return True
 
 def UpdateLatestReleaseInfoCore1(aReleaseType, aVersion, aSuppressionList, aMinKonfigVersion=None, aExaktLink=None):
@@ -568,7 +569,7 @@ def UpdateLatestReleaseInfo(aPlatform, aReleaseType, aVersion, aSuppressionList,
 
 def CommitAndPushReleaseInfo( aVersion, aDryRun ):
     Common.CommitAndPushFiles( Common.kOhDevToolsRepo, [kPcasLookupTable], "Upated product info for release %s" % aVersion, aDryRun )
-    # also publish to cloud location
+    # also publish to cloud location? FIX ME??
 
 def CreateCppPcasInfo( aFilePath=None ):
     jsonObjs = Common.GetJsonObjects( kPcasLookupTable )
