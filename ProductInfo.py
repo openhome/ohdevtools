@@ -520,7 +520,9 @@ def CreateV1ReleaseFeed(aFile, aVersion, aIsPromotionFromDev):
         rlsInfo = GetLatestReleaseInfo('core1', 'dev')
     else:
         rlsInfo = GetLatestReleaseInfo('core1', 'beta')
-    if rlsInfo == None or rlsInfo['version'] == aVersion:
+    print aVersion
+    print rlsInfo['version']
+    if rlsInfo == None or rlsInfo['version'] != aVersion:
         return False
     
     CreateV1Feed(aFile, aVersion, GetV1DownloadStableDir(), rlsInfo['suppress'], rlsInfo['minkonfigversion'], rlsInfo['exaktlink'])
