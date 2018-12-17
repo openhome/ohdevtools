@@ -2,7 +2,7 @@
     "PcasInfo": {
         "1000": {
             "description": "2018 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "KlimaxDsmMk4",
             "name": "Klimax DSM",
             "platform": "core1",
@@ -11,7 +11,7 @@
         },
         "1001": {
             "description": "2018 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "KlimaxExaktDsmMk2",
             "name": "Klimax Exakt DSM",
             "platform": "core1",
@@ -20,7 +20,7 @@
         },
         "1005": {
             "description": "2018 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "MajikDsMk3",
             "name": "Majik DS",
             "platform": "core1",
@@ -29,7 +29,7 @@
         },
         "1014": {
             "description": "2018 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "KlimaxSystemHub",
             "name": "Klimax System Hub",
             "platform": "core1",
@@ -38,7 +38,7 @@
         },
         "1015": {
             "description": "2018 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "AkurateSystemHub",
             "name": "Akurate System Hub",
             "platform": "core1",
@@ -47,7 +47,7 @@
         },
         "678": {
             "description": "2007 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "KlimaxDsMk1",
             "name": "Klimax DS",
             "platform": "core1",
@@ -62,7 +62,7 @@
         },
         "697": {
             "description": "2007 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "AkurateDsMk1",
             "name": "Akurate DS",
             "platform": "core1",
@@ -77,7 +77,7 @@
         },
         "716": {
             "description": "2008 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "MajikDsMk1",
             "name": "Majik DS",
             "platform": "core1",
@@ -87,7 +87,7 @@
         },
         "723": {
             "description": "2008 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "SneakyMusicDs",
             "name": "Sneaky Music DS",
             "platform": "core1",
@@ -97,7 +97,7 @@
         },
         "750": {
             "description": "2009 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "SekritDsi",
             "name": "Sekrit DS-I",
             "platform": "core1",
@@ -107,7 +107,7 @@
         },
         "765": {
             "description": "2009 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "MajikDsi",
             "name": "Majik DS-I",
             "platform": "core1",
@@ -117,7 +117,7 @@
         },
         "792": {
             "description": "2011 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "KlimaxDsmMk1",
             "name": "Klimax DSM",
             "platform": "core1",
@@ -132,7 +132,7 @@
         },
         "797": {
             "description": "2011 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "AkurateDsmMk1",
             "name": "Akurate DSM",
             "platform": "core1",
@@ -147,7 +147,7 @@
         },
         "803": {
             "description": "2010 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "AkurateDsMk2",
             "name": "Akurate DS",
             "note": "850 and 851 were known internally as 'NoDig': Mk2 main board in Mk1 enclosure",
@@ -166,7 +166,7 @@
         },
         "822": {
             "description": "2011 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "KlimaxDsMk2",
             "name": "Klimax DS",
             "platform": "core1",
@@ -182,7 +182,7 @@
         },
         "836": {
             "description": "2012 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "KikoDsm",
             "name": "Kiko DSM",
             "platform": "core1",
@@ -192,7 +192,7 @@
         },
         "840": {
             "description": "2012 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "MajikDsmMk2",
             "name": "Majik DSM",
             "platform": "core1",
@@ -202,7 +202,7 @@
         },
         "842": {
             "description": "2009 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "MajikDsmMk1",
             "name": "Majik DSM",
             "platform": "core1",
@@ -212,7 +212,7 @@
         },
         "858": {
             "description": "2012 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "SekritDsm",
             "name": "Sekrit DSM",
             "platform": "core1",
@@ -222,7 +222,7 @@
         },
         "867": {
             "description": "2014 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "KlimaxDsmMk2",
             "name": "Klimax DSM",
             "platform": "core1",
@@ -237,7 +237,7 @@
         },
         "875": {
             "description": "2013 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "SneakyDsm",
             "name": "Sneaky DSM",
             "platform": "core1",
@@ -247,7 +247,7 @@
         },
         "889": {
             "description": "2013 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "KlimaxExaktDsm",
             "name": "Klimax Exakt DSM",
             "platform": "core1",
@@ -258,7 +258,7 @@
         },
         "901": {
             "description": "2014 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "AkurateExaktDsm",
             "name": "Akurate Exakt DSM",
             "platform": "core1",
@@ -268,7 +268,7 @@
         },
         "903": {
             "description": "2014 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "AkurateDsmMk2",
             "name": "Akurate DSM",
             "platform": "core1",
@@ -279,7 +279,7 @@
         },
         "911": {
             "description": "2015 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "MajikDsMk2",
             "name": "Majik DS",
             "platform": "core1",
@@ -289,7 +289,7 @@
         },
         "912": {
             "description": "2015 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "AkurateDsMk3",
             "name": "Akurate DS",
             "platform": "core1",
@@ -302,7 +302,7 @@
         },
         "913": {
             "description": "2015 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "KlimaxDsMk3",
             "name": "Klimax DS",
             "platform": "core1",
@@ -317,7 +317,7 @@
         },
         "915": {
             "description": "2015 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "MajikDsmMk3",
             "name": "Majik DSM",
             "platform": "core1",
@@ -328,7 +328,7 @@
         },
         "960": {
             "description": "2016 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "KlimaxDsMk4",
             "name": "Klimax DS",
             "platform": "core1",
@@ -337,7 +337,7 @@
         },
         "961": {
             "description": "2016 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "KlimaxDsmMk3",
             "name": "Klimax DSM",
             "platform": "core1",
@@ -346,7 +346,7 @@
         },
         "973": {
             "description": "2018 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "SelektDsm",
             "name": "Selekt DSM",
             "platform": "core4",
@@ -355,7 +355,7 @@
         },
         "983": {
             "description": "2017 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "SekritDs",
             "name": "Sekrit DS",
             "platform": "core1",
@@ -364,7 +364,7 @@
         },
         "988": {
             "description": "2018 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "AkurateDsMk4",
             "name": "Akurate DS",
             "platform": "core1",
@@ -376,7 +376,7 @@
         },
         "989": {
             "description": "2018 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "AkurateDsmMk3",
             "name": "Akurate DSM",
             "platform": "core1",
@@ -385,7 +385,7 @@
         },
         "992": {
             "description": "2018 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "MajikDsmMk4",
             "name": "Majik DSM",
             "platform": "core1",
@@ -395,7 +395,7 @@
         },
         "993": {
             "description": "2018 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "SekritDsMk2",
             "name": "Sekrit DS",
             "platform": "core1",
@@ -404,7 +404,7 @@
         },
         "996": {
             "description": "2018 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "KikoDsmMk2",
             "name": "Kiko DSM",
             "platform": "core1",
@@ -413,7 +413,7 @@
         },
         "997": {
             "description": "2018 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "SekritDsmMk2",
             "name": "Sekrit DSM",
             "platform": "core1",
@@ -422,7 +422,7 @@
         },
         "998": {
             "description": "2018 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "AkurateExaktDsmMk2",
             "name": "Akurate Exakt DSM",
             "platform": "core1",
@@ -431,7 +431,7 @@
         },
         "999": {
             "description": "2018 variant",
-            "lateststable": "4.66.255",
+            "lateststable": "4.67.262",
             "legacytarget": "KlimaxDsMk5",
             "name": "Klimax DS",
             "platform": "core1",
@@ -569,20 +569,8 @@
     },
     "latestreleases": {
         "core1": {
-            "beta": {
-                "date": "17 Dec 2018 13:55:02",
-                "exaktlink": "3",
-                "minkonfigversion": "4.36.106",
-                "suppress": [],
-                "version": "4.67.262"
-            },
-            "dev": {
-                "date": "17 Dec 2018 13:55:02",
-                "exaktlink": "3",
-                "minkonfigversion": "4.36.106",
-                "suppress": [],
-                "version": "4.67.262"
-            },
+            "beta": null,
+            "dev": null,
             "nightly": {
                 "date": "17 Dec 2018 11:10:59",
                 "exaktlink": "3",
@@ -591,28 +579,16 @@
                 "version": "4.0.729"
             },
             "stable": {
-                "date": "17 Dec 2018 16:31:19",
+                "date": "17 Dec 2018 17:42:23",
                 "exaktlink": "3",
                 "minkonfigversion": "4.36.106",
                 "suppress": [],
-                "version": "4.66.255"
+                "version": "4.67.262"
             }
         },
         "core4": {
-            "beta": {
-                "date": "17 Dec 2018 13:55:02",
-                "exaktlink": "3",
-                "minkonfigversion": "4.36.106",
-                "suppress": [],
-                "version": "4.67.262"
-            },
-            "dev": {
-                "date": "17 Dec 2018 13:55:02",
-                "exaktlink": "3",
-                "minkonfigversion": "4.36.106",
-                "suppress": [],
-                "version": "4.67.262"
-            },
+            "beta": null,
+            "dev": null,
             "nightly": {
                 "date": "17 Dec 2018 11:17:43",
                 "exaktlink": "3",
@@ -621,9 +597,11 @@
                 "version": "4.0.729"
             },
             "stable": {
-                "date": "09 Nov 2018 10:04:27",
+                "date": "17 Dec 2018 17:42:23",
+                "exaktlink": "3",
+                "minkonfigversion": "4.36.106",
                 "suppress": [],
-                "version": "4.66.255"
+                "version": "4.67.262"
             }
         }
     },
@@ -729,6 +707,11 @@
                 "date": "17 Dec 2018 16:31:19",
                 "exaktlink": "3",
                 "minkonfigversion": "4.36.106"
+            },
+            "4.67.262": {
+                "date": "17 Dec 2018 17:42:23",
+                "exaktlink": "3",
+                "minkonfigversion": "4.36.106"
             }
         },
         "core4": {
@@ -744,6 +727,11 @@
             },
             "4.66.255": {
                 "date": "09 Nov 2018 10:04:27",
+                "exaktlink": "3",
+                "minkonfigversion": "4.36.106"
+            },
+            "4.67.262": {
+                "date": "17 Dec 2018 17:42:23",
                 "exaktlink": "3",
                 "minkonfigversion": "4.36.106"
             }
