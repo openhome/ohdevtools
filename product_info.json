@@ -569,14 +569,26 @@
     },
     "latestreleases": {
         "core1": {
-            "beta": null,
-            "dev": null,
+            "beta": {
+                "date": "17 Dec 2018 13:55:02",
+                "exaktlink": "3",
+                "minkonfigversion": "4.36.106",
+                "suppress": [],
+                "version": "4.67.262"
+            },
+            "dev": {
+                "date": "17 Dec 2018 13:55:02",
+                "exaktlink": "3",
+                "minkonfigversion": "4.36.106",
+                "suppress": [],
+                "version": "4.67.262"
+            },
             "nightly": {
-                "date": "03 Dec 2018 18:55:19",
+                "date": "17 Dec 2018 11:10:59",
                 "exaktlink": "3",
                 "minkonfigversion": "4.36.106",
                 "suppress": null,
-                "version": "4.0.719"
+                "version": "4.0.729"
             },
             "stable": {
                 "date": "17 Dec 2018 16:31:19",
@@ -588,21 +600,25 @@
         },
         "core4": {
             "beta": {
-                "date": "09 Nov 2018 09:54:48",
+                "date": "17 Dec 2018 13:55:02",
+                "exaktlink": "3",
+                "minkonfigversion": "4.36.106",
                 "suppress": [],
-                "version": "4.66.255"
+                "version": "4.67.262"
             },
             "dev": {
-                "date": "09 Nov 2018 09:54:48",
+                "date": "17 Dec 2018 13:55:02",
+                "exaktlink": "3",
+                "minkonfigversion": "4.36.106",
                 "suppress": [],
-                "version": "4.66.255"
+                "version": "4.67.262"
             },
             "nightly": {
-                "date": "03 Dec 2018 19:07:57",
+                "date": "17 Dec 2018 11:17:43",
                 "exaktlink": "3",
                 "minkonfigversion": "4.36.106",
                 "suppress": null,
-                "version": "4.0.719"
+                "version": "4.0.729"
             },
             "stable": {
                 "date": "09 Nov 2018 10:04:27",
