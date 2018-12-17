@@ -521,6 +521,7 @@ def CreateV1ReleaseFeed(aFile, aVersion, aIsPromotionFromDev):
     else:
         rlsInfo = GetLatestReleaseInfo('core1', 'beta')
     print aVersion
+    print rlsInfo
     print rlsInfo['version']
     if rlsInfo == None or rlsInfo['version'] != aVersion:
         return False
