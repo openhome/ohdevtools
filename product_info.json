@@ -42,6 +42,11 @@
             "name": "",
             "platform": "secondary"
         },
+        "1013": {
+            "description": "",
+            "name": "Akurate Exaktbox-I",
+            "platform": "exakt"
+        },
         "1014": {
             "description": "2018 variant",
             "lateststable": "4.66.255",
@@ -325,6 +330,11 @@
             "name": "",
             "platform": "secondary"
         },
+        "865": {
+            "description": "",
+            "name": "Klimax Exaktbox",
+            "platform": "exakt"
+        },
         "867": {
             "description": "2014 variant",
             "lateststable": "4.66.255",
@@ -339,6 +349,11 @@
                 "826": "Klimax Renew DSM"
             },
             "volkano1": true
+        },
+        "869": {
+            "description": "",
+            "name": "Klimax Exakt 350",
+            "platform": "exakt"
         },
         "875": {
             "description": "2013 variant",
@@ -355,6 +370,16 @@
             "name": "",
             "platform": "secondary"
         },
+        "887,886,871": {
+            "description": "",
+            "name": "Akubarik Exakt",
+            "platform": "exakt"
+        },
+        "887,904,871": {
+            "description": "",
+            "name": "Akudorik Exakt/Dorik Exakt Upgrade Stand",
+            "platform": "exakt"
+        },
         "889": {
             "description": "2013 variant",
             "lateststable": "4.66.255",
@@ -366,6 +391,11 @@
             "v1sources": 14,
             "volkano1": true
         },
+        "893": {
+            "description": "",
+            "name": "Urika II",
+            "platform": "exakt"
+        },
         "901": {
             "description": "2014 variant",
             "lateststable": "4.66.255",
@@ -375,6 +405,11 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Akurate_Exakt_DSM",
             "v1sources": 18,
             "volkano1": true
+        },
+        "902": {
+            "description": "",
+            "name": "Akurate Exaktbox 10",
+            "platform": "exakt"
         },
         "903": {
             "description": "2014 variant",
@@ -386,6 +421,11 @@
             "urlhdmi2": "http://docs.linn.co.uk/wiki/index.php/Akurate_DSM_(4K_compatible)",
             "v1sources": 19,
             "volkano1": true
+        },
+        "909": {
+            "description": "",
+            "name": "Exaktbox Sub",
+            "platform": "exakt"
         },
         "911": {
             "description": "2015 variant",
@@ -436,6 +476,26 @@
             "v1sources": 20,
             "volkano1": true
         },
+        "926,925": {
+            "description": "",
+            "name": "530",
+            "platform": "exakt"
+        },
+        "926,930": {
+            "description": "",
+            "name": "520",
+            "platform": "exakt"
+        },
+        "933": {
+            "description": "",
+            "name": "Akurate Exaktbox 6",
+            "platform": "exakt"
+        },
+        "935": {
+            "description": "",
+            "name": "Majik Exaktbox-I",
+            "platform": "exakt"
+        },
         "950": {
             "description": "",
             "name": "",
@@ -474,6 +534,26 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Klimax_DSM_(KATALYST_Variant)",
             "volkano1": false
         },
+        "963": {
+            "description": "",
+            "name": "Klimax Exaktbox Katalyst",
+            "platform": "exakt"
+        },
+        "964": {
+            "description": "",
+            "name": "Klimax Exakt Katalyst 350",
+            "platform": "exakt"
+        },
+        "972,970,871": {
+            "description": "",
+            "name": "Akubarik Exakt Katalyst",
+            "platform": "exakt"
+        },
+        "972,971,871": {
+            "description": "",
+            "name": "Akudorik Exakt Katalyst",
+            "platform": "exakt"
+        },
         "973": {
             "description": "2018 variant",
             "lateststable": "4.66.255",
@@ -488,6 +568,11 @@
             "name": "",
             "platform": "secondary"
         },
+        "981": {
+            "description": "",
+            "name": "Selekt Integrated Exakt",
+            "platform": "exakt"
+        },
         "983": {
             "description": "2017 variant",
             "lateststable": "4.66.255",
@@ -496,6 +581,16 @@
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Sekrit_DS",
             "volkano1": false
+        },
+        "984": {
+            "description": "",
+            "name": "Akurate Exaktbox 6 Katalyst",
+            "platform": "exakt"
+        },
+        "985": {
+            "description": "",
+            "name": "Akurate Exaktbox 10 Katalyst",
+            "platform": "exakt"
         },
         "986": {
             "description": "",
