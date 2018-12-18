@@ -27,6 +27,21 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Majik_DS_(Exakt_Variant)",
             "volkano1": false
         },
+        "1008": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
+        "1010": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
+        "1011": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
         "1014": {
             "description": "2018 variant",
             "lateststable": "4.66.255",
@@ -45,6 +60,21 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Akurate_Exakt_DSM",
             "volkano1": false
         },
+        "610": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
+        "611": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
+        "670": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
         "678": {
             "description": "2007 variant",
             "lateststable": "4.66.255",
@@ -60,6 +90,11 @@
             },
             "volkano1": true
         },
+        "679": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
         "697": {
             "description": "2007 variant",
             "lateststable": "4.66.255",
@@ -74,6 +109,11 @@
                 "826": "Akurate Renew DS"
             },
             "volkano1": true
+        },
+        "698": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
         },
         "716": {
             "description": "2008 variant",
@@ -95,6 +135,11 @@
             "v1sources": 5,
             "volkano1": true
         },
+        "749": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
         "750": {
             "description": "2009 variant",
             "lateststable": "4.66.255",
@@ -115,6 +160,11 @@
             "v1sources": 16,
             "volkano1": true
         },
+        "770": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
         "792": {
             "description": "2011 variant",
             "lateststable": "4.66.255",
@@ -130,6 +180,11 @@
             },
             "volkano1": true
         },
+        "793": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
         "797": {
             "description": "2011 variant",
             "lateststable": "4.66.255",
@@ -144,6 +199,16 @@
                 "826": "Akurate Renew DSM"
             },
             "volkano1": true
+        },
+        "799": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
+        "802": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
         },
         "803": {
             "description": "2010 variant",
@@ -164,6 +229,11 @@
             },
             "volkano1": true
         },
+        "805": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
         "822": {
             "description": "2011 variant",
             "lateststable": "4.66.255",
@@ -180,6 +250,11 @@
             },
             "volkano1": true
         },
+        "826": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
         "836": {
             "description": "2012 variant",
             "lateststable": "4.66.255",
@@ -189,6 +264,16 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Kiko_DSM",
             "v1sources": 10,
             "volkano1": true
+        },
+        "837": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
+        "838": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
         },
         "840": {
             "description": "2012 variant",
@@ -200,6 +285,11 @@
             "v1sources": 20,
             "volkano1": true
         },
+        "841": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
         "842": {
             "description": "2009 variant",
             "lateststable": "4.66.255",
@@ -210,6 +300,11 @@
             "v1sources": 16,
             "volkano1": true
         },
+        "844": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
         "858": {
             "description": "2012 variant",
             "lateststable": "4.66.255",
@@ -219,6 +314,16 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Sekrit_DSM",
             "v1sources": 11,
             "volkano1": true
+        },
+        "862": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
+        "863": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
         },
         "867": {
             "description": "2014 variant",
@@ -244,6 +349,11 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Sneaky_DSM",
             "v1sources": 11,
             "volkano1": true
+        },
+        "876": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
         },
         "889": {
             "description": "2013 variant",
@@ -326,6 +436,26 @@
             "v1sources": 20,
             "volkano1": true
         },
+        "950": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
+        "953": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
+        "954": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
+        "958": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
         "960": {
             "description": "2016 variant",
             "lateststable": "4.66.255",
@@ -353,6 +483,11 @@
             "url": "http://docs.linn.co.uk/wiki/index.php/Selekt_DSM",
             "volkano1": false
         },
+        "974": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
         "983": {
             "description": "2017 variant",
             "lateststable": "4.66.255",
@@ -361,6 +496,16 @@
             "platform": "core1",
             "url": "http://docs.linn.co.uk/wiki/index.php/Sekrit_DS",
             "volkano1": false
+        },
+        "986": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
+        },
+        "987": {
+            "description": "",
+            "name": "",
+            "platform": "secondary"
         },
         "988": {
             "description": "2018 variant",
