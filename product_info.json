@@ -572,11 +572,11 @@
             "beta": null,
             "dev": null,
             "nightly": {
-                "date": "17 Dec 2018 18:55:14",
+                "date": "18 Dec 2018 18:55:22",
                 "exaktlink": "3",
                 "minkonfigversion": "4.36.106",
                 "suppress": null,
-                "version": "4.0.730"
+                "version": "4.0.731"
             },
             "stable": {
                 "date": "17 Dec 2018 17:42:23",
