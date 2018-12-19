@@ -29,6 +29,7 @@ kExaktRepo                  = "ssh://joshh@core.linn.co.uk/home/git/exakt.git" #
 kProductRepo                = "ssh://joshh@core.linn.co.uk/home/git/product.git" # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
 kReleaseUtilsRepo           = "ssh://joshh@core.linn.co.uk/home/git/releaseUtils.git" # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
 kOhDevToolsRepo             = "ssh://joshh@core.linn.co.uk/home/git/ohdevtools.git" # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
+kProductInfoRepo            = "ssh://joshh@core.linn.co.uk/home/git/ProductInfo.git" # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
 # Kiboko details
 kRemoteHost                 = 'products@kiboko.linn.co.uk'
 kDevFileLocation            = '/var/www.products/VersionInfo/Downloads/Development/'
