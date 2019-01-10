@@ -34,5 +34,5 @@ def check_version():
                 try:
                     require_version(required_version)
                 except BadVersionException as e:
-                    print e.usermessage
+                    print( e.usermessage )
                     sys.exit(32)
