@@ -1,6 +1,8 @@
 import email.mime.text
+import json
 import os
 import re
+import requests
 import sys
 import shutil
 import subprocess
@@ -320,31 +322,47 @@ def TitleToId( aTitle ):
     id = id.replace(".", "d")
     return id
 
-
 try:
     import boto3
 except:
-    print( '\nAWS publish requires boto3 module' )
-    print( "Please install this using 'pip install boto3'\n" )
-    sys.exit( 2 )
+    print('\nAWS fetch requires boto3 module')
+    print("Please install this using 'pip install boto3'\n")
 else:
-    # create AWS credentials file (if not already present)
-    home = None
-    if 'HOMEPATH' in os.environ and 'HOMEDRIVE' in os.environ:
-        home = os.path.join(os.environ['HOMEDRIVE'], os.environ['HOMEPATH'])
-    elif 'HOME' in os.environ:
-        home = os.environ['HOME']
-    if home:
-        awsCreds = os.path.join(home, '.aws', 'credentials')
-        if not os.path.exists(awsCreds):
-            try:
-                os.mkdir(os.path.join(home, '.aws'))
-            except:
-                pass
-            credsFile = urllib2.urlopen('http://core.linn.co.uk/~artifacts/artifacts/aws-credentials' )
-            creds = credsFile.read()
-            with open(awsCreds, 'wt') as f:
-                f.write(creds)
+    awsSlave = False
+    try:
+        resp = requests.get( 'http://169.254.169.254/latest/meta-data/iam/info' )
+        meta = json.loads( resp.text )
+        if 'InstanceProfileArn' in meta:
+            if 'dev-tools-EC2SlaveInstanceProfile' in meta['InstanceProfileArn']:
+                awsSlave = True
+    except:
+        pass
+
+    if not awsSlave:
+        # create AWS credentials file (if not already present)
+        home = None
+        if 'HOMEPATH' in os.environ and 'HOMEDRIVE' in os.environ:
+            home = os.path.join(os.environ['HOMEDRIVE'], os.environ['HOMEPATH'])
+        elif 'HOME' in os.environ:
+            home = os.environ['HOME']
+        if home:
+            awsCreds = os.path.join(home, '.aws', 'credentials')
+            if not os.path.exists(awsCreds):
+                if sys.version_info[0] == 2:
+                    from urllib2 import urlopen
+                else:
+                    from urllib.request import urlopen
+                try:
+                    os.mkdir(os.path.join(home, '.aws'))
+                except:
+                    pass
+                try:
+                    credsFile = urlopen('http://core.linn.co.uk/aws-credentials' )
+                    creds = credsFile.read()
+                    with open(awsCreds, 'wt') as f:
+                        f.write(creds)
+                except:
+                    pass
 
 
 def DownloadFromAws( aKey, aDestinationFile, aBucket=kAwsBucketPrivate ):
@@ -429,7 +447,7 @@ def CheckPublishTestDsEmulatorLocal( aVersion, aDryRun=False ):
     CreateTestDsEmulator( aVersion, True, True, aDryRun )
 
 def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
-    kEmulatorTypes = [ { "os": "Linux-x86",   "spotify": "spotify_embedded/lib/libspotify_embedded_shared.so" }, 
+    kEmulatorTypes = [ { "os": "Linux-x86",   "spotify": "spotify_embedded/lib/libspotify_embedded_shared.so" },
                        { "os": "Windows-x86", "spotify": "spotify_embedded/lib/spotify_embedded_shared.dll" } ] # Core-ppc32?
     jsonObjs = GetDependenciesJson( kProductRepo, aVersion )
     libdsVer = spotifyVer = libdsKey = spotifyKey = libdsFile = spotifyFile = None
@@ -515,7 +533,7 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
 
             txtData = "libds\\bin\\TestDs.exe -r TestDs-%s -n SoftPlayer -l --ui libds\\ui\\AkurateIcons\\" % aVersion
             CreateFile( txtData, os.path.join( localDirEt, 'TestDs.bat' ) )
-    
+
     if aCheckOnly:
         print "TestDs Emulator check succeeded"
         shutil.rmtree( localDirTop )
@@ -538,7 +556,7 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
     else:
         uploadKey = 'Volkano2Products/%s' % tarOutputFile
         UploadToAws( uploadKey, tarOutputFile, aDryRun=aDryRun )
-        
+
         os.remove( tarOutputFile )
 
         to = [ 'Robbie.Singer@linn.co.uk', 'Gareth.Griffiths@linn.co.uk', 'Simon.Chisholm@linn.co.uk' ]
