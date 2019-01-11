@@ -87,7 +87,7 @@ def CreateJsonFile(aJsonObjs, aJsonFile, aSortKeys=True):
     f = open(aJsonFile, 'wt')
     f.write(data)
     f.close()
-    os.chmod(aJsonFile, 0664)  # allow group to write this file as it may be manually updated occasionally
+    os.chmod(aJsonFile, 0664)  # NOQA  allow group to write this file as it may be manually updated occasionally
 
 
 def ReadJson(aJsonFile):
