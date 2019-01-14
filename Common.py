@@ -1,6 +1,8 @@
 import email.mime.text
+import json
 import os
 import re
+import requests
 import sys
 import shutil
 import subprocess
@@ -16,21 +18,21 @@ import urllib2
 
 # CDN locations - jenkins job runs on eng.linn.co.uk - need to relocate cdn directory if this changed
 kCdnWwwDestination          = "linnapi@static.linnapi.com:/var/www.linnapi/public_html"
-kCdnRsyncLocalDir           = "/local/share/cdn/" # local location (eng) to sync with remote host
-kCdnDirForUploadV2          = '/local/share/cdn/exaktV2' # location for rsync with public server: \\eng.linn.co.uk\share\cdn\exaktV2\
+kCdnRsyncLocalDir           = "/local/share/cdn/"   # local location (eng) to sync with remote host
+kCdnDirForUploadV2          = '/local/share/cdn/exaktV2'    # location for rsync with public server: \\eng.linn.co.uk\share\cdn\exaktV2\
 kCdnDirForUploadProduct     = '/local/share/cdn/product' # location for rsync with public server: \\eng.linn.co.uk\share\cdn\product\
 kExaktJsonGenericDevCloudV2 = os.path.join(kCdnDirForUploadV2, 'devattributes.json')
 kExaktJsonStableCloudV2     = os.path.join(kCdnDirForUploadV2, 'attributesV4.json')
-kDirComponentsV2            = '/local/share/componentsV2' # official location for software components: \\eng.linn.co.uk\share\componentsV2\
+kDirComponentsV2            = '/local/share/componentsV2'   # official location for software components: \\eng.linn.co.uk\share\componentsV2\
 kLocalCloudFileName         = 'ExaktCloudDbV2.json'
 kLocalCloudTempFileName     = 'ExaktMinimalTemp.json'
 kLocalDevCloudTempFileName  = 'ExaktMinimalDevTemp.json'
 # Repo locations
-kExaktRepo                  = "ssh://joshh@core.linn.co.uk/home/git/exakt.git" # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
-kProductRepo                = "ssh://joshh@core.linn.co.uk/home/git/product.git" # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
-kReleaseUtilsRepo           = "ssh://joshh@core.linn.co.uk/home/git/releaseUtils.git" # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
-kOhDevToolsRepo             = "ssh://joshh@core.linn.co.uk/home/git/ohdevtools.git" # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
-kProductInfoRepo            = "ssh://joshh@core.linn.co.uk/home/git/ProductInfo.git" # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
+kExaktRepo                  = "ssh://joshh@core.linn.co.uk/home/git/exakt.git"  # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
+kProductRepo                = "ssh://joshh@core.linn.co.uk/home/git/product.git"    # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
+kReleaseUtilsRepo           = "ssh://joshh@core.linn.co.uk/home/git/releaseUtils.git"   # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
+kOhDevToolsRepo             = "ssh://joshh@core.linn.co.uk/home/git/ohdevtools.git"     # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
+kProductInfoRepo            = "ssh://joshh@core.linn.co.uk/home/git/ProductInfo.git"    # would prefer to use artifacts user but it is not allowed to push. Requires membership in BUILTIN\users group, and  <usermod -a -G "BUILTIN\\users" artifacts> doesn't woprk from root
 # Kiboko details
 kRemoteHost                 = 'products@kiboko.linn.co.uk'
 kDevFileLocation            = '/var/www.products/VersionInfo/Downloads/Development/'
@@ -42,7 +44,7 @@ kDevFeedFileName            = 'DevelopmentVersionInfoV2.json'
 kBetaFeedFileName           = 'LatestVersionInfoV2.json'
 kReleaseUrlBase             = 'http://products.linn.co.uk/VersionInfo/'
 # Misc
-kDateAndTime                = time.strftime('%d %b %Y %H:%M:%S', time.localtime()) # returns: 25 Aug 2014 15:38:11
+kDateAndTime                = time.strftime('%d %b %Y %H:%M:%S', time.localtime())  # returns: 25 Aug 2014 15:38:11
 kProductSuppressedString    = 'DISABLED'
 kExaktSuppressedString      = 'suppress'
 # crash report related
@@ -72,11 +74,13 @@ def Info( aMsg ):
     """Display information message"""
     print( aMsg )
 
+
 def GetJsonObjects( aJsonFile ):
     f = open(aJsonFile, 'rt')
     data = f.read()
     f.close()
     return json.loads(data)  # performs validation as well
+
 
 def CreateJsonFile(aJsonObjs, aJsonFile, aSortKeys=True):
     data = json.dumps(aJsonObjs, sort_keys=aSortKeys, indent=4, separators=(',', ': '))  # creates formatted json file and validates
@@ -84,13 +88,16 @@ def CreateJsonFile(aJsonObjs, aJsonFile, aSortKeys=True):
     f = open(aJsonFile, 'wt')
     f.write(data)
     f.close()
-    os.chmod(aJsonFile, 0664)  # allow group to write this file as it may be manually updated occasionally
+    os.chmod(aJsonFile, 0664)  # NOQA  allow group to write this file as it may be manually updated occasionally
+
 
 def ReadJson(aJsonFile):
     return GetJsonObjects(aJsonFile)
 
+
 def WriteJson(aData, aJsonFile, aSortKeys=True):
     CreateJsonFile(aData, aJsonFile, aSortKeys)
+
 
 def GetLines(aTextFile):
     f = open(aTextFile, 'rt')
@@ -98,10 +105,12 @@ def GetLines(aTextFile):
     f.close()
     return data
 
+
 def CreateTextFile(aLines, aTextFile):
     f = open(aTextFile, 'wt')
     f.writelines(aLines)
     f.close()
+
 
 def CompareVersions(aVersion1, aVersion2):
     # if aVersion1 > aVersion2 return true, otherwise return false
@@ -132,6 +141,7 @@ def CompareVersions(aVersion1, aVersion2):
     elif int(new[0]) == int(old[0]) and int(new[1]) == int(old[1]) and int(new[2]) > int(old[2]):
         return True
     return False
+
 
 def SendEmail( aSubject, aText, aTo, aDryRun ):
     """Send email subject aSubject containing aText to aRecipients"""
@@ -190,7 +200,7 @@ def SendPublishedEmail( aExecutable, aVersion, aPlatform, aReleaseNotes=None, aD
 def CommitAndPushFiles( aRepo, aFileList, aCommitMessage, aDryRun, aBranch=None ):
     from git import Repo
     clonePath = tempfile.mkdtemp()
-    if aBranch != None and len(aBranch) > 0:
+    if aBranch is not None and len(aBranch) > 0:
         Info( "Locally clone %s (%s) to %s" % ( aRepo, aBranch, clonePath ) )
         localRepo = Repo.clone_from( aRepo, clonePath, branch=aBranch )
     else:
@@ -269,6 +279,7 @@ def UploadFilesToCdn(aDryRun):
     exeRsync.append( kCdnWwwDestination )
     subprocess.check_call( exeRsync )
 
+
 def CopyFileWithPermissions(aSource, aDestination):
     import grp
     subprocess.check_call(['sudo', 'cp', '--preserve=mode', aSource, aDestination])
@@ -298,8 +309,9 @@ def GetBitstreamVersion(aBitstreamFile, aMajorNumber):
         return ver.group(0)
     return 'Unknown'
 
+
 def CreateHtmlFile( aHtml, aHtmlFile, aPrintToScreen ):
-    print ( "Created html output file: %s" % aHtmlFile )
+    print( "Created html output file: %s" % aHtmlFile )
     f = open(aHtmlFile, 'wt')
     f.write( aHtml.encode('utf-8') )
     f.close()
@@ -325,27 +337,44 @@ def TitleToId( aTitle ):
 try:
     import boto3
 except:
-    print( '\nAWS publish requires boto3 module' )
-    print( "Please install this using 'pip install boto3'\n" )
-    sys.exit( 2 )
+    print('\nAWS fetch requires boto3 module')
+    print("Please install this using 'pip install boto3'\n")
 else:
-    # create AWS credentials file (if not already present)
-    home = None
-    if 'HOMEPATH' in os.environ and 'HOMEDRIVE' in os.environ:
-        home = os.path.join(os.environ['HOMEDRIVE'], os.environ['HOMEPATH'])
-    elif 'HOME' in os.environ:
-        home = os.environ['HOME']
-    if home:
-        awsCreds = os.path.join(home, '.aws', 'credentials')
-        if not os.path.exists(awsCreds):
-            try:
-                os.mkdir(os.path.join(home, '.aws'))
-            except:
-                pass
-            credsFile = urllib2.urlopen('http://core.linn.co.uk/~artifacts/artifacts/aws-credentials' )
-            creds = credsFile.read()
-            with open(awsCreds, 'wt') as f:
-                f.write(creds)
+    awsSlave = False
+    try:
+        resp = requests.get( 'http://169.254.169.254/latest/meta-data/iam/info' )
+        meta = json.loads( resp.text )
+        if 'InstanceProfileArn' in meta:
+            if 'dev-tools-EC2SlaveInstanceProfile' in meta['InstanceProfileArn']:
+                awsSlave = True
+    except:
+        pass
+
+    if not awsSlave:
+        # create AWS credentials file (if not already present)
+        home = None
+        if 'HOMEPATH' in os.environ and 'HOMEDRIVE' in os.environ:
+            home = os.path.join(os.environ['HOMEDRIVE'], os.environ['HOMEPATH'])
+        elif 'HOME' in os.environ:
+            home = os.environ['HOME']
+        if home:
+            awsCreds = os.path.join(home, '.aws', 'credentials')
+            if not os.path.exists(awsCreds):
+                if sys.version_info[0] == 2:
+                    from urllib2 import urlopen
+                else:
+                    from urllib.request import urlopen
+                try:
+                    os.mkdir(os.path.join(home, '.aws'))
+                except:
+                    pass
+                try:
+                    credsFile = urlopen('http://core.linn.co.uk/aws-credentials' )
+                    creds = credsFile.read()
+                    with open(awsCreds, 'wt') as f:
+                        f.write(creds)
+                except:
+                    pass
 
 
 def DownloadFromAws( aKey, aDestinationFile, aBucket=kAwsBucketPrivate ):
@@ -363,10 +392,11 @@ def UploadToAws( aKey, aSourceFile, aBucket=kAwsBucketPrivate, aDryRun=False ):
     with open( aSourceFile, 'rb' ) as data:
         if not aDryRun:
             ext = aSourceFile.split(".")[-1]
-            if ext in  ["txt", "json", "xml"]:
+            if ext in ["txt", "json", "xml"]:
                 bucket.upload_fileobj(data, aKey, ExtraArgs={'ContentType': 'text/plain'})
             else:
                 bucket.upload_fileobj(data, aKey)
+
 
 def UploadRecursiveToAws( aSrcDir, aDstDir, aFileFilter="*", aDryRun=False ):
     import glob
@@ -374,15 +404,18 @@ def UploadRecursiveToAws( aSrcDir, aDstDir, aFileFilter="*", aDryRun=False ):
         elfFileKey = os.path.join( aDstDir, os.path.basename(f) )
         UploadToAws( elfFileKey, f, kAwsBucketPrivate, aDryRun)
 
+
 def UploadToAwsDir( aDir, aSourceFile, aBucket=kAwsBucketPrivate, aDryRun=False ):
     key = os.path.join( aDir, os.path.basename(aSourceFile) )
     UploadToAws( key, aSourceFile, aBucket, aDryRun )
+
 
 def CopyOnAws( aSourceKey, aDestKey, aBucket=kAwsBucketPrivate, aDryRun=False ):
     print( 'Copy from AWS (%s) %s to %s' % ( aBucket, aSourceKey, aDestKey ) )
     client = boto3.client('s3')
     if not aDryRun:
         client.copy_object(Bucket=aBucket, CopySource="%s/%s" % ( aBucket, aSourceKey ), Key=aDestKey)
+
 
 def CopyRecursiveOnAws( aSourceDir, aDestDir, aBucket=kAwsBucketPrivate, aDryRun=False ):
     print( 'Copy Recursive on AWS (%s) %s to %s' % ( aBucket, aSourceDir, aDestDir ) )
@@ -395,12 +428,14 @@ def CopyRecursiveOnAws( aSourceDir, aDestDir, aBucket=kAwsBucketPrivate, aDryRun
         destKey = os.path.join( aDestDir.strip("/"), sourceFile )
         CopyOnAws( sourceKey, destKey, aBucket, aDryRun )
 
+
 def MoveOnAws( aSourceKey, aDestKey, aBucket=kAwsBucketPrivate, aDryRun=False ):
     print( 'Move on AWS (%s) %s to %s' % ( aBucket, aSourceKey, aDestKey ) )
     client = boto3.client('s3')
     if not aDryRun:
         client.copy_object(Bucket=aBucket, CopySource="%s/%s" % ( aBucket, aSourceKey ), Key=aDestKey)
         client.delete_object(Bucket=aBucket, Key=aSourceKey)
+
 
 def MoveRecursiveOnAws( aSourceDir, aDestDir, aBucket=kAwsBucketPrivate, aDryRun=False ):
     client = boto3.client('s3')
@@ -412,26 +447,32 @@ def MoveRecursiveOnAws( aSourceDir, aDestDir, aBucket=kAwsBucketPrivate, aDryRun
         destKey = os.path.join( aDestDir.strip("/"), sourceFile )
         MoveOnAws( sourceKey, destKey, aBucket, aDryRun )
 
+
 def CreateFile(aData, aFile):
     f = open(aFile, 'wt')
     f.write(aData)
     f.close()
 
+
 def PublishTestDsEmulatorAws( aVersion, aDryRun=False ):
     CreateTestDsEmulator( aVersion, False, False, aDryRun )
+
 
 def PublishTestDsEmulatorLocal( aVersion, aDryRun=False ):
     CreateTestDsEmulator( aVersion, False, True, aDryRun )
 
+
 def CheckPublishTestDsEmulatorAws( aVersion, aDryRun=False ):
     CreateTestDsEmulator( aVersion, True, False, aDryRun )
+
 
 def CheckPublishTestDsEmulatorLocal( aVersion, aDryRun=False ):
     CreateTestDsEmulator( aVersion, True, True, aDryRun )
 
+
 def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
-    kEmulatorTypes = [ { "os": "Linux-x86",   "spotify": "spotify_embedded/lib/libspotify_embedded_shared.so" }, 
-                       { "os": "Windows-x86", "spotify": "spotify_embedded/lib/spotify_embedded_shared.dll" } ] # Core-ppc32?
+    kEmulatorTypes = [ { "os": "Linux-x86",   "spotify": "spotify_embedded/lib/libspotify_embedded_shared.so" },
+                       { "os": "Windows-x86", "spotify": "spotify_embedded/lib/spotify_embedded_shared.dll" } ]  # Core-ppc32?
     jsonObjs = GetDependenciesJson( kProductRepo, aVersion )
     libdsVer = spotifyVer = libdsKey = spotifyKey = libdsFile = spotifyFile = None
     versionId = aVersion.split('.')[1]
@@ -446,7 +487,7 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
             os.makedirs( localDirEt )
         for obj in jsonObjs:
             if obj['name'] == 'libds':
-                libdsVer = obj['version'] # earliest windows variant is 0.102.723 as we weren't publishing this by default
+                libdsVer = obj['version']  # earliest windows variant is 0.102.723 as we weren't publishing this by default
                 libdsFile = "libds-%s-%s-Release.tar.gz" % ( libdsVer, et["os"] )
                 libdsKey = "libds/%s" % libdsFile
                 libdsFile = os.path.join( localDirEt, libdsFile )
@@ -516,7 +557,7 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
 
             txtData = "libds\\bin\\TestDs.exe -r TestDs-%s -n SoftPlayer -l --ui libds\\ui\\AkurateIcons\\" % aVersion
             CreateFile( txtData, os.path.join( localDirEt, 'TestDs.bat' ) )
-    
+
     if aCheckOnly:
         print "TestDs Emulator check succeeded"
         shutil.rmtree( localDirTop )
@@ -539,7 +580,7 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
     else:
         uploadKey = 'Volkano2Products/%s' % tarOutputFile
         UploadToAws( uploadKey, tarOutputFile, aDryRun=aDryRun )
-        
+
         os.remove( tarOutputFile )
 
         to = [ 'Robbie.Singer@linn.co.uk', 'Gareth.Griffiths@linn.co.uk', 'Simon.Chisholm@linn.co.uk' ]
@@ -547,5 +588,5 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
         text = "Download here: https://s3-eu-west-1.amazonaws.com/linn-artifacts-private/%s" % uploadKey
         SendEmail( subj, text, to, aDryRun )
 
-#PublishTestDsEmulatorLocal( "4.63.223", aDryRun=False )
-#SendPublishedEmail( 'Volkano1Fallback', '1.2.3', 'Volkano1FallbackAte', '', True )
+# PublishTestDsEmulatorLocal( "4.63.223", aDryRun=False )
+# SendPublishedEmail( 'Volkano1Fallback', '1.2.3', 'Volkano1FallbackAte', '', True )
