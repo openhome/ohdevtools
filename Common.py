@@ -20,7 +20,7 @@ import urllib2
 kCdnWwwDestination          = "linnapi@static.linnapi.com:/var/www.linnapi/public_html"
 kCdnRsyncLocalDir           = "/local/share/cdn/"   # local location (eng) to sync with remote host
 kCdnDirForUploadV2          = '/local/share/cdn/exaktV2'    # location for rsync with public server: \\eng.linn.co.uk\share\cdn\exaktV2\
-kCdnDirForUploadProduct     = '/local/share/cdn/product' # location for rsync with public server: \\eng.linn.co.uk\share\cdn\product\
+kWwwDestinationProduct      = "linnapi@static.linnapi.com:/var/www.linnapi/public_html/product"
 kExaktJsonGenericDevCloudV2 = os.path.join(kCdnDirForUploadV2, 'devattributes.json')
 kExaktJsonStableCloudV2     = os.path.join(kCdnDirForUploadV2, 'attributesV4.json')
 kDirComponentsV2            = '/local/share/componentsV2'   # official location for software components: \\eng.linn.co.uk\share\componentsV2\
