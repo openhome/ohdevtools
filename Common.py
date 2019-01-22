@@ -269,7 +269,7 @@ def GetDependenciesJson( aRepo, aVersion ):
 
 def UploadFilesToCdn(aDryRun):
     Info( 'Upload files from %s to %s' % ( kCdnRsyncLocalDir,  kCdnWwwDestination) )
-    rsyncOptions = ['--itemize-changes', '--recursive', '--cvs-exclude', '--delete', '--checksum', '--copy-links', '--perms', '--times', '--verbose', '--exclude=/konfig/assets.*', '--exclude=/konfig/devassets.*']  # --cvs-exclude suppresses .svn/ and much other junk
+    rsyncOptions = ['--itemize-changes', '--recursive', '--cvs-exclude', '--delete', '--checksum', '--copy-links', '--perms', '--times', '--verbose', '--exclude=/konfig/assets.*', '--exclude=/konfig/devassets.*', '--exclude=/product/']  # --cvs-exclude suppresses .svn/ and much other junk
     exeRsync = 'rsync'.split()
     if aDryRun:
         exeRsync.append( '--dry-run')
