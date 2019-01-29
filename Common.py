@@ -590,3 +590,4 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
 
 # PublishTestDsEmulatorLocal( "4.63.223", aDryRun=False )
 # SendPublishedEmail( 'Volkano1Fallback', '1.2.3', 'Volkano1FallbackAte', '', True )
+# UploadFilesToCdn(False)
