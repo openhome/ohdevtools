@@ -2,9 +2,9 @@
 import json
 import os
 import requests
-import sys
 
 kAwsBucketPrivate   = 'linn-artifacts-private'
+kAwsLinnCredsUri    = 'http://core.linn.co.uk/aws-credentials'
 kAwsMetadataService = 'http://169.254.169.254/latest/meta-data/iam/info'
 
 try:
@@ -15,8 +15,8 @@ except:
 else:
     awsSlave = False
     try:
-        resp = requests.get( kAwsMetadataService )
-        meta = json.loads( resp.text )
+        resp = requests.get(kAwsMetadataService)
+        meta = json.loads(resp.text)
         if 'InstanceProfileArn' in meta:
             if 'dev-tools-EC2SlaveInstanceProfile' in meta['InstanceProfileArn']:
                 awsSlave = True
@@ -33,119 +33,176 @@ else:
         if home:
             awsCreds = os.path.join(home, '.aws', 'credentials')
             if not os.path.exists(awsCreds):
-                if sys.version_info[0] == 2:
-                    from urllib2 import urlopen
-                else:
-                    from urllib.request import urlopen
                 try:
                     os.mkdir(os.path.join(home, '.aws'))
                 except:
                     pass
                 try:
-                    credsFile = urlopen('http://core.linn.co.uk/aws-credentials' )
-                    creds = credsFile.read()
+                    creds = requests.get(kAwsLinnCredsUri).text
                     with open(awsCreds, 'wt') as f:
                         f.write(creds)
                 except:
                     pass
 
-def copy(aSrc, aDst):
-    """Copy objects to/from AWS. AWS uri in form s3://<bucket>/<key>"""
-    resource = boto3.resource('s3')
-    if 's3://' in aSrc:
-        bucket = resource.Bucket(aSrc.split('/')[2])
-        obj = bucket.Object('/'.join(aSrc.split('/')[3:]))
-        with open(aDst, 'wb') as data:
-            obj.download_fileobj(data)
-    elif 's3://' in aDst:
-        bucket = resource.Bucket(aDst.split('/')[2])
-        with open( aSrc, 'rb' ) as data:
-            ext = aSrc.split(".")[-1]
-            if ext in ["txt", "json", "xml"]:
-                bucket.upload_fileobj(data, '/'.join(aDst.split('/')[3:]), ExtraArgs={'ContentType': 'text/plain'})
-            else:
-                bucket.upload_fileobj(data, '/'.join(aDst.split('/')[3:]))
 
+# ------------------------------------------------------------------------------
+# 'Private' class to manage AWS using boto3 - public interface at end of file
+# ------------------------------------------------------------------------------
+class __aws:
 
-def delete(aBucket, aKey):
-    if aKey is not None and len(aKey) > 0:
-        s3 = boto3.resource('s3')
-        bucket = s3.Bucket(aBucket)
-        # this allows a single file to be deleted or an entire directory, so be careful!
-        bucket.objects.filter(Prefix=aKey).delete()
+    def __init__(self):
+        self.s3 = boto3.resource('s3')
+        self.client = boto3.client('s3')
 
+    def _copy(self, aSrc, aDst):
+        """Copy objects to/from AWS. AWS uri in form s3://<bucket>/<key>"""
+        if 's3://' in aSrc:
+            bucket = self.s3.Bucket(aSrc.split('/')[2] )
+            obj = bucket.Object('/'.join( aSrc.split('/')[3:]))
+            with open(aDst, 'wb') as data:
+                obj.download_fileobj(data)
+        elif 's3://' in aDst:
+            bucket = self.s3.Bucket(aDst.split('/')[2])
+            with open(aSrc, 'rb') as data:
+                ext = aSrc.split(".")[-1]
+                if ext in ["txt", "json", "xml"]:
+                    bucket.upload_fileobj(data, '/'.join(aDst.split('/')[3:]), ExtraArgs={'ContentType': 'text/plain'})
+                else:
+                    bucket.upload_fileobj(data, '/'.join(aDst.split('/')[3:]))
 
-def CompareVersions(aVersion1, aVersion2):
-    # if aVersion1 > aVersion2 return true, otherwise return false
-    aVersion1 = aVersion1.strip("/").split("/")[-1]
-    aVersion2 = aVersion2.strip("/").split("/")[-1]
+    def _delete(self, aBucket, aKey):
+        if aKey is not None and len(aKey) > 0:
+            bucket = self.s3.Bucket(aBucket)
+            # this allows a single file to be deleted or an entire directory, so be careful!
+            bucket.objects.filter(Prefix=aKey).delete()
 
-    try:
-        v1valid = len(aVersion1.split('.')) == 3 and aVersion1.split('.')[0] != "0"
-    except:
-        v1valid = False
-    try:
-        v2valid = len(aVersion2.split('.')) == 3 and aVersion2.split('.')[0] != "0"
-    except:
-        v2valid = False
+    def _download(self, aKey, aDestinationFile, aBucket=kAwsBucketPrivate):
+        print('Download from AWS s3://%s/%s to %s' % (aBucket, aKey.strip("/"), os.path.abspath(aDestinationFile)))
+        bucket = self.s3.Bucket(aBucket)
+        with open(aDestinationFile, 'wb') as data:
+            bucket.download_fileobj(aKey.strip("/"), data)
 
-    if v1valid and not v2valid:
-        return 1
-    elif v2valid and not v1valid:
-        return -1
-    elif not v1valid and not v2valid:
-        return 0
+    def _exists(self, aUri):
+        exists = False
+        bucket = aUri.split('/')[2]
+        key = '/'.join(aUri.split('/')[3:])
+        try:
+            self.s3.Object(bucket, key).load()
+            exists = True
+        except:
+            pass
+        return exists
 
-    new = aVersion1.split('_')[0].split('.')
-    old = aVersion2.split('_')[0].split('.')
+    def _listItems(self, aUri, aSort=None):
+        """Return (non-recursive) directory listing of specified URI"""
+        entries = []
+        objects = self.__listObjs(aUri)
+        if 'CommonPrefixes' in objects:
+            for item in objects['CommonPrefixes']:
+                entries.append(item['Prefix'])
+        if 'Contents' in objects:
+            for item in objects['Contents']:
+                entries.append(item['Key'])
+        if aSort is not None:
+            entries = self.__sort(entries, aSort)
+        return entries
 
-    if int(new[0]) > int(old[0]):
-        return 1
-    elif int(new[0]) == int(old[0]) and int(new[1]) > int(old[1]):
-        return 1
-    elif int(new[0]) == int(old[0]) and int(new[1]) == int(old[1]) and int(new[2]) > int(old[2]):
-        return 1
-    return -1
+    def _listItemsRecursive(self, aUri):
+        """Return (non-recursive) directory listing of specified URI"""
+        entries = []
+        objects = self.__listObjs(aUri)
+        if 'CommonPrefixes' in objects:
+            for item in objects['CommonPrefixes']:
+                entries.append(item['Prefix'])
+                entries.extend(self._listItemsRecursive(aUri + '/' + item['Prefix'].split('/')[-2]))
+        if 'Contents' in objects:
+            for item in objects['Contents']:
+                entries.append(item['Key'])
+        return entries
 
+    def _listDetails(self, aUri):
+        """Return (non-recursive) directory listing of specified URI"""
+        entries = []
+        objects = self.__listObjs(aUri)
+        if 'CommonPrefixes' in objects:
+            for item in objects['CommonPrefixes']:
+                entries.append({'key': item['Prefix']})
+        if 'Contents' in objects:
+            for item in objects['Contents']:
+                timestamp = str(item['LastModified'])
+                entries.append({'key': item['Key'], 'modified': timestamp, 'size': item['Size']})
+        return entries
 
-def ls(aUri, aSort=None):
-    """Return directory listing of contents of specified URI"""
-    entries = []
-    fields = aUri.split('/')
-    bucket = fields[2]
-    prefix = '/'.join(fields[3:])
-    if prefix[-1] != '/':
-        prefix += '/'
-    client = boto3.client('s3')
-    objects = client.list_objects_v2(Bucket=bucket, Delimiter='/', Prefix=prefix)
-    if 'CommonPrefixes' in objects:
-        for item in objects['CommonPrefixes']:
-            entries.append(item['Prefix'])
-    if 'Contents' in objects:
-        for item in objects['Contents']:
-            entries.append(item['Key'])
-    if aSort is not None:
+    def _listDetailsRecursive(self, aUri):
+        """Return detailed recursive directory listing of specified URI (ls -lr)"""
+        entries = []
+        objects = self.__listObjs(aUri)
+        if 'CommonPrefixes' in objects:
+            for item in objects['CommonPrefixes']:
+                entries.append({'key': item['Prefix']})
+                entries.extend(self._listDetailsRecursive(aUri + '/' + item['Prefix'].split('/')[-2]))
+        if 'Contents' in objects:
+            for item in objects['Contents']:
+                timestamp = str(item['LastModified'])
+                entries.append({'key': item['Key'], 'modified': timestamp, 'size': item['Size']})
+        return entries
+
+    # Helper methods ----------------------------------
+
+    @staticmethod
+    def __cmpKey(aStr):
+        """Key to compare version numbers in format NN.NNN.NNNNN"""
+        verStr = aStr.strip("/").split("/")[-1]
+        version = 0
+        try:
+            fields = verStr.split('_')[0].split('.')
+            version = int(fields[0]) * 1000000000 + int(fields[1]) * 100000 + int(fields[2])
+            # this is good for up to 1000 minor and 10000 build versions
+        except:
+            pass
+        return version
+
+    def __listObjs(self, aUri):
+        fields = aUri.split('/')
+        bucket = fields[2]
+        prefix = '/'.join(fields[3:])
+        if prefix[-1] != '/':
+            prefix += '/'
+        return self.client.list_objects_v2(Bucket=bucket, Delimiter='/', Prefix=prefix)
+
+    def __sort(self, aItems, aSort):
+        # NOTE that this wont work in python3 - need to use a 'key' function
+        #      see functools.cmp_to_key
+        sortedItems = None
         if 'asc' in aSort.lower():
-            entries = sorted(entries, cmp=CompareVersions)
+            sortedItems = sorted(aItems, key=aws.__cmpKey)
         elif 'desc' in aSort.lower():
-            entries = sorted(entries, cmp=CompareVersions, reverse=True)
-    return entries
+            sortedItems = sorted(aItems, key=aws.__cmpKey, reverse=True)
+        return sortedItems
 
 
-def exists(aUri):
-    bucket = aUri.split('/')[2]
-    key = '/'.join(aUri.split('/')[3:])
-    resource = boto3.resource('s3')
-    try:
-        resource.Object(bucket, key).load()
-        return True
-    except:
-        return False
+# ------------------------------------------------------------------------------
+# Public interface to AWS (commands and aliases)
+# ------------------------------------------------------------------------------
 
+# NOTE that exists() method will return False for directories as they do not
+#     actually exist as such on AWS, but are merely a prefix on existing keys
 
-def download( aKey, aDestinationFile, aBucket=kAwsBucketPrivate ):
-    print( 'Download from AWS s3://%s/%s to %s' % ( aBucket, aKey.strip("/"), os.path.abspath( aDestinationFile ) ) )
-    s3 = boto3.resource( 's3' )
-    bucket = s3.Bucket( aBucket )
-    with open( aDestinationFile, 'wb' ) as data:
-        bucket.download_fileobj( aKey.strip("/"), data)
+aws = __aws()
+
+cp   = aws._copy
+dir  = aws._listItems
+ls   = aws._listItems
+lsl  = aws._listDetails
+lsr  = aws._listItemsRecursive
+lslr = aws._listDetailsRecursive
+rm   = aws._delete
+
+copy                 = aws._copy
+download             = aws._download
+delete               = aws._delete
+exists               = aws._exists
+listDetails          = aws._listItems
+listDetailsRecursive = aws._listDetailsRecursive
+listItems            = aws._listItems
+listItemsRecursive   = aws._listItemsRecursive
