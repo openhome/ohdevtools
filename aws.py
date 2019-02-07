@@ -15,7 +15,7 @@ except:
 else:
     awsSlave = False
     try:
-        resp = requests.get(kAwsMetadataService)
+        resp = requests.get(kAwsMetadataService, timeout=1)
         meta = json.loads(resp.text)
         if 'InstanceProfileArn' in meta:
             if 'dev-tools-EC2SlaveInstanceProfile' in meta['InstanceProfileArn']:
