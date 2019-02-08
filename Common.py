@@ -28,11 +28,11 @@ kLocalCloudFileName         = 'ExaktCloudDbV2.json'
 kLocalCloudTempFileName     = 'ExaktMinimalTemp.json'
 kLocalDevCloudTempFileName  = 'ExaktMinimalDevTemp.json'
 # Repo locations
-kExaktRepo                  = "ssh://git@core.linn.co.uk/home/git/exakt.git"  
-kProductRepo                = "ssh://git@core.linn.co.uk/home/git/product.git"    
-kReleaseUtilsRepo           = "ssh://git@core.linn.co.uk/home/git/releaseUtils.git"   
-kOhDevToolsRepo             = "ssh://git@core.linn.co.uk/home/git/ohdevtools.git"     
-kProductInfoRepo            = "ssh://git@core.linn.co.uk/home/git/ProductInfo.git"    
+kExaktRepo                  = "ssh://git@core.linn.co.uk/home/git/exakt.git"
+kProductRepo                = "ssh://git@core.linn.co.uk/home/git/product.git"
+kReleaseUtilsRepo           = "ssh://git@core.linn.co.uk/home/git/releaseUtils.git"
+kOhDevToolsRepo             = "ssh://git@core.linn.co.uk/home/git/ohdevtools.git"
+kProductInfoRepo            = "ssh://git@core.linn.co.uk/home/git/ProductInfo.git"
 # Kiboko details
 kRemoteHost                 = 'products@kiboko.linn.co.uk'
 kDevFileLocation            = '/var/www.products/VersionInfo/Downloads/Development/'
@@ -342,7 +342,7 @@ except:
 else:
     awsSlave = False
     try:
-        resp = requests.get( 'http://169.254.169.254/latest/meta-data/iam/info' )
+        resp = requests.get( 'http://169.254.169.254/latest/meta-data/iam/info', timeout=1 )
         meta = json.loads( resp.text )
         if 'InstanceProfileArn' in meta:
             if 'dev-tools-EC2SlaveInstanceProfile' in meta['InstanceProfileArn']:
