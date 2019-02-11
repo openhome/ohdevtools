@@ -2,6 +2,7 @@
 import json
 import os
 import requests
+import shutil
 
 kAwsBucketPrivate   = 'linn-artifacts-private'
 kAwsLinnCredsUri    = 'http://core.linn.co.uk/aws-credentials'
@@ -55,8 +56,13 @@ class __aws:
         self.client = boto3.client('s3')
 
     def _copy(self, aSrc, aDst):
-        """Copy objects to/from AWS. AWS uri in form s3://<bucket>/<key>"""
-        if 's3://' in aSrc:
+        if 's3://' in aSrc and 's3://' in aDst:
+            bucketSrc = aSrc.split('/')[2]
+            keySrc = '/'.join(aSrc.split('/')[3:])
+            bucketDst = aDst.split('/')[2]
+            keyDst = '/'.join(aDst.split('/')[3:])
+            self.client.copy_object(Bucket=bucketDst, Key=keyDst, CopySource="%s/%s" % (bucketSrc, keySrc))
+        elif 's3://' in aSrc:
             bucket = self.s3.Bucket(aSrc.split('/')[2] )
             obj = bucket.Object('/'.join( aSrc.split('/')[3:]))
             with open(aDst, 'wb') as data:
@@ -69,12 +75,19 @@ class __aws:
                     bucket.upload_fileobj(data, '/'.join(aDst.split('/')[3:]), ExtraArgs={'ContentType': 'text/plain'})
                 else:
                     bucket.upload_fileobj(data, '/'.join(aDst.split('/')[3:]))
+        else:
+            shutil.copyfile(aSrc, aDst)
 
-    def _delete(self, aBucket, aKey):
-        if aKey is not None and len(aKey) > 0:
-            bucket = self.s3.Bucket(aBucket)
-            # this allows a single file to be deleted or an entire directory, so be careful!
-            bucket.objects.filter(Prefix=aKey).delete()
+    def _delete(self, aItem):
+        if 's3://' in aItem:
+            bucket = aItem.split('/')[2]
+            key = '/'.join(aItem.split('/')[3:])
+            if key is not None and len(key) > 0:
+                s3bucket = self.s3.Bucket(bucket)
+                # this allows a single file to be deleted or an entire directory, so be careful!
+                s3bucket.objects.filter(Prefix=key).delete()
+        else:
+            os.unlink( aItem )
 
     def _download(self, aKey, aDestinationFile, aBucket=kAwsBucketPrivate):
         print('Download from AWS s3://%s/%s to %s' % (aBucket, aKey.strip("/"), os.path.abspath(aDestinationFile)))
@@ -147,6 +160,10 @@ class __aws:
                 entries.append({'key': item['Key'], 'modified': timestamp, 'size': item['Size']})
         return entries
 
+    def _move(self, aSrc, aDst):
+        self._copy(aSrc, aDst)
+        self._delete(aSrc)
+
     # Helper methods ----------------------------------
 
     @staticmethod
@@ -196,6 +213,7 @@ ls   = aws._listItems
 lsl  = aws._listDetails
 lsr  = aws._listItemsRecursive
 lslr = aws._listDetailsRecursive
+mv   = aws._move
 rm   = aws._delete
 
 copy                 = aws._copy
@@ -206,3 +224,4 @@ listDetails          = aws._listItems
 listDetailsRecursive = aws._listDetailsRecursive
 listItems            = aws._listItems
 listItemsRecursive   = aws._listItemsRecursive
+move                 = aws._move

@@ -1,4 +1,5 @@
 import email.mime.text
+import aws
 import json
 import os
 import re
@@ -334,75 +335,22 @@ def TitleToId( aTitle ):
     return id
 
 
-try:
-    import boto3
-except:
-    print('\nAWS fetch requires boto3 module')
-    print("Please install this using 'pip install boto3'\n")
-else:
-    awsSlave = False
-    try:
-        resp = requests.get( 'http://169.254.169.254/latest/meta-data/iam/info', timeout=1 )
-        meta = json.loads( resp.text )
-        if 'InstanceProfileArn' in meta:
-            if 'dev-tools-EC2SlaveInstanceProfile' in meta['InstanceProfileArn']:
-                awsSlave = True
-    except:
-        pass
-
-    if not awsSlave:
-        # create AWS credentials file (if not already present)
-        home = None
-        if 'HOMEPATH' in os.environ and 'HOMEDRIVE' in os.environ:
-            home = os.path.join(os.environ['HOMEDRIVE'], os.environ['HOMEPATH'])
-        elif 'HOME' in os.environ:
-            home = os.environ['HOME']
-        if home:
-            awsCreds = os.path.join(home, '.aws', 'credentials')
-            if not os.path.exists(awsCreds):
-                if sys.version_info[0] == 2:
-                    from urllib2 import urlopen
-                else:
-                    from urllib.request import urlopen
-                try:
-                    os.mkdir(os.path.join(home, '.aws'))
-                except:
-                    pass
-                try:
-                    credsFile = urlopen('http://core.linn.co.uk/aws-credentials' )
-                    creds = credsFile.read()
-                    with open(awsCreds, 'wt') as f:
-                        f.write(creds)
-                except:
-                    pass
-
-
 def DownloadFromAws( aKey, aDestinationFile, aBucket=kAwsBucketPrivate ):
     print( 'Download from AWS s3://%s/%s to %s' % ( aBucket, aKey, os.path.abspath( aDestinationFile ) ) )
-    s3 = boto3.resource( 's3' )
-    bucket = s3.Bucket( aBucket )
-    with open( aDestinationFile, 'wb' ) as data:
-        bucket.download_fileobj( aKey, data)
+    aws.cp( 's3://%s/%s' % (aBucket, aKey), aDestinationFile )
 
 
 def UploadToAws( aKey, aSourceFile, aBucket=kAwsBucketPrivate, aDryRun=False ):
     print( 'Upload %s to AWS s3://%s/%s' % ( os.path.abspath( aSourceFile ), aBucket, aKey ) )
-    s3 = boto3.resource('s3')
-    bucket = s3.Bucket( aBucket )
-    with open( aSourceFile, 'rb' ) as data:
-        if not aDryRun:
-            ext = aSourceFile.split(".")[-1]
-            if ext in ["txt", "json", "xml"]:
-                bucket.upload_fileobj(data, aKey, ExtraArgs={'ContentType': 'text/plain'})
-            else:
-                bucket.upload_fileobj(data, aKey)
+    if not aDryRun:
+        aws.cp( aSourceFile, 's3://%s/%s' % (aBucket, aKey) )
 
 
 def UploadRecursiveToAws( aSrcDir, aDstDir, aFileFilter="*", aDryRun=False ):
     import glob
     for f in glob.glob( os.path.join(aSrcDir, aFileFilter) ):
-        elfFileKey = os.path.join( aDstDir, os.path.basename(f) )
-        UploadToAws( elfFileKey, f, kAwsBucketPrivate, aDryRun)
+        fileKey = os.path.join( aDstDir, os.path.basename(f) )
+        UploadToAws( fileKey, f, kAwsBucketPrivate, aDryRun)
 
 
 def UploadToAwsDir( aDir, aSourceFile, aBucket=kAwsBucketPrivate, aDryRun=False ):
@@ -411,41 +359,32 @@ def UploadToAwsDir( aDir, aSourceFile, aBucket=kAwsBucketPrivate, aDryRun=False 
 
 
 def CopyOnAws( aSourceKey, aDestKey, aBucket=kAwsBucketPrivate, aDryRun=False ):
-    print( 'Copy from AWS (%s) %s to %s' % ( aBucket, aSourceKey, aDestKey ) )
-    client = boto3.client('s3')
+    print( 'Copy on AWS (%s) %s to %s' % ( aBucket, aSourceKey, aDestKey ) )
     if not aDryRun:
-        client.copy_object(Bucket=aBucket, CopySource="%s/%s" % ( aBucket, aSourceKey ), Key=aDestKey)
+        aws.cp( 's3://%s/%s' % (aBucket, aSourceKey), 's3://%s/%s' % (aBucket, aDestKey) )
 
 
 def CopyRecursiveOnAws( aSourceDir, aDestDir, aBucket=kAwsBucketPrivate, aDryRun=False ):
     print( 'Copy Recursive on AWS (%s) %s to %s' % ( aBucket, aSourceDir, aDestDir ) )
-    client = boto3.client('s3')
-
-    objs = client.list_objects_v2( Bucket=aBucket, Delimiter='|', Prefix=aSourceDir.strip("/") )['Contents']
-    for obj in objs:
-        sourceKey = obj['Key']
-        sourceFile = os.path.basename( sourceKey )
-        destKey = os.path.join( aDestDir.strip("/"), sourceFile )
-        CopyOnAws( sourceKey, destKey, aBucket, aDryRun )
+    if not aDryRun:
+        items = aws.lsr( 's3://%s/%s' % (aBucket, aSourceDir) )
+        for item in items:
+            if item[-1] != '/':
+                aws.cp( 's3://%s/%s' % (aBucket, item), 's3://%s/%s' % (aBucket, item.replace( aSourceDir, aDestDir )) )
 
 
 def MoveOnAws( aSourceKey, aDestKey, aBucket=kAwsBucketPrivate, aDryRun=False ):
     print( 'Move on AWS (%s) %s to %s' % ( aBucket, aSourceKey, aDestKey ) )
-    client = boto3.client('s3')
     if not aDryRun:
-        client.copy_object(Bucket=aBucket, CopySource="%s/%s" % ( aBucket, aSourceKey ), Key=aDestKey)
-        client.delete_object(Bucket=aBucket, Key=aSourceKey)
+        aws.mv( 's3://%s/%s' % (aBucket, aSourceKey), 's3://%s/%s' % (aBucket, aDestKey) )
 
 
 def MoveRecursiveOnAws( aSourceDir, aDestDir, aBucket=kAwsBucketPrivate, aDryRun=False ):
-    client = boto3.client('s3')
-
-    objs = client.list_objects_v2( Bucket=aBucket, Delimiter='|', Prefix=aSourceDir.strip("/") )['Contents']
-    for obj in objs:
-        sourceKey = obj['Key']
-        sourceFile = os.path.basename( sourceKey )
-        destKey = os.path.join( aDestDir.strip("/"), sourceFile )
-        MoveOnAws( sourceKey, destKey, aBucket, aDryRun )
+    if not aDryRun:
+        items = aws.lsr( 's3://%s/%s' % (aBucket, aSourceDir) )
+        for item in items:
+            if item[-1] != '/':
+                aws.mv( 's3://%s/%s' % (aBucket, item), 's3://%s/%s' % (aBucket, item.replace( aSourceDir, aDestDir )) )
 
 
 def CreateFile(aData, aFile):
@@ -587,7 +526,3 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
         subj = "TestDs Emulator for %s Now Available" % aVersion
         text = "Download here: https://s3-eu-west-1.amazonaws.com/linn-artifacts-private/%s" % uploadKey
         SendEmail( subj, text, to, aDryRun )
-
-# PublishTestDsEmulatorLocal( "4.63.223", aDryRun=False )
-# SendPublishedEmail( 'Volkano1Fallback', '1.2.3', 'Volkano1FallbackAte', '', True )
-# UploadFilesToCdn(False)
