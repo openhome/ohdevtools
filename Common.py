@@ -367,10 +367,12 @@ def CopyOnAws( aSourceKey, aDestKey, aBucket=kAwsBucketPrivate, aDryRun=False ):
 def CopyRecursiveOnAws( aSourceDir, aDestDir, aBucket=kAwsBucketPrivate, aDryRun=False ):
     print( 'Copy Recursive on AWS (%s) %s to %s' % ( aBucket, aSourceDir, aDestDir ) )
     if not aDryRun:
-        items = aws.lsr( 's3://%s/%s' % (aBucket, aSourceDir) )
+        sourceDir = aSourceDir.lstrip( '/' )
+        destDir = aDestDir.lstrip( '/' )
+        items = aws.lsr( 's3://%s/%s' % (aBucket, sourceDir) )
         for item in items:
             if item[-1] != '/':
-                aws.cp( 's3://%s/%s' % (aBucket, item), 's3://%s/%s' % (aBucket, item.replace( aSourceDir, aDestDir )) )
+                aws.cp( 's3://%s/%s' % (aBucket, item), 's3://%s/%s' % (aBucket, item.replace( sourceDir, destDir )) )
 
 
 def MoveOnAws( aSourceKey, aDestKey, aBucket=kAwsBucketPrivate, aDryRun=False ):
@@ -381,10 +383,12 @@ def MoveOnAws( aSourceKey, aDestKey, aBucket=kAwsBucketPrivate, aDryRun=False ):
 
 def MoveRecursiveOnAws( aSourceDir, aDestDir, aBucket=kAwsBucketPrivate, aDryRun=False ):
     if not aDryRun:
-        items = aws.lsr( 's3://%s/%s' % (aBucket, aSourceDir) )
+        sourceDir = aSourceDir.lstrip( '/' )
+        destDir = aDestDir.lstrip( '/' )
+        items = aws.lsr( 's3://%s/%s' % (aBucket, sourceDir.lstrip( '/' )) )
         for item in items:
             if item[-1] != '/':
-                aws.mv( 's3://%s/%s' % (aBucket, item), 's3://%s/%s' % (aBucket, item.replace( aSourceDir, aDestDir )) )
+                aws.mv( 's3://%s/%s' % (aBucket, item), 's3://%s/%s' % (aBucket, item.replace( sourceDir, destDir )) )
 
 
 def CreateFile(aData, aFile):
@@ -526,3 +530,4 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
         subj = "TestDs Emulator for %s Now Available" % aVersion
         text = "Download here: https://s3-eu-west-1.amazonaws.com/linn-artifacts-private/%s" % uploadKey
         SendEmail( subj, text, to, aDryRun )
+        
