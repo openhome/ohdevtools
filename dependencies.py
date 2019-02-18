@@ -321,7 +321,7 @@ class EnvironmentExpander(object):
         return self._expandvalue(value)
 
     def _expandvalue(self, value):
-        if isinstance(value, (str, unicode)):
+        if isinstance(value, ("".__class__, u"".__class__)):
             return self.expandstring(value)
             # return self.template_regex.sub(self.replacematch, value)
         elif isinstance(value, (list, tuple)):
@@ -368,7 +368,7 @@ class EnvironmentExpander(object):
             key = keyname
         if not isinstance(table, dict):
             raise ValueError("lookup table must expand to a JSON object (got {0!r} instead)".format(table))
-        if not isinstance(key, (str, unicode)):
+        if not isinstance(key, ("".__class__, u"".__class__)):
             raise ValueError("lookup index must expand to a JSON string (got {0!r} instead)".format(key))
         if key not in table:
             if '*' in table:

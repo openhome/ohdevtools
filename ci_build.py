@@ -108,7 +108,7 @@ def flatten_string_list(arglist):
     strings or similar lists.
     Output will be a list containing only strings.
     """
-    if isinstance(arglist, (str, unicode)):
+    if isinstance(arglist, ("".__class__, u"".__class__)):
         return [arglist]
     return sum([flatten_string_list(x) for x in arglist], [])
 
