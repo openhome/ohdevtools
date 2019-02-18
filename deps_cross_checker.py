@@ -6,6 +6,7 @@ kDepsFilename = 'dependencies.json'
 kDepsPath     = 'dependencies'
 kProjDataPath = 'projectdata'
 
+
 class DepsCrossChecker:
     """Ensure version consistency (at major.minor level) across all dependencies"""
 
@@ -17,8 +18,8 @@ class DepsCrossChecker:
 
     def execute( self ):
         """Perform the check - return zero on success, number of mismatches on failure"""
-        print 'Cross-checking dependency versions'
-        print '  Finding %s dependency definition files...' % kDepsFilename
+        print('Cross-checking dependency versions')
+        print('  Finding %s dependency definition files...' % kDepsFilename)
         for root, dirs, files in os.walk( os.path.join( os.getcwd(), kDepsPath )):
             for name in files:
                 if name == kDepsFilename:
@@ -37,16 +38,16 @@ class DepsCrossChecker:
 
     def check_versions( self, aProject1, aProject2 ):
         """Perform comparison between 2 specified projects"""
-        print '    Checking %s against %s' % (aProject1, aProject2)
+        print('    Checking %s against %s' % (aProject1, aProject2))
         for dependency in self.artifacts[aProject1]:
             if dependency in self.artifacts[aProject2]:
                 version1 = self.artifacts[aProject1][dependency]
                 version2 = self.artifacts[aProject2][dependency]
-                if version1==version2:
-                    print '      %-16s %6s        --> OK' % (dependency, version1)
+                if version1 == version2:
+                    print('      %-16s %6s        --> OK' % (dependency, version1))
                 else:
                     self.failures += 1
-                    print '      %-16s %6s/%-6s --> FAILED' % (dependency, version1, version2)
+                    print('      %-16s %6s/%-6s --> FAILED' % (dependency, version1, version2))
 
     @staticmethod
     def parse_json( aPath ):
@@ -64,7 +65,7 @@ class DepsCrossChecker:
                     if xCheck:
                         name = item['name'].encode( 'ascii' )
                         ver = '.' . join( item['version'].split( '.' )[:-1] ).encode( 'ascii' )
-                        deps[name] =  ver
+                        deps[name] = ver
                 except:
                     pass
         return deps

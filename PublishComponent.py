@@ -1,7 +1,6 @@
 import aws
 import json
 import os
-import sys
 import shutil
 import subprocess
 import tempfile
@@ -20,7 +19,7 @@ kJsonManifestSubdepsTag = "subdeps"
 kJsonManifestTokenTag   = "token"
 kTempDir                = tempfile.mkdtemp()
 kJsonManifestFileName   = os.path.join( kTempDir, "component.json" )
-kLinnHostPublic         = "https://cloud.linn.co.uk" # "https://beta-cloud.linn.co.uk"
+kLinnHostPublic         = "https://cloud.linn.co.uk"  # "https://beta-cloud.linn.co.uk"
 kLinnHostPrivate        = "https://artifacts.linn.co.uk"
 kAwsHostPublic          = "s3://linn-artifacts-public"
 kAwsHostPrivate         = "s3://linn-artifacts-private"
@@ -70,6 +69,7 @@ def GetFileSize( aFilePath ):
 def GetFileBasename( aFilePath ):
     return os.path.basename( os.path.normpath( aFilePath ) )
 
+
 def Cleanup( ):
     shutil.rmtree( kTempDir )
 
@@ -77,7 +77,7 @@ def Cleanup( ):
 # ------------------------------------------------------------------------------
 # The Good Stuff
 # ------------------------------------------------------------------------------
-    
+
 def PublishComponent( aBuildOutputList, aDest, aSubDependenciesList=None, aDryRun=False ):     # NOQA
     """ Publish aBuildOutputList and aSubDependenciesList to aDest
         aBuildOutput: a list of tuples pairing a logical name with a localfile
@@ -92,18 +92,19 @@ def PublishComponent( aBuildOutputList, aDest, aSubDependenciesList=None, aDryRu
             PublishFileToAws( buildOutput[1], aDest, aDryRun )
         PublishFileToAws( kJsonManifestFileName, aDest, aDryRun )
     else:
-        CreateRemoteDir( aDest, aDryRun )    
+        CreateRemoteDir( aDest, aDryRun )
         for buildOutput in aBuildOutputList:
             PublishFileToSsh( buildOutput[1], aDest, aDryRun )
         PublishFileToSsh( kJsonManifestFileName, aDest, aDryRun )
 
     Cleanup()
 
+
 def CreateComponent( aBuildOutputList, aJsonFileName, aSubDependenciesList=None, aDryRun=False ):
     """ Create a json manifest file for the given list of files """
 
     jsonManifest = { kJsonManifestBaseTag: [] }
-    if aSubDependenciesList != None and len(aSubDependenciesList) > 0:
+    if aSubDependenciesList is not None and len(aSubDependenciesList) > 0:
         jsonManifest[kJsonManifestSubdepsTag] = []
         for subdep in aSubDependenciesList:
             subdepDict = {}
@@ -122,12 +123,14 @@ def CreateComponent( aBuildOutputList, aJsonFileName, aSubDependenciesList=None,
     jsonManifest[kJsonManifestBaseTag] = sorted( jsonManifest[kJsonManifestBaseTag], key=lambda k: k['name'] )  # ensures json is always sorted by name
     Common.CreateJsonFile( jsonManifest, aJsonFileName )
     if aDryRun:
-        print "--- %s ---" % aJsonFileName
-        print json.dumps(jsonManifest, indent=4, sort_keys=True)
-        print "---------------"
+        print("--- %s ---" % aJsonFileName)
+        print(json.dumps(jsonManifest, indent=4, sort_keys=True))
+        print("---------------")
+
 
 def PublishFile( aFile, aDest, aDryRun=False ):
     PublishFiles( [aFile], aDest, aDryRun )
+
 
 def PublishFiles( aFileList, aDest, aDryRun=False ):
     if any(x in aDest for x in [kLinnHostPublic, kLinnHostPrivate, kAwsHostPublic, kAwsHostPrivate]):
@@ -138,6 +141,7 @@ def PublishFiles( aFileList, aDest, aDryRun=False ):
         CreateRemoteDir( aDest, aDryRun )
         for f in aFileList:
             PublishFileToSsh( f, aDest, aDryRun )
+
 
 # ------------------------------------------------------------------------------
 # A Quick Test
@@ -152,6 +156,3 @@ testSubDependencies = [
     ('exakt', 3)
 ]
 testDest = 'core.linn.co.uk/home/artifacts/public_html/testUpload/joshie/hahn'
-
-#PublishComponent( testBuildOutput, testDest, testSubDependencies, False )
-#CreateComponent( testBuildOutput, "component.json", testSubDependencies )

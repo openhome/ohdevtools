@@ -7,10 +7,11 @@ import version
 
 HELP_SYNONYMS = ["--help", "-h", "/h", "/help", "/?", "-?", "h", "help", "commands"]
 
+
 def get_command_details(modulename):
     command = modulename
     try:
-        commands_module = __import__('commands.'+command)
+        commands_module = __import__('commands.' + command)
         command_module = getattr(commands_module, command)
     except:
         traceback.print_exc()
@@ -26,6 +27,7 @@ def get_command_details(modulename):
         synonyms.remove(name)
     return Command(name, command, group, description, synonyms, hidden)
 
+
 class Command(object):
     def __init__(self, name, modulename, group, description, synonyms, hidden):
         self.name = name
@@ -35,6 +37,7 @@ class Command(object):
         self.synonyms = list(synonyms)
         self.hidden = hidden
 
+
 def getcommandmodules():
     dirpath, scriptname = os.path.split(os.path.abspath(__file__))
     filenames = os.listdir(os.path.join(dirpath, 'commands'))
@@ -43,12 +46,12 @@ def getcommandmodules():
     commands = [c for c in commands if not c.startswith('.')]
     return commands
 
+
 def getcommands():
     commandmodules = getcommandmodules()
     commanddetails = [get_command_details(c) for c in commandmodules]
-    return dict(
-            (d.name, d)
-            for d in commanddetails)
+    return dict((d.name, d) for d in commanddetails)
+
 
 def get_commands_and_synonyms():
     commands = getcommands()
@@ -58,6 +61,7 @@ def get_commands_and_synonyms():
             commands_and_synonyms[synonym] = cmd
     return commands_and_synonyms
 
+
 def findcommand(command):
     command_modules = getcommandmodules()
     if command in command_modules:
@@ -65,9 +69,10 @@ def findcommand(command):
     commands = get_commands_and_synonyms()
     if command in commands:
         return commands[command].modulename
-    print 'Unrecognized command.'
-    print 'Try "go help" for a list of commands.'
+    print('Unrecognized command.')
+    print('Try "go help" for a list of commands.')
     sys.exit(1)
+
 
 def invoke_module(modulename, args):
     oldpythonpath = os.getenv('PYTHONPATH')
@@ -77,36 +82,38 @@ def invoke_module(modulename, args):
     newenv['PYTHONPATH'] = pythonpath
     # This isn't ideal. Importing tkinter, even indirectly, adds unicode
     # strings to the environment. Force them all to str:
-    newenv = dict((key,str(value)) for (key, value) in newenv.items())
+    newenv = dict((key, str(value)) for (key, value) in newenv.items())
     exitcode = subprocess.call([sys.executable, '-m', modulename] + args, env=newenv)
     sys.exit(exitcode)
 
 
 def runcommand(command, args):
     commandname = findcommand(command)
-    invoke_module('commands.'+commandname, args)
+    invoke_module('commands.' + commandname, args)
+
 
 def showcommandhelp(command):
     commandname = findcommand(command)
     commanddetails = get_command_details(commandname)
-    print 'Command: ' + commanddetails.name,
+    print('Command: ' + commanddetails.name,)
     if commanddetails.synonyms:
-        print "(also %s)" % (", ".join(commanddetails.synonyms),)
+        print("(also %s)" % (", ".join(commanddetails.synonyms),))
     else:
-        print
-    print
-    invoke_module('commands.'+commandname, ['--help'])
+        print()
+    print()
+    invoke_module('commands.' + commandname, ['--help'])
+
 
 def showhelp():
-    print
-    print "Usage:"
-    print
-    print "  go COMMAND"
-    print "  go help COMMAND"
-    print
-    print "Available commands:"
+    print()
+    print("Usage:")
+    print()
+    print("  go COMMAND")
+    print("  go help COMMAND")
+    print()
+    print("Available commands:")
     commands = sorted(getcommands().items())
-    maxlen = max(len(cmd) for (cmd,details) in commands)
+    maxlen = max(len(cmd) for (cmd, details) in commands)
     groups = {}
     for cmd, details in commands:
         if details.hidden:
@@ -114,10 +121,11 @@ def showhelp():
         groups.setdefault(details.group, []).append(details)
     for group, commandlist in sorted(groups.items()):
         print
-        if group!="":
-            print "  "+group
-        for details in sorted(commandlist, key=lambda c:c.name):
-            print "    %s   %s" % (details.name.ljust(maxlen), details.description)
+        if group != "":
+            print("  " + group)
+        for details in sorted(commandlist, key=lambda c: c.name):
+            print("    %s   %s" % (details.name.ljust(maxlen), details.description))
+
 
 def main():
     version.check_version()
@@ -129,5 +137,6 @@ def main():
     else:
         runcommand(sys.argv[1], sys.argv[2:])
 
-if __name__=="__main__":
+
+if __name__ == "__main__":
     main()

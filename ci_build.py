@@ -12,9 +12,7 @@ from userlocks import userlock
 from default_platform import default_platform as _default_platform
 from functools import wraps
 import version
-# import filechecker
 import tarfile
-import urllib2
 import glob
 import aws
 
@@ -27,12 +25,9 @@ ILLEGAL_STEP_NAMES = [DEFAULT_STEPS, ALL_STEPS]
 
 
 def get_vsvars_environment(architecture="x86"):
-    """
-    Returns a dictionary containing the environment variables set up by vsvars32.bat
-
-    architecture - Architecture to pass to vcvarsall.bat. Normally "x86" or "amd64"
-
-    win32-specific
+    """ Returns a dictionary containing the environment variables set up by vsvars32.bat
+        architecture - Architecture to pass to vcvarsall.bat. Normally "x86" or "amd64"
+        win32-specific
     """
     result = None
     python = sys.executable
@@ -40,8 +35,9 @@ def get_vsvars_environment(architecture="x86"):
     for vcvars32 in [
         'C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\Common7\\Tools\\vsvars32.bat',                     # VS12 Express
         'C:\\Program Files\\Microsoft Visual Studio\\2017\\Professional\\Common7\\Tools\\vcvars32.bat',            # VS2017 Pro
-        'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\BuildTools\\VC\\Auxiliary\\Build\\vcvars32.bat', # Build Tools for VS2017
-        'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\Auxiliary\\Build\\vcvars32.bat']:   # VS2017 Community edition
+        'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\BuildTools\\VC\\Auxiliary\\Build\\vcvars32.bat',  # Build Tools for VS2017
+        'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\Auxiliary\\Build\\vcvars32.bat'     # VS2017 Community edition
+    ]:
         if os.path.isfile(vcvars32):
             process = subprocess.Popen('("%s" %s>nul)&&"%s" -c "import os; print repr(os.environ)"' % (vcvars32, architecture, python), stdout=subprocess.PIPE, shell=True)
             stdout, _ = process.communicate()
@@ -53,45 +49,22 @@ def get_vsvars_environment(architecture="x86"):
     return result
 
 
-    # comntoolsVarNames = ['VS100COMNTOOLS', 'VS110COMNTOOLS', 'VS120COMNTOOLS', 'VS140COMNTOOLS']
-    #
-    # for varName in comntoolsVarNames:
-    #     vscomntools = os.getenv(varName)
-    #     if vscomntools is not None:
-    #         break
-    #
-    # if vscomntools is None:
-    #     raise Exception('Couldn\'t find COMNTOOLS environment variable (tried %s)' % ', '.join(comntoolsVarNames))
-    #
-    # vsvars32 = os.path.join(vscomntools, '..', '..', 'VC', 'vcvarsall.bat')
-    # python = sys.executable
-    # process = subprocess.Popen('("%s" %s>nul)&&"%s" -c "import os; print repr(os.environ)"' % (vsvars32, architecture, python), stdout=subprocess.PIPE, shell=True)
-    # stdout, _ = process.communicate()
-    # exitcode = process.wait()
-    # if exitcode != 0:
-    #     vsvars32 = os.path.join(vscomntools, 'vsvars32.bat')
-    #     process = subprocess.Popen('("%s" %s>nul)&&"%s" -c "import os; print repr(os.environ)"' % (vsvars32, architecture, python), stdout=subprocess.PIPE, shell=True)
-    #     stdout, _ = process.communicate()
-    #     exitcode = process.wait()
-    #     if exitcode != 0:
-    #         raise Exception("Got error code %s from subprocess!" % exitcode)
-    # return eval(stdout.strip())
-
-
 def default_platform(fail_on_unknown=True):
     p = _default_platform()
     if p is None and fail_on_unknown:
         fail('No platform specified and unable to guess.')
     return p
 
+
 def delete_directory(path):
     path = os.path.abspath(path)
-    print('Deleting "'+path+'"... ')
+    print('Deleting "' + path + '"... ')
     shutil.rmtree(path, ignore_errors=True)
     if os.path.isdir(path):
         print('\nFailed.\n')
         raise Exception('Failed to delete "%s"' % path)
     print('\nDone.\n')
+
 
 class BuildStep(object):
     def __init__(self, name, action):
@@ -102,24 +75,31 @@ class BuildStep(object):
         self.is_optional = False
         self.is_enabled_by_default = True
         self.action = action
+
     def add_conditions(self, condition_set):
         self.condition_sets.append(condition_set)
+
     def set_default(self, enabled_by_default):
         self.is_enabled_by_default = enabled_by_default
+
     def set_optional(self, optional):
         self.is_optional = optional
+
     def test_conditions(self, env):
         if len(self.condition_sets) == 0:
             return True
         for conditions in self.condition_sets:
-            if all(key in env and env[key]==value for (key, value) in conditions.items()):
+            if all(key in env and env[key] == value for (key, value) in conditions.items()):
                 return True
         return False
+
     def run(self, context):
         return self.action(context)
 
+
 class BuildContext(object):
     pass
+
 
 def flatten_string_list(arglist):
     """
@@ -132,8 +112,10 @@ def flatten_string_list(arglist):
         return [arglist]
     return sum([flatten_string_list(x) for x in arglist], [])
 
+
 def flatten_comma_list(arglist):
     return sum([s.split(",") for s in arglist], [])
+
 
 def process_kwargs(func_name, kwarg_dict, defaults_dict):
     result = dict(defaults_dict)
@@ -144,45 +126,57 @@ def process_kwargs(func_name, kwarg_dict, defaults_dict):
             raise TypeError("{0}() got an unexpected keyword argument '{1}'".format(func_name, key))
     return result
 
+
 NOT_SPECIFIED = object()
+
+
 class CaseInsensitiveEnvironmentCopy(dict):
     def __contains__(self, key):
         return dict.__contains__(self, key.upper())
+
     def __getitem__(self, key):
         return dict.__getitem__(self, key.upper())
+
     def __setitem__(self, key, value):
         return dict.__setitem__(self, key.upper(), value)
+
     def __init__(self, *args):
-        if len(args)==0:
+        if len(args) == 0:
             dict.__init__(self)
-        elif len(args)==1:
-            dict.__init__(self, [(k.upper(), v) for (k,v) in args[0].items()])
+        elif len(args) == 1:
+            dict.__init__(self, [(k.upper(), v) for (k, v) in args[0].items()])
         else:
             raise ValueError()
+
     def get(self, key, default=None):
         return dict.get(self, key.upper(), default)
+
     def has_key(self, key):
-        return dict.has_key(self, key.upper())
+        return key.upper() in dict
+
     def pop(self, key, *args):
         return dict.pop(self, key.upper(), *args)
+
     def setdefault(self, key, *args):
         return dict.setdefault(self, key.upper(), *args)
+
     def update(self, *args, **kwargs):
-        if len(args)==0:
-            primary={}
-        elif len(args)==1:
-            primary=CaseInsensitiveEnvironmentCopy(args[0])
+        if len(args) == 0:
+            primary = {}
+        elif len(args) == 1:
+            primary = CaseInsensitiveEnvironmentCopy(args[0])
         else:
             raise ValueError()
-        secondary=CaseInsensitiveEnvironmentCopy(kwargs)
+        secondary = CaseInsensitiveEnvironmentCopy(kwargs)
         return dict.update(self, primary, **secondary)
 
-# This is the same mechanism Python uses to decide if os.environ is case-
-# sensitive:
+
+# This is the same mechanism Python uses to decide if os.environ is case-# sensitive:
 if os.name in ['nt', 'os2']:
     EnvironmentCopy = CaseInsensitiveEnvironmentCopy
 else:
     EnvironmentCopy = dict
+
 
 def callable_to_function(f):
     '''
@@ -196,6 +190,7 @@ def callable_to_function(f):
         f(*args, **kwargs)
     return f_prime
 
+
 class Builder(object):
     def __init__(self):
         self.nuget_sln = None
@@ -208,9 +203,10 @@ class Builder(object):
         self._disabled_options = set()
         self._disable_all_options = False
         self._enable_all_options = False
-        #self._context = BuildContext()
+
     def has_steps(self):
         return len(self._steps) > 0
+
     def create_build_step(self, f, name):
         if hasattr(f, "buildstep"):
             return f
@@ -218,6 +214,7 @@ class Builder(object):
         f.buildstep = BuildStep(name or f.__name__, f)
         self._steps.append(f.buildstep)
         return f
+
     def build_condition(self, name=None, **conditions):
         """Decorator applied to functions in the build_behaviour file."""
         def decorator_func(f):
@@ -225,6 +222,7 @@ class Builder(object):
             f.buildstep.add_conditions(conditions)
             return f
         return decorator_func
+
     def build_step(self, name=None, optional=False, default=True):
         def decorator_func(f):
             f = self.create_build_step(f, name=name)
@@ -232,8 +230,10 @@ class Builder(object):
             f.buildstep.set_default(default)
             return f
         return decorator_func
+
     def get_optional_steps(self):
         return (step.name for step in self._steps if self.is_optional)
+
     def specify_optional_steps(self, *steps):
         '''
         Specify which optional steps to include in the build.
@@ -245,12 +245,11 @@ class Builder(object):
         steps = flatten_string_list(steps)
         steps = flatten_comma_list(steps)
         self._enable_all_options = ALL_STEPS in steps
-        #self._enable_default_options = DEFAULT_STEPS in steps
         self._disable_all_options = DEFAULT_STEPS not in steps and ALL_STEPS not in steps
         self._disabled_options = set(s[1:] for s in steps if s.startswith("-"))
         self._enabled_options = set(s[1:] for s in steps if s.startswith("+"))
-        self._enabled_options = self._enabled_options.union(
-                s for s in steps if s[0] not in "+-")
+        self._enabled_options = self._enabled_options.union(s for s in steps if s[0] not in "+-")
+
     def modify_optional_steps(self, *steps):
         '''
         Add or remove optional steps in the build.
@@ -276,7 +275,7 @@ class Builder(object):
         kwargs = process_kwargs(
             "select_optional_steps",
             kwargs,
-            {"disable_others":False})
+            {"disable_others": False})
         if kwargs["disable_others"]:
             self._enabled_options.clear()
             self._disable_all_options = True
@@ -310,27 +309,29 @@ class Builder(object):
                         enabled = False
                         reason = "deselected"
                 if enabled:
-                    print "Performing step '{0}' (reason: '{1}')".format(step.name, reason)
+                    print("Performing step '{0}' (reason: '{1}')".format(step.name, reason))
                     step.run(self._context)
                 else:
-                    print "Skipping step '{0}' (reason: '{1}')".format(step.name, reason)
+                    print("Skipping step '{0}' (reason: '{1}')".format(step.name, reason))
+
     def add_bool_option(self, *args, **kwargs):
-        kwargs=dict(kwargs)
+        kwargs = dict(kwargs)
         kwargs["default"] = False
         kwargs["action"] = "store_true"
         self.add_option(*args, **kwargs)
+
     def add_option(self, *args, **kwargs):
         self._optionParser.add_option(*args, **kwargs)
 
     def _check_call(self, *args, **kwargs):
         # force unicode strings in env to str() as unicode env variables break on windows
         if 'env' in kwargs:
-            kwargs['env'] = dict((key,str(value)) for (key, value) in kwargs['env'].items())
+            kwargs['env'] = dict((key, str(value)) for (key, value) in kwargs['env'].items())
         argstring = [", ".join([repr(arg) for arg in args])]
-        kwargstring = [", ".join(["%s=%r" % (k,v) for (k,v) in kwargs.items()])]
-        invocation = "subprocess.call({0})".format(", ".join(argstring+kwargstring))
+        kwargstring = [", ".join(["%s=%r" % (k, v) for (k, v) in kwargs.items()])]
+        invocation = "subprocess.call({0})".format(", ".join(argstring + kwargstring))
         if self._context.options.verbose:
-            print invocation
+            print(invocation)
         try:
             retval = subprocess.call(*args, **kwargs)
         except OSError as e:
@@ -341,6 +342,7 @@ class Builder(object):
     def python(self, *args, **kwargs):
         args = flatten_string_list(args)
         self._check_call([sys.executable] + args, env=self._context.env, **kwargs)
+
     def shell(self, *args, **kwargs):
         args = flatten_string_list(args)
         kwargs.setdefault('shell', True)
@@ -349,6 +351,7 @@ class Builder(object):
             # The shell hates lists.
             args = args[0]
         self._check_call(args, **kwargs)
+
     def cli(self, *args, **kwargs):
         args = flatten_string_list(args)
         if platform.system() != "Windows":
@@ -356,22 +359,26 @@ class Builder(object):
         kwargs.setdefault('shell', False)
         kwargs.setdefault('env', self._context.env)
         self._check_call(args, **kwargs)
+
     def rsync(self, *args, **kwargs):
         args = flatten_string_list(args)
         self._check_call(["rsync"] + args, **kwargs)
+
     def curl(self, *args, **kwargs):
         args = flatten_string_list(args)
         self._check_call(["curl"] + args, **kwargs)
+
     def _dependency_collection(self, env):
         return read_json_dependencies_from_filename(
-                os.path.join('projectdata', 'dependencies.json'),
-                os.path.join('..', 'dependency_overrides.json'),
-                env)
+            os.path.join('projectdata', 'dependencies.json'),
+            os.path.join('..', 'dependency_overrides.json'),
+            env)
+
     def _process_dependency_args(self, *selected, **kwargs):
         kwargs = process_kwargs(
             "fetch_dependencies",
             kwargs,
-            {"env":None},)
+            {"env": None},)
         selected = flatten_string_list(selected)
         env = dict(kwargs['env'] or {})
         if "debugmode" not in env:
@@ -382,6 +389,7 @@ class Builder(object):
         if "linn-git-user" not in env:
             env['linn-git-user'] = getpass.getuser()
         return selected, env
+
     def fetch_dependencies(self, *selected, **kwargs):
         selected, env = self._process_dependency_args(*selected, **kwargs)
         clean = False
@@ -394,27 +402,28 @@ class Builder(object):
             clean = False
         try:
             dependencies.fetch_dependencies(
-                    selected or None, platform=self._context.env["OH_PLATFORM"], env=env, fetch=True,
-                    nuget_packages='projectdata/packages.config' if not self.nuget_sln else None,
-                    nuget_sln=self.nuget_sln,
-                    clean=clean, source=False,
-                    local_overrides=not self._context.options.no_overrides)
+                selected or None, platform=self._context.env["OH_PLATFORM"], env=env, fetch=True,
+                nuget_packages='projectdata/packages.config' if not self.nuget_sln else None,
+                nuget_sln=self.nuget_sln,
+                clean=clean, source=False,
+                local_overrides=not self._context.options.no_overrides)
         except Exception as e:
-            print e
+            print(e)
             raise AbortRunException()
+
     def read_dependencies(self, *selected, **kwargs):
         selected, env = self._process_dependency_args(*selected, **kwargs)
         return self._dependency_collection(env)
+
     def fetch_source(self, *selected, **kwargs):
         selected, env = self._process_dependency_args(*selected, **kwargs)
         dependency_collection = self._dependency_collection(env)
         return dependency_collection.checkout(selected or None)
+
     def get_dependency_args(self, *selected, **kwargs):
         selected, env = self._process_dependency_args(*selected, **kwargs)
         dependency_collection = self._dependency_collection(env)
         return dependency_collection.get_args(selected or None)
-
-
 
 
 class SshConnection(object):
@@ -430,9 +439,11 @@ class SshConnection(object):
         self.stderr_thread = threading.Thread(target=pump_output_thread, args=(stderr, sys.stderr))
         self.stdout_thread.start()
         self.stderr_thread.start()
+
     def send(self, data):
         self.stdin.write(data)
         self.stdin.flush()
+
     def join(self):
         self.stdout_thread.join()
         self.stderr_thread.join()
@@ -445,25 +456,32 @@ class SshSession(object):
         self.ssh = paramiko.SSHClient()
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         self.ssh.connect(host, username=username, look_for_keys='True')
+
     def call(self, *args, **kwargs):
         stdin, stdout, stderr = self.ssh.exec_command(*args, **kwargs)
         conn = SshConnection(stdin, stdout, stderr)
         return conn.join()
+
     def call_async(self, *args, **kwargs):
         stdin, stdout, stderr = self.ssh.exec_command(*args, **kwargs)
         return SshConnection(stdin, stdout, stderr)
+
     def __call__(self, *args):
         return self.call(*args)
+
     def __enter__(self):
         return self
+
     def __exit__(self, ex_type, ex_value, ex_traceback):
         self.ssh.close()
+
 
 class AbortRunException(Exception):
     def __init__(self, message="Aborted due to error.", exitcode=1):
         Exception.__init__(self, message)
         self.usermessage = message
         self.exitcode = exitcode
+
 
 def fail(*args, **kwargs):
     '''
@@ -472,6 +490,7 @@ def fail(*args, **kwargs):
     '''
     raise AbortRunException(*args, **kwargs)
 
+
 def require_version(required_version):
     '''Fail if the version of ohDevTools is too old.'''
     try:
@@ -479,14 +498,18 @@ def require_version(required_version):
     except version.BadVersionException as e:
         fail(e.usermessage, 32)
 
+
 def windows_program_exists(program):
-    return subprocess.call(["where", "/q", program], shell=False)==0
+    return subprocess.call(["where", "/q", program], shell=False) == 0
+
 
 def other_program_exists(program):
     nul = open(os.devnull, "w")
-    return subprocess.call(["/bin/sh", "-c", "command -v "+program], shell=False, stdout=nul, stderr=nul)==0
+    return subprocess.call(["/bin/sh", "-c", "command -v " + program], shell=False, stdout=nul, stderr=nul) == 0
+
 
 program_exists = windows_program_exists if platform.platform().startswith("Windows") else other_program_exists
+
 
 def scp(*args):
     sourcepath = args[0]
@@ -522,6 +545,7 @@ def _forward_to_builder(name):
         return getattr(self._builder, name)(*args, **kwargs)
     return func
 
+
 def _forward_to_function(f):
     '''
     Create a method that just calls a function with the same
@@ -536,8 +560,10 @@ def _forward_to_function(f):
 def string_is_truish(value):
     return value.lower() in ['1', 'yes', 'true', 'on', 'y', 't']
 
+
 def string_is_falsish(value):
     return value.lower() in ['0', 'no', 'false', 'off', 'n', 'f']
+
 
 class OpenHomeBuilder(object):
 
@@ -561,7 +587,7 @@ class OpenHomeBuilder(object):
     test_location = 'build/{assembly}/bin/{configuration}/{assembly}.dll'
     package_location = 'build/packages/{packagename}'
     package_upload = 'releases@builds.openhome.org:/home/releases/www/artifacts/{uploadpath}'
-    automatic_steps = ['fetch','configure','clean','build','test']
+    automatic_steps = ['fetch', 'configure', 'clean', 'build', 'test']
     mdtool_mac = '/Applications/Xamarin\ Studio.app/Contents/MacOS/mdtool'
     msbuild_verbosity = 'minimal'
 
@@ -569,12 +595,12 @@ class OpenHomeBuilder(object):
 
     source_check_rules = [ ]
     standard_source_check_rules = [
-            ['src/**/*.csproj', 'warnings-as-errors'],     # All C# projects should enable warnings-as-errors
-            ['src/**/*.csproj', 'import-shared-settings'], # All C# projects should import the shared settings
-            ['src/**/*.orig', 'disallow'],                 # Don't commit .orig files from merges!
-            ['src/**/*.cs', 'no-tabs'],                    # Don't use tabs in C# source
-            ]
-    platform_slave_overrides = {} # subclasses should override this to map non-standard platform slave labels to standard ones in auto behaviour
+        ['src/**/*.csproj', 'warnings-as-errors'],      # All C# projects should enable warnings-as-errors
+        ['src/**/*.csproj', 'import-shared-settings'],  # All C# projects should import the shared settings
+        ['src/**/*.orig', 'disallow'],                  # Don't commit .orig files from merges!
+        ['src/**/*.cs', 'no-tabs'],                     # Don't use tabs in C# source
+    ]
+    platform_slave_overrides = {}  # subclasses should override this to map non-standard platform slave labels to standard ones in auto behaviour
 
     def __init__(self):
         super(OpenHomeBuilder, self).__init__()
@@ -627,11 +653,11 @@ class OpenHomeBuilder(object):
 
     def _expand_template(self, template, **kwargs):
         kwargs.update(dict(
-            configuration = self.configuration,
-            system = self.system,
-            architecture = self.architecture,
-            platform = self.platform,
-            version = self.version))
+            configuration=self.configuration,
+            system=self.system,
+            architecture=self.architecture,
+            platform=self.platform,
+            version=self.version))
         return template.format(**kwargs)
 
     def _process_platform_options(self):
@@ -659,21 +685,25 @@ class OpenHomeBuilder(object):
         self.platform = platform
         self.system = system
         self.architecture = architecture
+
     def _process_configuration_options(self):
         configuration = self.options.configuration
         if configuration is None:
             configuration = "Release"
         self.configuration = configuration
+
     def _process_version_options(self):
         self.version = self.options.version
+
     def _process_auto_option(self):
         if self.options.auto:
             self.steps_to_run = self.automatic_steps
-            if self.env.get('PUBLISH_RELEASE',"false").lower() == "true":
+            if self.env.get('PUBLISH_RELEASE', "false").lower() == "true":
                 self.steps_to_run += ["+publish"]
             self.version = self.env.get('RELEASE_VERSION', self.version)
         else:
             self.steps_to_run = self.options.steps
+
     def _process_options(self):
         if self.enable_platforms:
             self._process_platform_options()
@@ -702,7 +732,7 @@ class OpenHomeBuilder(object):
             else:
                 fail('Bad value for --vsvars')
             if vsvars:
-                print 'Automatically find Visual Studio...'
+                print('Automatically find Visual Studio...')
                 self.env.update(get_vsvars_environment(self.architecture))
         self._builder.specify_optional_steps(self.steps_to_run)
 
@@ -722,7 +752,7 @@ class OpenHomeBuilder(object):
         '''
         Fetch dependencies. Subclasses may override.
         '''
-        self.fetch_dependencies(env={'debugmode':self.configuration, 'platform':self.platform})
+        self.fetch_dependencies(env={'debugmode': self.configuration, 'platform': self.platform})
 
     def configure(self):
         '''
@@ -730,7 +760,6 @@ class OpenHomeBuilder(object):
         project requires configuration.
         '''
         pass
-
 
     def clean(self):
         '''
@@ -784,7 +813,7 @@ class OpenHomeBuilder(object):
         set to 'true' and the configuration is 'Release', but it could be overriden to
         enable or disable coverage for other configurations.
         '''
-        cover = self.env.get('COVER',"false").lower() == "true"
+        cover = self.env.get('COVER', "false").lower() == "true"
         return (self.configuration == 'Release') and cover and (self.platform == 'Windows-x86')
 
     def set_nuget_sln(self, sln):
@@ -792,7 +821,7 @@ class OpenHomeBuilder(object):
         Set the solution file to be used for fetching nuget dependencies. If this is not set,
         the packages.config file found in the project's projectdata directory will be used.
         '''
-        print "setting solution to use for nuget to  {0}".format(sln)
+        print("setting solution to use for nuget to  {0}".format(sln))
         self._builder.nuget_sln = sln
 
     def msbuild(self, project, target='Build', platform=None, configuration=None, args=None, properties=None, verbosity=None):
@@ -800,16 +829,15 @@ class OpenHomeBuilder(object):
         Invoke msbuild/xbuild to build a project/solution. Specify the path to
         the project or solution file.
         '''
-        #msbuild_args = ['msbuild' if self.system == 'Windows' else 'xbuild']
         msbuild_args = ['msbuild' if sys.platform.startswith('win') else 'xbuild']
         properties = {} if properties is None else dict(properties)
 
         if target is not None:
-            msbuild_args += ['/target:'+target]
+            msbuild_args += ['/target:' + target]
 
         if verbosity is None:
             verbosity = self.msbuild_verbosity
-        msbuild_args += ['/verbosity:'+verbosity]
+        msbuild_args += ['/verbosity:' + verbosity]
 
         if platform is not None:
             properties['Platform'] = platform
@@ -817,7 +845,7 @@ class OpenHomeBuilder(object):
         if configuration is not None:
             properties['Configuration'] = configuration
 
-        msbuild_args += ['/property:{0}={1}'.format(k,v) for (k,v) in properties.items() if v is not None]
+        msbuild_args += ['/property:{0}={1}'.format(k, v) for (k, v) in properties.items() if v is not None]
         msbuild_args += [project]
         if args is not None:
             msbuild_args += args
@@ -838,7 +866,7 @@ class OpenHomeBuilder(object):
         elif target is not None:
             mdtool_args += [target]
         if configuration is not None:
-            mdtool_args += ['-c:'+configuration]
+            mdtool_args += ['-c:' + configuration]
         mdtool_args += [('-p:' if target == 'mac-bundle' else '') + project]
         if bundle is not None:
             mdtool_args += [bundle]
@@ -887,7 +915,7 @@ class OpenHomeBuilder(object):
             self._builder.cli(cmd_options)
             self.cover_reports.append(args['output'])
         else:
-            print 'Coverage not enabled for this platform, executing tests normally'
+            print('Coverage not enabled for this platform, executing tests normally')
             if 'command' in args:
                 self._builder.cli(args['command'])
             elif 'nunit_assembly' in args:
@@ -910,25 +938,25 @@ class OpenHomeBuilder(object):
                 '-historydir:history',
                 '-targetdir:' + output_dir])
         else:
-            print 'Coverage not enabled for this platform, not generating report'
+            print('Coverage not enabled for this platform, not generating report')
 
     def cover_compress(self, output, reports=None):
-      '''
-      Generates a tar file with the specified name, containing all the reports provided. If no reports are provided,
-      all the reports generated by the cover calls will be added.
-      '''
-      if self.should_cover():
-          head, tail = os.path.split(output)
-          if not os.path.isdir(head):
-              os.makedirs(head)
-          if reports is None:
-              reports = self.cover_reports
-          with tarfile.open(output, 'w') as tar:
-              for report in reports:
-                  head, tail = os.path.split(report)
-                  tar.add(report, arcname=tail)
-      else:
-          print 'Coverage not enabled for this platform, not generating ' + output
+        '''
+        Generates a tar file with the specified name, containing all the reports provided. If no reports are provided,
+        all the reports generated by the cover calls will be added.
+        '''
+        if self.should_cover():
+            head, tail = os.path.split(output)
+            if not os.path.isdir(head):
+                os.makedirs(head)
+            if reports is None:
+                reports = self.cover_reports
+            with tarfile.open(output, 'w') as tar:
+                for report in reports:
+                    head, tail = os.path.split(report)
+                    tar.add(report, arcname=tail)
+        else:
+            print('Coverage not enabled for this platform, not generating ' + output)
 
     def pack_nuget(self, project_name, base_path='', props=None, output_path='build/packages', include_references=True):
         '''
@@ -984,7 +1012,7 @@ class OpenHomeBuilder(object):
             package_upload = self.package_upload
         sourcepath = self._expand_template(package_location, packagename=packagename)
         destinationpath = self._expand_template(package_upload, uploadpath=uploadpath)
-        print '\n\n', sourcepath, destinationpath
+        print('\n\n', sourcepath, destinationpath)
         if 'core.linn.co.uk' in destinationpath:
             # reroute to AWS (private)
             awspath = 's3://%s/%s' % (AWS_BUCKET_PRIVATE, destinationpath.split('artifacts/')[2])
@@ -1012,8 +1040,6 @@ class OpenHomeBuilder(object):
     cli = _forward_to_builder("cli")
     rsync = _forward_to_builder("rsync")
     curl = _forward_to_builder("curl")
-    #build_step = _forward_to_builder("build_step")
-    #build_condition = _forward_to_builder("condition")
     modify_optional_steps = _forward_to_builder("modify_optional_steps")
     specify_optional_steps = _forward_to_builder("specify_optional_steps")
     default_platform = _forward_to_function(default_platform)
@@ -1028,46 +1054,46 @@ class OpenHomeBuilder(object):
     require_version = _forward_to_function(require_version)
 
 
-
 def run(buildname="build", argv=None):
     builder = Builder()
     import ci
     behaviour_globals = {
-            'fetch_dependencies':builder.fetch_dependencies,
-            'read_dependencies':builder.read_dependencies,
-            'get_dependency_args':builder.get_dependency_args,
-            'add_option':builder.add_option,
-            'add_bool_option':builder.add_bool_option,
-            'python':builder.python,
-            'shell':builder.shell,
-            'cli':builder.cli,
-            'rsync':builder.rsync,
-            'curl':builder.curl,
-            'build_step':builder.build_step,
-            'build_condition':builder.build_condition,
-            'default_platform':default_platform,
-            'get_vsvars_environment':get_vsvars_environment,
-            'SshSession':SshSession,
-            'select_optional_steps':builder.select_optional_steps,
-            'modify_optional_steps':builder.modify_optional_steps,
-            'specify_optional_steps':builder.specify_optional_steps,
-            'userlock':userlock,
-            'fail':fail,
-            'scp':scp,
-            'require_version':require_version,
-            'OpenHomeBuilder':OpenHomeBuilder
-        }
+        'fetch_dependencies': builder.fetch_dependencies,
+        'read_dependencies': builder.read_dependencies,
+        'get_dependency_args': builder.get_dependency_args,
+        'add_option': builder.add_option,
+        'add_bool_option': builder.add_bool_option,
+        'python': builder.python,
+        'shell': builder.shell,
+        'cli': builder.cli,
+        'rsync': builder.rsync,
+        'curl': builder.curl,
+        'build_step': builder.build_step,
+        'build_condition': builder.build_condition,
+        'default_platform': default_platform,
+        'get_vsvars_environment': get_vsvars_environment,
+        'SshSession': SshSession,
+        'select_optional_steps': builder.select_optional_steps,
+        'modify_optional_steps': builder.modify_optional_steps,
+        'specify_optional_steps': builder.specify_optional_steps,
+        'userlock': userlock,
+        'fail': fail,
+        'scp': scp,
+        'require_version': require_version,
+        'OpenHomeBuilder': OpenHomeBuilder
+    }
     for name, value in behaviour_globals.items():
         setattr(ci, name, value)
     try:
         global_dict = dict(behaviour_globals)
-        execfile(os.path.join('projectdata', buildname+'_behaviour.py'), global_dict)
+
+        exec(open(os.path.join('projectdata', buildname + '_behaviour.py')).read(), global_dict)
         if not builder.has_steps() and 'Builder' in global_dict:
             instance = global_dict['Builder']()
             instance.startup(builder)
         builder.run(argv)
     except AbortRunException as e:
-        print e.usermessage
+        print(e.usermessage)
         sys.exit(e.exitcode)
     for name in behaviour_globals.keys():
         delattr(ci, name)

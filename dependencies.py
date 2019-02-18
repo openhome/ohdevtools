@@ -3,18 +3,17 @@ import tarfile
 import zipfile
 import re
 import urllib
-import urllib2
+import requests
 import platform
 import subprocess
 import json
 import shutil
-import cStringIO
+import io
 import tempfile
 from glob import glob
 from default_platform import default_platform
 import deps_cross_checker
 import aws
-import platform
 
 # Master table of dependency types.
 
@@ -248,8 +247,7 @@ class FileFetcher(object):
         print("  from '%s'" % url)
         handle, temppath = tempfile.mkstemp( suffix='.tmp' )
         try:
-            req = urllib2.Request(url=url, headers={'Accept-Encoding': 'identity'})
-            remotefile = urllib2.urlopen( req, timeout=10 )
+            remotefile = requests.get(url=url, headers={'Accept-Encoding': 'identity'})
             localfile = os.fdopen( handle, 'wb' )
             chunk = remotefile.read( 1000000 )      # chunk size optimised for download speed
             while len( chunk ):
@@ -654,7 +652,7 @@ def read_json_dependencies_from_filename(dependencies_filename, overrides_filena
                 with open(overrides_filename) as overridesfile:
                     return read_json_dependencies(dependencyfile, overridesfile, env)
             else:
-                return read_json_dependencies(dependencyfile, cStringIO.StringIO('[]'), env)
+                return read_json_dependencies(dependencyfile, io.StringIO(u'[]'), env)
     except (OSError, IOError) as e:
         if e.errno != 2:
             raise
@@ -685,7 +683,7 @@ def clean_dirs(dir):
                     locked.append(filePath)
         if locked:
             for f in locked:
-                print 'Locked file:- ', f
+                print('Locked file:- ', f)
             raise Exception('Failed to clean dependencies\n')
         else:
             shutil.rmtree(dir)
@@ -740,15 +738,15 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
     dependencies = read_json_dependencies_from_filename('projectdata/dependencies.json', overrides_filename, env=env)
     if list_details:
         for name, dependency in dependencies.items():
-            print "Dependency '{0}':".format(name)
-            print "    fetches from:     {0!r}".format(dependency['archive-path'])
-            print "    unpacks to:       {0!r}".format(dependency['dest'])
-            print "    local override:   {0}".format("YES (see '../dependency_overrides.json')" if dependency.has_overrides else 'no')
+            print("Dependency '{0}':".format(name))
+            print("    fetches from:     {0!r}".format(dependency['archive-path']))
+            print("    unpacks to:       {0!r}".format(dependency['dest']))
+            print("    local override:   {0}".format("YES (see '../dependency_overrides.json')" if dependency.has_overrides else 'no'))
             if verbose:
-                print "    all keys:"
+                print("    all keys:")
                 for key, value in sorted(dependency.items()):
-                    print "        {0} = {1!r}".format(key, value)
-            print ""
+                    print("        {0} = {1!r}".format(key, value))
+            print("")
     else:
         if fetch:
             if not dependencies.fetch(dependency_names):
@@ -760,22 +758,22 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
         if nuget_packages:
             # follow the legacy behaviour if a valid nuget packages.config file has been specified
             if not os.path.exists(nuget_packages):
-                print "Skipping NuGet invocation because projectdata/packages.config not found."
+                print("Skipping NuGet invocation because projectdata/packages.config not found.")
             else:
-                print "Fetching dependencies based on {0}".format(nuget_packages)
+                print("Fetching dependencies based on {0}".format(nuget_packages))
                 nuget_exes = [os.path.normpath(p) for p in glob('dependencies/AnyPlatform/NuGet.[0-9]*/NuGet.exe')]
                 if len(nuget_exes) == 0:
                     raise Exception("'NuGet.exe' not found, cannot fetch NuGet dependencies.")
                 nuget_exe = nuget_exes[0]
                 if len(nuget_exes) > 1:
-                    print "Warning: multiple copies of 'NuGet.exe' found. Using:"
-                    print "    " + nuget_exe
+                    print("Warning: multiple copies of 'NuGet.exe' found. Using:")
+                    print("    " + nuget_exe)
                 cli([nuget_exe, 'install', nuget_packages, '-OutputDirectory', 'dependencies/nuget'])
         elif nuget_sln:
             if not os.path.exists(nuget_sln):
-                print "Skipping NuGet invocation because {0} not found.".format(nuget_sln)
+                print("Skipping NuGet invocation because {0} not found.".format(nuget_sln))
             else:
-                print "Fetching dependencies based on {0}".format(nuget_sln)
+                print("Fetching dependencies based on {0}".format(nuget_sln))
                 # recursive lookup of the nuget.config file does not work on linux... So,
                 # the location of the file needs to be specified explicitly
                 args = ['../ohdevtools/nuget/nuget.exe', 'restore', nuget_sln]
