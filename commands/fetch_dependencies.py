@@ -58,7 +58,11 @@ def main():
         print("No dependencies were specified. Default to:")
         print("    go fetch --all" + (" --nuget" if options.nuget else ""))
         print("[Yn]?", end='')
-        answer = raw_input().strip().upper()
+        try:
+            input = raw_input
+        except NameError:
+            pass
+        answer = input().strip().upper()
         if answer not in ["", "Y", "YES"]:
             sys.exit(1)
     platform = options.platform or default_platform()
