@@ -27,7 +27,7 @@ class DepsCrossChecker:
                         self.artifacts[os.path.basename( root )] = self.parse_json( os.path.join( root, kDepsFilename ))
         self.artifacts['projectdata'] = self.parse_json( os.path.join( kProjDataPath, kDepsFilename ))
 
-        projects = self.artifacts.keys()
+        projects = list( self.artifacts )
         while len(projects):
             project1 = projects[0]
             for project2 in projects:
