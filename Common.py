@@ -312,10 +312,23 @@ def GetBitstreamVersion(aBitstreamFile, aMajorNumber):
 
 
 def CreateHtmlFile( aHtml, aHtmlFile, aPrintToScreen ):
-    print( "Created html output file: %s" % aHtmlFile )
-    f = open(aHtmlFile, 'wt')
+    print( "Creating html output file: %s" % aHtmlFile )
+
+    htmlFile = aHtmlFile
+    if "@" in aHtmlFile:
+        htmlFile = "TempHtmlFile.html"
+
+    f = open(htmlFile, 'wt')
     f.write( aHtml.encode('utf-8') )
     f.close()
+
+    if "@" in aHtmlFile:
+        cmd = "scp %s %s" % ( htmlFile, aHtmlFile )
+        resp = subprocess.call(cmd.split())
+        os.unlink( htmlFile )
+        if resp != 0:
+            Info( "    SCP call failed with exit code %d" % resp )
+            sys.exit(resp)
 
     if aPrintToScreen:
         print aHtml
