@@ -19,12 +19,12 @@ import urllib2
 
 # CDN locations - jenkins job runs on eng.linn.co.uk - need to relocate cdn directory if this changed
 kCdnWwwDestination          = "linnapi@static.linnapi.com:/var/www.linnapi/public_html"
-kCdnRsyncLocalDir           = "/local/share/cdn/"   # local location (eng) to sync with remote host
-kCdnDirForUploadV2          = '/local/share/cdn/exaktV2'    # location for rsync with public server: \\eng.linn.co.uk\share\cdn\exaktV2\
+kCdnRsyncLocalDir           = "products@eng.linn.co.uk:/local/share/cdn/"   # local location (eng) to sync with remote host
+kCdnDirForUploadV2          = 'products@eng.linn.co.uk:/local/share/cdn/exaktV2'    # location for rsync with public server: \\eng.linn.co.uk\share\cdn\exaktV2\
 kWwwDestinationProduct      = "linnapi@static.linnapi.com:/var/www.linnapi/public_html/product"
 kExaktJsonGenericDevCloudV2 = os.path.join(kCdnDirForUploadV2, 'devattributes.json')
 kExaktJsonStableCloudV2     = os.path.join(kCdnDirForUploadV2, 'attributesV4.json')
-kDirComponentsV2            = '/local/share/componentsV2'   # official location for software components: \\eng.linn.co.uk\share\componentsV2\
+kDirComponentsV2            = 'products@eng.linn.co.uk:/local/share/componentsV2'   # official location for software components: \\eng.linn.co.uk\share\componentsV2\
 kLocalCloudFileName         = 'ExaktCloudDbV2.json'
 kLocalCloudTempFileName     = 'ExaktMinimalTemp.json'
 kLocalDevCloudTempFileName  = 'ExaktMinimalDevTemp.json'
