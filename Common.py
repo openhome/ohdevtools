@@ -17,14 +17,10 @@ import urllib2
 # Constants
 # ------------------------------------------------------------------------------
 
-# CDN locations - jenkins job runs on eng.linn.co.uk - need to relocate cdn directory if this changed
-kCdnWwwDestination          = "linnapi@static.linnapi.com:/var/www.linnapi/public_html"
-kCdnRsyncLocalDir           = "/local/share/cdn/"   # local location (eng) to sync with remote host
-kCdnDirForUploadV2          = '/local/share/cdn/exaktV2'    # location for rsync with public server: \\eng.linn.co.uk\share\cdn\exaktV2\
+# File Locations
 kWwwDestinationProduct      = "linnapi@static.linnapi.com:/var/www.linnapi/public_html/product"
-kExaktJsonGenericDevCloudV2 = os.path.join(kCdnDirForUploadV2, 'devattributes.json')
-kExaktJsonStableCloudV2     = os.path.join(kCdnDirForUploadV2, 'attributesV4.json')
-kDirComponentsV2            = '/local/share/componentsV2'   # official location for software components: \\eng.linn.co.uk\share\componentsV2\
+kExaktDevCloudFileName      = 'devattributes.json'
+kExaktStableCloudFileName   = 'attributesV4.json'
 kLocalCloudFileName         = 'ExaktCloudDbV2.json'
 kLocalCloudTempFileName     = 'ExaktMinimalTemp.json'
 kLocalDevCloudTempFileName  = 'ExaktMinimalDevTemp.json'
@@ -267,20 +263,6 @@ def GetDependenciesJson( aRepo, aVersion ):
         print "    " + obj['name'] + ": " + obj['version']
     return jsonObjs
 
-
-def UploadFilesToCdn(aDryRun):
-    Info( 'Upload files from %s to %s' % ( kCdnRsyncLocalDir,  kCdnWwwDestination) )
-    rsyncOptions = ['--itemize-changes', '--recursive', '--cvs-exclude', '--delete', '--checksum', '--copy-links', '--perms', '--times', '--verbose', '--exclude=/konfig/assets.*', '--exclude=/konfig/devassets.*', '--exclude=/product/']  # --cvs-exclude suppresses .svn/ and much other junk
-    exeRsync = 'rsync'.split()
-    if aDryRun:
-        exeRsync.append( '--dry-run')
-    for option in rsyncOptions:
-        exeRsync.append( option )
-    exeRsync.append( kCdnRsyncLocalDir )
-    exeRsync.append( kCdnWwwDestination )
-    subprocess.check_call( exeRsync )
-
-
 def CopyFileWithPermissions(aSource, aDestination):
     import grp
     subprocess.check_call(['sudo', 'cp', '--preserve=mode', aSource, aDestination])
@@ -300,7 +282,7 @@ def Md5Hash(aFile):
     return md5Hash
 
 
-def GetBitstreamVersion(aBitstreamFile, aMajorNumber):
+def GetBitstreamVersion(aBitstreamFile):
     """Extract version number from given bitstream file."""
     f = open(aBitstreamFile, 'rt')
     data = f.read()
@@ -312,10 +294,23 @@ def GetBitstreamVersion(aBitstreamFile, aMajorNumber):
 
 
 def CreateHtmlFile( aHtml, aHtmlFile, aPrintToScreen ):
-    print( "Created html output file: %s" % aHtmlFile )
-    f = open(aHtmlFile, 'wt')
+    print( "Creating html output file: %s" % aHtmlFile )
+
+    htmlFile = aHtmlFile
+    if "@" in aHtmlFile:
+        htmlFile = "TempHtmlFile.html"
+
+    f = open(htmlFile, 'wt')
     f.write( aHtml.encode('utf-8') )
     f.close()
+
+    if "@" in aHtmlFile:
+        cmd = "scp %s %s" % ( htmlFile, aHtmlFile )
+        resp = subprocess.call(cmd.split())
+        os.unlink( htmlFile )
+        if resp != 0:
+            Info( "    SCP call failed with exit code %d" % resp )
+            sys.exit(resp)
 
     if aPrintToScreen:
         print aHtml
@@ -396,6 +391,66 @@ def CreateFile(aData, aFile):
     f.write(aData)
     f.close()
 
+def GetExaktDevFeed( aLocalFilePath ):
+    return GetExaktFeed( aLocalFilePath, kExaktDevCloudFileName )
+
+def GetExaktStableFeed( aLocalFilePath ):
+    return GetExaktFeed( aLocalFilePath, kExaktStableCloudFileName )
+
+def GetExaktFeed( aLocalFilePath, aFeedName ):
+    key = "exakt/feeds/%s" % (aFeedName)
+    f = os.path.join( aLocalFilePath, aFeedName )
+    try:
+        DownloadFromAws( key, f, aBucket=kAwsBucketPublic )
+    except:
+        f = None
+    return f
+
+def GetExaktComponent( aLocalFilePath, aComponentName ):
+    key = "exakt/components/%s" % (aComponentName)
+    f = os.path.join( aLocalFilePath, aComponentName )
+    try:
+        DownloadFromAws( key, f, aBucket=kAwsBucketPublic )
+    except:
+        f = None
+    return f
+
+def GetExaktComponentList( aIncludeVersion ):
+    exaktCompList = aws.ls('s3://' + kAwsBucketPublic + '/exakt/components/')
+
+    if not aIncludeVersion:
+        uniqueList = []
+        for comp in exaktCompList:
+            unique = comp.split("_")[-1]
+            if unique not in uniqueList:
+                uniqueList.append( unique )
+        return uniqueList
+    else:
+        return exaktCompList
+
+def GetLatestExaktVersion():
+    exaktFeedList = aws.ls('s3://' + kAwsBucketPublic + '/exakt/feeds/')
+    versionList = []
+    latestVersion = None
+    for feedFile in exaktFeedList:
+        if '_Cloud.json' in feedFile:
+            versionList.append( os.path.basename(feedFile).split('_')[0] )
+    if len(versionList) > 0:
+        mostRecentVersion = '0.0.0'
+        for version in versionList:
+            versionSplit = map(int, version.split('.'))
+            mostRecentVersionSplit = map(int, mostRecentVersion.split('.'))
+            if (versionSplit[0] > mostRecentVersionSplit[0]) or (versionSplit[0] == mostRecentVersionSplit[0] and versionSplit[1] > mostRecentVersionSplit[1]) or (versionSplit[0] == mostRecentVersionSplit[0] and versionSplit[1] == mostRecentVersionSplit[1] and versionSplit[2] > mostRecentVersionSplit[2]):
+                mostRecentVersion = version
+        if mostRecentVersion != '0.0.0':
+            latestVersion = mostRecentVersion
+    return  latestVersion
+
+def UploadExaktFeedToAws( aFeedName, aLocalFeedFile, aDryRun ):
+    UploadToAws( 'exakt/feeds/%s' % ( aFeedName ), aLocalFeedFile, kAwsBucketPublic, aDryRun )
+
+def UploadExaktComponentToAws( aComponentName, aLocalComponentFile, aDryRun ):
+    UploadToAws( 'exakt/components/%s' % ( aComponentName ), aLocalComponentFile, kAwsBucketPublic, aDryRun )
 
 def PublishTestDsEmulatorAws( aVersion, aDryRun=False ):
     CreateTestDsEmulator( aVersion, False, False, aDryRun )
