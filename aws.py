@@ -39,9 +39,11 @@ else:
                 except:
                     pass
                 try:
-                    creds = requests.get(kAwsLinnCredsUri).text
-                    with open(awsCreds, 'wt') as f:
-                        f.write(creds)
+                    resp = requests.get(kAwsLinnCredsUri)
+                    if resp.status_code == 200:
+                        creds = resp.text
+                        with open(awsCreds, 'wt') as f:
+                            f.write(creds)
                 except:
                     pass
 
