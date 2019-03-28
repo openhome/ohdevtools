@@ -245,19 +245,12 @@ class FileFetcher(object):
     @staticmethod
     def fetch_url(url):
         print("  from '%s'" % url)
-        handle, temppath = tempfile.mkstemp( suffix='.tmp' )
-        try:
-            remotefile = requests.get(url=url, headers={'Accept-Encoding': 'identity'})
-            localfile = os.fdopen( handle, 'wb' )
-            chunk = remotefile.read( 1000000 )      # chunk size optimised for download speed
-            while len( chunk ):
-                localfile.write( chunk )
-                chunk = remotefile.read( 1000000 )
-            localfile.close()
-            remotefile.close()
-        except:
-            # errors handled in caller to permit execution to continue after errored dependency
-            os.close( handle )
+        handle, temppath = tempfile.mkstemp(suffix='.tmp')
+        remotefile = requests.get(url=url, headers={'Accept-Encoding': 'identity'})
+        localfile = os.fdopen(handle, 'wb')
+        if remotefile.status_code == 200:
+            localfile.write(remotefile.content)
+        localfile.close()
         return temppath
 
 
@@ -417,7 +410,7 @@ class Dependency(object):
             statinfo = os.stat(fetched_path)
             if not statinfo.st_size:
                 os.unlink(fetched_path)
-                print("  **** WARNING - failed to fetch %s ****" % remote_path)
+                print("  **** WARNING - failed to fetch %s ****" % os.path.basename(remote_path))
                 return False
         except IOError:
             print("  **** FAILED ****")
