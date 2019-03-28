@@ -264,12 +264,14 @@ def GetDependenciesJson( aRepo, aVersion ):
     return jsonObjs
 
 def CopyFileWithPermissions(aSource, aDestination):
-    import grp
-    subprocess.check_call(['sudo', 'cp', '--preserve=mode', aSource, aDestination])
-    try:
-        subprocess.check_call(['sudo', 'chown', '%d:%d' % (os.geteuid(), grp.getgrnam('products').gr_gid), aDestination])
-    except:
-        subprocess.check_call(['sudo', 'chown', '%d:%d' % (os.geteuid(), os.getegid()), aDestination])
+    shutil.copy2(aSource, aDestination)
+    # BELOW WAS REQUIRED FOR COPYING ON ENG - could be removed next time anyone looks at this
+    #import grp
+    #subprocess.check_call(['sudo', 'cp', '--preserve=mode', aSource, aDestination])
+    #try:
+    #    subprocess.check_call(['sudo', 'chown', '%d:%d' % (os.geteuid(), grp.getgrnam('products').gr_gid), aDestination])
+    #except:
+    #    subprocess.check_call(['sudo', 'chown', '%d:%d' % (os.geteuid(), os.getegid()), aDestination])
 
 
 def Md5Hash(aFile):
