@@ -39,11 +39,11 @@ def get_vsvars_environment(architecture="x86"):
         'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\Auxiliary\\Build\\vcvars32.bat'     # VS2017 Community edition
     ]:
         if os.path.isfile(vcvars32):
-            process = subprocess.Popen('("%s" %s>nul)&&"%s" -c "import os; print repr(os.environ)"' % (vcvars32, architecture, python), stdout=subprocess.PIPE, shell=True)
+            process = subprocess.Popen('("%s" %s>nul)&&"%s" -c "import os; print(repr(os.environ))"' % (vcvars32, architecture, python), stdout=subprocess.PIPE, shell=True)
             stdout, _ = process.communicate()
             exitcode = process.wait()
             if exitcode == 0:
-                result = eval(stdout.strip())
+                result = eval(stdout.decode('ascii').strip('environ'))
     if not result:
         raise Exception('Couldn\'t find/process vcvars32 batch file' )
     return result
