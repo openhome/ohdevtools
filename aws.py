@@ -75,6 +75,8 @@ class __aws:
                 ext = aSrc.split(".")[-1]
                 if ext in ["txt", "json", "xml"]:
                     bucket.upload_fileobj(data, '/'.join(aDst.split('/')[3:]), ExtraArgs={'ContentType': 'text/plain'})
+                elif ext in ["htm", "html"]:
+                    bucket.upload_fileobj(data, '/'.join(aDst.split('/')[3:]), ExtraArgs={'ContentType': 'text/html'})
                 else:
                     bucket.upload_fileobj(data, '/'.join(aDst.split('/')[3:]))
         else:
