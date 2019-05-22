@@ -126,6 +126,7 @@ class __aws:
 
     def _listItemsRecursive(self, aUri):
         """Return (non-recursive) directory listing of specified URI"""
+        aUri = aUri.strip("/")
         entries = []
         objects = self.__listObjs(aUri)
         if 'CommonPrefixes' in objects:

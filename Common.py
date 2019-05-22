@@ -354,8 +354,8 @@ def DeleteRecursiveFromAws( aDstDir, aBucket=kAwsBucketPrivate, aFileFilter=None
     filelist = aws.lsr( 's3://%s/%s' % (aBucket, aDstDir) )
     for f in filelist:
         if aFileFilter == None or aFileFilter in f: 
-            fileKey = os.path.join( aDstDir, os.path.basename(f) )
-            DeleteFromAws( fileKey, aBucket, aDryRun)
+            if not f.endswith("/"):
+                DeleteFromAws( f, aBucket, aDryRun)
 
 def UploadRecursiveToAws( aSrcDir, aDstDir, aBucket=kAwsBucketPrivate, aFileFilter="*", aDryRun=False ):
     import glob
