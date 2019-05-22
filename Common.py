@@ -376,13 +376,15 @@ def CopyOnAws( aSourceKey, aDestKey, aBucket=kAwsBucketPrivate, aDryRun=False ):
 
 def CopyRecursiveOnAws( aSourceDir, aDestDir, aBucket=kAwsBucketPrivate, aDryRun=False ):
     print( 'Copy Recursive on AWS (%s) %s to %s' % ( aBucket, aSourceDir, aDestDir ) )
-    if not aDryRun:
-        sourceDir = aSourceDir.lstrip( '/' )
-        destDir = aDestDir.lstrip( '/' )
-        items = aws.lsr( 's3://%s/%s' % (aBucket, sourceDir) )
-        for item in items:
-            if item[-1] != '/':
-                aws.cp( 's3://%s/%s' % (aBucket, item), 's3://%s/%s' % (aBucket, item.replace( sourceDir, destDir )) )
+    cpcnt = 0
+    sourceDir = aSourceDir.lstrip( '/' )
+    destDir = aDestDir.lstrip( '/' )
+    items = aws.lsr( 's3://%s/%s' % (aBucket, sourceDir) )
+    for item in items:
+        if item[-1] != '/':
+            cpcnt += 1
+            CopyOnAws( item, item.replace( sourceDir, destDir ), aBucket, aDryRun )
+    return cpcnt
 
 
 def MoveOnAws( aSourceKey, aDestKey, aBucket=kAwsBucketPrivate, aDryRun=False ):
