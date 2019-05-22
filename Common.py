@@ -18,7 +18,6 @@ import urllib2
 # ------------------------------------------------------------------------------
 
 # File Locations
-kWwwDestinationProduct      = "linnapi@static.linnapi.com:/var/www.linnapi/public_html/product"
 kExaktDevCloudFileName      = 'devattributes.json'
 kExaktStableCloudFileName   = 'attributesV4.json'
 kLocalCloudFileName         = 'ExaktCloudDbV2.json'
@@ -30,12 +29,7 @@ kProductRepo                = "ssh://git@core.linn.co.uk/home/git/product.git"
 kReleaseUtilsRepo           = "ssh://git@core.linn.co.uk/home/git/releaseUtils.git"
 kOhDevToolsRepo             = "ssh://git@core.linn.co.uk/home/git/ohdevtools.git"
 kProductInfoRepo            = "ssh://git@core.linn.co.uk/home/git/ProductInfo.git"
-# Kiboko details
-kRemoteHost                 = 'products@kiboko.linn.co.uk'
-kDevFileLocation            = '/var/www.products/VersionInfo/Downloads/Development/'
-kBetaFileLocation           = '/var/www.products/VersionInfo/Downloads/Beta/'
-kReleaseFileLocation        = '/var/www.products/VersionInfo/Downloads/Releases/'
-kFeedLocation               = kRemoteHost + ':/var/www.products/VersionInfo/'
+# Release feed details
 kDevMasterFeedFileName      = 'DevelopmentMasterFeed.json'
 kDevFeedFileName            = 'DevelopmentVersionInfoV2.json'
 kBetaFeedFileName           = 'LatestVersionInfoV2.json'
@@ -47,14 +41,23 @@ kExaktSuppressedString      = 'suppress'
 # crash report related
 kTicketUrlBase              = "http://core.linn.co.uk/network/ticket/"
 kReportUrlBase              = "http://products.linn.co.uk/restricted/site/device/exception/"
-# Aws S3
+# Aws S3 - private
 kAwsBucketPrivate           = 'linn-artifacts-private'
-kAwsBucketPublic            = 'linn-artifacts-public'
-kAwsProductBase             = 'Volkano2Products/'
+kAwsProductionBase          = 'Volkano2Products/'
 kAwsHardwareBase            = 'hardware/'
-kJenkinsHardwareBuildDir    = 'install/AppBoard/release/bin'
 kAwsElfBase                 = '/artifacts/builds/Volkano2'
 kElfFileFilter              = '*.elf'
+# Aws S3 - public
+kAwsBucketPublic            = 'linn-artifacts-public'
+kAwsNightlyBase             = 'VersionInfo/Downloads/NightlyBuilds/'    
+kAwsDevBase                 = 'VersionInfo/Downloads/Development/'
+kAwsBetaBase                = 'VersionInfo/Downloads/Beta/'
+kAwsReleaseBase             = 'VersionInfo/Downloads/Releases/'
+kAwsReleaseFeedBase         = 'VersionInfo/' 
+kAwsProductWebViewBase      = 'product/'
+# Jenkins
+kJenkinsHardwareBuildDir    = 'install/AppBoard/release/bin'
+
 
 
 # ------------------------------------------------------------------------------
@@ -342,13 +345,23 @@ def UploadToAws( aKey, aSourceFile, aBucket=kAwsBucketPrivate, aDryRun=False ):
     if not aDryRun:
         aws.cp( aSourceFile, 's3://%s/%s' % (aBucket, aKey) )
 
+def DeleteFromAws( aKey, aBucket=kAwsBucketPrivate, aDryRun=False ):
+    print( 'Delete from AWS s3://%s/%s' % ( aBucket, aKey ) )
+    if not aDryRun:
+        aws.delete( 's3://%s/%s' % (aBucket, aKey) )
 
-def UploadRecursiveToAws( aSrcDir, aDstDir, aFileFilter="*", aDryRun=False ):
+def DeleteRecursiveFromAws( aDstDir, aBucket=kAwsBucketPrivate, aFileFilter=None, aDryRun=False ):
+    filelist = aws.lsr( 's3://%s/%s' % (aBucket, aDstDir) )
+    for f in filelist:
+        if aFileFilter == None or aFileFilter in f: 
+            fileKey = os.path.join( aDstDir, os.path.basename(f) )
+            DeleteFromAws( fileKey, aBucket, aDryRun)
+
+def UploadRecursiveToAws( aSrcDir, aDstDir, aBucket=kAwsBucketPrivate, aFileFilter="*", aDryRun=False ):
     import glob
     for f in glob.glob( os.path.join(aSrcDir, aFileFilter) ):
         fileKey = os.path.join( aDstDir, os.path.basename(f) )
-        UploadToAws( fileKey, f, kAwsBucketPrivate, aDryRun)
-
+        UploadToAws( fileKey, f, aBucket, aDryRun)
 
 def UploadToAwsDir( aDir, aSourceFile, aBucket=kAwsBucketPrivate, aDryRun=False ):
     key = os.path.join( aDir, os.path.basename(aSourceFile) )
@@ -578,7 +591,7 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
         if aDryRun:
             os.remove( tarOutputFile )
     else:
-        uploadKey = 'Volkano2Products/%s' % tarOutputFile
+        uploadKey = '%s%s' % ( kAwsProductionBase, tarOutputFile )
         UploadToAws( uploadKey, tarOutputFile, aDryRun=aDryRun )
 
         os.remove( tarOutputFile )
