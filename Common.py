@@ -373,6 +373,15 @@ def CopyOnAws( aSourceKey, aDestKey, aBucket=kAwsBucketPrivate, aDryRun=False ):
     if not aDryRun:
         aws.cp( 's3://%s/%s' % (aBucket, aSourceKey), 's3://%s/%s' % (aBucket, aDestKey) )
 
+def ListRecursiveOnAws( aDestDir, aBucket=kAwsBucketPrivate, aFileFilter=None ):
+    print( 'List Recursive on AWS (%s) %s' % ( aBucket, aDestDir ) )
+    destDir = aDestDir.lstrip( '/' )
+    awsItems = aws.lsr( 's3://%s/%s' % (aBucket, destDir) )
+    items = []
+    for i in awsItems:
+        if aFileFilter == None or aFileFilter in i:
+            items.append(i)
+    return items
 
 def CopyRecursiveOnAws( aSourceDir, aDestDir, aBucket=kAwsBucketPrivate, aDryRun=False ):
     print( 'Copy Recursive on AWS (%s) %s to %s' % ( aBucket, aSourceDir, aDestDir ) )
