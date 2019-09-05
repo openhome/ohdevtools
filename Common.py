@@ -48,7 +48,8 @@ kAwsHardwareBase            = 'hardware/'
 kAwsElfBase                 = '/artifacts/builds/Volkano2'
 kElfFileFilter              = '*.elf'
 # Aws S3 - public
-kAwsBucketPublic            = 'linn-artifacts-public'
+kAwsBucketPublic            = 'linn-artifacts-public' # linn public, no customers
+kAwsBucketCustomer          = 'linn-artifacts-firmware' # customer access, core1 firmware only as of now
 kAwsNightlyBase             = 'VersionInfo/Downloads/NightlyBuilds/'    
 kAwsDevBase                 = 'VersionInfo/Downloads/Development/'
 kAwsBetaBase                = 'VersionInfo/Downloads/Beta/'
@@ -373,6 +374,11 @@ def CopyOnAws( aSourceKey, aDestKey, aBucket=kAwsBucketPrivate, aDryRun=False ):
     if not aDryRun:
         aws.cp( 's3://%s/%s' % (aBucket, aSourceKey), 's3://%s/%s' % (aBucket, aDestKey) )
 
+def CopyOnAwsCrossBucket( aSourceKey, aSourceBucket, aDestKey, aDestBucket, aDryRun=False ):
+    print( 'Copy cross bucket on AWS (%s) %s to (%s) %s' % ( aSourceBucket, aSourceKey, aDestBucket, aDestKey ) )
+    if not aDryRun:
+        aws.cp( 's3://%s/%s' % (aSourceBucket, aSourceKey), 's3://%s/%s' % (aDestBucket, aDestKey) )
+
 def ListRecursiveOnAws( aDestDir, aBucket=kAwsBucketPrivate, aFileFilter=None ):
     print( 'List Recursive on AWS (%s) %s' % ( aBucket, aDestDir ) )
     destDir = aDestDir.lstrip( '/' )
@@ -395,6 +401,17 @@ def CopyRecursiveOnAws( aSourceDir, aDestDir, aBucket=kAwsBucketPrivate, aDryRun
             CopyOnAws( item, item.replace( sourceDir, destDir ), aBucket, aDryRun )
     return cpcnt
 
+def CopyRecursiveOnAwsCrossBucket( aSourceDir, aSourceBucket, aDestDir, aDestBucket, aDryRun=False ):
+    print( 'Copy Recursive cross bucket on AWS (%s) %s to (%s) %s' % ( aSourceBucket, aSourceDir, aDestBucket, aDestDir ) )
+    cpcnt = 0
+    sourceDir = aSourceDir.lstrip( '/' )
+    destDir = aDestDir.lstrip( '/' )
+    items = aws.lsr( 's3://%s/%s' % (aSourceBucket, sourceDir) )
+    for item in items:
+        if item[-1] != '/':
+            cpcnt += 1
+            CopyOnAwsCrossBucket( item, aSourceBucket, item.replace( sourceDir, destDir ), aDestBucket, aDryRun )
+    return cpcnt
 
 def MoveOnAws( aSourceKey, aDestKey, aBucket=kAwsBucketPrivate, aDryRun=False ):
     print( 'Move on AWS (%s) %s to %s' % ( aBucket, aSourceKey, aDestKey ) )
