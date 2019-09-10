@@ -230,3 +230,11 @@ listDetailsRecursive = aws._listDetailsRecursive
 listItems            = aws._listItems
 listItemsRecursive   = aws._listItemsRecursive
 move                 = aws._move
+
+
+if __name__ == "__main__":
+    import sys
+    args = sys.argv
+    if args[1] == "cp":
+        cp(args[2], args[3])
+        
