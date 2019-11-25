@@ -59,10 +59,10 @@ def main():
         print("    go fetch --all" + (" --nuget" if options.nuget else ""))
         print("[Yn]?", end='')
         try:
-            input = raw_input
+            inp = input()
         except NameError:
             pass
-        answer = input().strip().upper()
+        answer = inp.strip().upper()
         if answer not in ["", "Y", "YES"]:
             sys.exit(1)
     platform = options.platform or default_platform()
