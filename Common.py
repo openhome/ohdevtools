@@ -515,7 +515,7 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
     kEmulatorTypes = [ { "os": "Linux-x86",   "spotify": "spotify_embedded/lib/libspotify_embedded_shared.so" },
                        { "os": "Windows-x86", "spotify": "spotify_embedded/lib/spotify_embedded_shared.dll" } ]  # Core-ppc32?
     jsonObjs = GetDependenciesJson( kProductRepo, aVersion )
-    libdsVer = spotifyVer = libdsKey = spotifyKey = libdsFile = spotifyFile = None
+    dsVer = spotifyVer = dsKey = spotifyKey = dsFile = spotifyFile = None
     versionId = aVersion.split('.')[1]
     localDirTop = '%s-TestDs' % aVersion
     if not os.path.exists( localDirTop ):
@@ -527,11 +527,11 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
         if not os.path.exists( localDirEt ):
             os.makedirs( localDirEt )
         for obj in jsonObjs:
-            if obj['name'] == 'libds':
-                libdsVer = obj['version']  # earliest windows variant is 0.102.723 as we weren't publishing this by default
-                libdsFile = "libds-%s-%s-Release.tar.gz" % ( libdsVer, et["os"] )
-                libdsKey = "libds/%s" % libdsFile
-                libdsFile = os.path.join( localDirEt, libdsFile )
+            if obj['name'] == 'ds':
+                dsVer = obj['version']  # earliest windows variant is 0.102.723 as we weren't publishing this by default
+                dsFile = "ds-%s-%s-Release.tar.gz" % ( dsVer, et["os"] )
+                dsKey = "ds/%s" % dsFile
+                dsFile = os.path.join( localDirEt, dsFile )
             elif obj['name'] == 'Spotify':
                 spotifyVer = obj['version']
                 spotifyFile = "spotify_embedded-v%s-%s-Release.tar.gz" % ( spotifyVer, et["os"] )
@@ -541,9 +541,9 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
         fail = False
         errorMsg = ''
         try:
-            DownloadFromAws( libdsKey, libdsFile )
+            DownloadFromAws( dsKey, dsFile )
         except:
-            errorMsg = "Could not download libds artifact from AWS: %s" % libdsKey
+            errorMsg = "Could not download ds artifact from AWS: %s" % dsKey
             fail = True
 
         try:
@@ -568,35 +568,35 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
 
         if "Linux" in et["os"]:
             dockerData = """
-            FROM ubuntu:16.04 AS libds_base
+            FROM ubuntu:16.04 AS ds_base
 
             RUN apt-get update; apt-get install -y libc6-i386 lib32stdc++6
 
-            FROM libds_base
+            FROM ds_base
 
             ENV ROOM="davaar-{0}"
             ENV NAME="davaar-{0}"
             ENV DUMMY_BOARD_INDEX=80
             ENV SUBDOMAIN_PREFIX="beta"
 
-            ADD libds-{1}-{3}-Release.tar.gz /opt
+            ADD ds-{1}-{3}-Release.tar.gz /opt
             # Extracted from spotify_embedded-v{2}-{3}-Release.tar.gz
-            ADD libspotify_embedded_shared.so /opt/libds/bin
-            RUN chmod +x /opt/libds/bin/TestDs
+            ADD libspotify_embedded_shared.so /opt/ds/bin
+            RUN chmod +x /opt/ds/bin/TestDs
 
-            WORKDIR /opt/libds
+            WORKDIR /opt/ds
 
             ENTRYPOINT ./bin/TestDs --ui ui/AkurateIcons/ --cloud ${{DUMMY_BOARD_INDEX}} --name ${{NAME}} --room ${{ROOM}} --cloud-sub-domain ${{SUBDOMAIN_PREFIX}}
-            """.format( versionId, libdsVer, spotifyVer, et["os"] )
+            """.format( versionId, dsVer, spotifyVer, et["os"] )
 
             CreateFile( dockerData, os.path.join( localDirEt, 'Dockerfile' ) )
         else:
-            tar = tarfile.open( libdsFile )
+            tar = tarfile.open( dsFile )
             tar.extractall( localDirEt )
             tar.close()
-            os.remove( libdsFile )
+            os.remove( dsFile )
 
-            txtData = "libds\\bin\\TestDs.exe -r TestDs-%s -n SoftPlayer -l --ui libds\\ui\\AkurateIcons\\" % aVersion
+            txtData = "ds\\bin\\TestDs.exe -r TestDs-%s -n SoftPlayer -l --ui ds\\ui\\AkurateIcons\\" % aVersion
             CreateFile( txtData, os.path.join( localDirEt, 'TestDs.bat' ) )
 
     if aCheckOnly:
