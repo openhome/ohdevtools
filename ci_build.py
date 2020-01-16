@@ -193,7 +193,6 @@ def callable_to_function(f):
 
 class Builder(object):
     def __init__(self):
-        self.nuget_sln = None
         self._steps = []
         self._optionParser = OptionParser()
         self.add_bool_option("-v", "--verbose")
@@ -403,8 +402,6 @@ class Builder(object):
         try:
             dependencies.fetch_dependencies(
                 selected or None, platform=self._context.env["OH_PLATFORM"], env=env, fetch=True,
-                nuget_packages='projectdata/packages.config' if not self.nuget_sln else None,
-                nuget_sln=self.nuget_sln,
                 clean=clean, source=False,
                 local_overrides=not self._context.options.no_overrides)
         except Exception as e:
@@ -816,14 +813,6 @@ class OpenHomeBuilder(object):
         cover = self.env.get('COVER', "false").lower() == "true"
         return (self.configuration == 'Release') and cover and (self.platform == 'Windows-x86')
 
-    def set_nuget_sln(self, sln):
-        '''
-        Set the solution file to be used for fetching nuget dependencies. If this is not set,
-        the packages.config file found in the project's projectdata directory will be used.
-        '''
-        print("setting solution to use for nuget to  {0}".format(sln))
-        self._builder.nuget_sln = sln
-
     def msbuild(self, project, target='Build', platform=None, configuration=None, args=None, properties=None, verbosity=None):
         '''
         Invoke msbuild/xbuild to build a project/solution. Specify the path to
@@ -957,37 +946,6 @@ class OpenHomeBuilder(object):
                     tar.add(report, arcname=tail)
         else:
             print('Coverage not enabled for this platform, not generating ' + output)
-
-    def pack_nuget(self, project_name, base_path='', props=None, output_path='build/packages', include_references=True):
-        '''
-        Creates a nuget package based on the supplied project file
-        '''
-        props = {} if props is None else props
-        props['Configuration'] = self.configuration
-        props['version'] = self.version if self.version is not None else '0.0.0.1-dev'
-        props_str = ';'.join(['%s=%s' % (k, v) for (k, v) in props.items()])
-
-        args = ['../ohdevtools/nuget/nuget.exe', 'pack', project_name, '-BasePath', base_path, '-Properties', props_str]
-        if output_path is not None:
-            if not os.path.exists(output_path):
-                os.makedirs(output_path)
-            args += ['-OutputDirectory', output_path]
-        if include_references:
-            args += ['-IncludeReferencedProjects']
-        self.cli(args)
-
-    def publish_nuget(self, package, api_key=None, server=None, config_file='nuget.config'):
-        '''
-        Publishes a nuget package to a specified NuGet server.
-        '''
-        args = ['../ohdevtools/nuget/nuget.exe', 'push', package]
-        if api_key is not None:
-            args += [api_key]
-        if server is not None:
-            args += ['-Source', server]
-        if config_file is not None and os.path.isfile(config_file):
-            args += ['-ConfigFile', config_file]
-        self.cli(args)
 
     def publish_package_curl(self, package, server=None):
         '''

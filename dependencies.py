@@ -134,25 +134,8 @@ DEPENDENCY_TYPES = {
         'dest': 'dependencies/${archive-platform}/',
         'configure-args': []
     },
-
-    # Ex-nuget dependencies don't have a git repo, but they are always
-    # AnyPlatform and have a strict convention on location and structure
-    # that makes them easy to specify.
-    #
-    # An exnuget dependency need only specify:
-    #     name
-    #     version
-    'exnuget': {
-        'archive-extension': '.tar.gz',
-        'binary-repo': 'http://builds.openhome.org/releases/artifacts',
-        'archive-directory': '${binary-repo}/nuget/',
-        'archive-filename': '${name}.${version}${archive-extension}',
-        'archive-path': '${archive-directory}${archive-filename}',
-        'host-platform': default_platform(),
-        'dest': 'dependencies/nuget/',
-        'configure-args': []
-    },
 }
+
 AWS_BUCKET = {'private': 'linn-artifacts-private',
               'public':  'linn-artifacts-public'}
 AWS_URL    = {'private': 's3-eu-west-1.amazonaws.com/linn-artifacts-private',
@@ -682,7 +665,7 @@ def clean_dirs(dir):
             shutil.rmtree(dir)
 
 
-def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=True, nuget_packages=None, nuget_sln=None, nuget_config='nuget.config', clean=True, source=False, list_details=False, local_overrides=True, verbose=False):
+def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=True, clean=True, source=False, list_details=False, local_overrides=True, verbose=False):
     '''
     Fetch all the dependencies defined in projectdata/dependencies.json and in
     projectdata/packages.config.
@@ -692,8 +675,6 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
         Extra variables referenced by the dependencies file.
     fetch:
         True to fetch the listed dependencies, False to skip.
-    nuget:
-        True to fetch nuget packages listed in packages.config, False to skip.
     clean:
         True to clean out directories before fetching, False to skip.
     source:
@@ -747,32 +728,6 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
 
         if source:
             dependencies.checkout(dependency_names)
-
-        if nuget_packages:
-            # follow the legacy behaviour if a valid nuget packages.config file has been specified
-            if not os.path.exists(nuget_packages):
-                print("Skipping NuGet invocation because projectdata/packages.config not found.")
-            else:
-                print("Fetching dependencies based on {0}".format(nuget_packages))
-                nuget_exes = [os.path.normpath(p) for p in glob('dependencies/AnyPlatform/NuGet.[0-9]*/NuGet.exe')]
-                if len(nuget_exes) == 0:
-                    raise Exception("'NuGet.exe' not found, cannot fetch NuGet dependencies.")
-                nuget_exe = nuget_exes[0]
-                if len(nuget_exes) > 1:
-                    print("Warning: multiple copies of 'NuGet.exe' found. Using:")
-                    print("    " + nuget_exe)
-                cli([nuget_exe, 'install', nuget_packages, '-OutputDirectory', 'dependencies/nuget'])
-        elif nuget_sln:
-            if not os.path.exists(nuget_sln):
-                print("Skipping NuGet invocation because {0} not found.".format(nuget_sln))
-            else:
-                print("Fetching dependencies based on {0}".format(nuget_sln))
-                # recursive lookup of the nuget.config file does not work on linux... So,
-                # the location of the file needs to be specified explicitly
-                args = ['../ohdevtools/nuget/nuget.exe', 'restore', nuget_sln]
-                if nuget_config is not None and os.path.isfile(nuget_config):
-                    args += ['-ConfigFile', nuget_config]
-                cli(args)
 
     # Finally perform cross-check of (major.minor) dependency versions to ensure that these are in sync
     # across this (current) repo and all its pulled-in dependencies. Done as totally seperate operation

@@ -10,7 +10,6 @@ import dependencies
 import getpass
 import sys
 import traceback
-import os
 
 description = "Fetch ohWidget dependencies from the Internet."
 command_group = "Developer tools"
@@ -52,7 +51,6 @@ def main():
     options, args = parser.parse_args()
     if len(args) == 0 and not options.clean and not options.all and not options.source and not options.list:
         options.all = True
-        options.nuget = os.path.exists('projectdata/packages.config')
         print("No dependencies were specified. Default to:")
         print("    go fetch --all")
         try:
