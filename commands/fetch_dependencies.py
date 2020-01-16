@@ -10,7 +10,6 @@ import dependencies
 import getpass
 import sys
 import traceback
-import os
 
 description = "Fetch ohWidget dependencies from the Internet."
 command_group = "Developer tools"
@@ -38,12 +37,11 @@ See 'ohDevTools/dependencies.py' for details.
 
 
 def main():
+    sysargs = sys.argv
     parser = OptionParser(usage=usage)
     parser.add_option('--linn-git-user', default=None, help='Username to use when connecting to core.linn.co.uk.')
     parser.add_option('--clean', action="store_true", default=False, help="Clean out the dependencies directory.")
     parser.add_option('--all', action="store_true", default=False, help="Fetch all regular dependencies.")
-    parser.add_option('--nuget', action="store_true", default=False, help="Fetch all nuget dependencies.")
-    parser.add_option('--nuget-sln', default=None, help="Fetch all nuget dependencies based on a solution file.")
     parser.add_option('--source', action="store_true", default=False, help="Fetch source for listed dependencies.")
     parser.add_option('--release', action="store_const", const="Release", dest="debugmode", default="Release", help="")
     parser.add_option('--debug', action="store_const", const="Debug", dest="debugmode", default="Release", help="")
@@ -52,32 +50,24 @@ def main():
     parser.add_option('-l', '--list', action="store_true", default=False, help="Don't fetch anything, just list all dependencies.")
     parser.add_option('--no-overrides', action="store_true", default=False, help="Don't process ../dependency_overrides.json for local overrides.")
     options, args = parser.parse_args()
-    if len(args) == 0 and not options.clean and not options.nuget and not options.nuget_sln and not options.all and not options.source and not options.list:
-        options.all = True
-        options.nuget = os.path.exists('projectdata/packages.config')
-        print("No dependencies were specified. Default to:")
-        print("    go fetch --all" + (" --nuget" if options.nuget else ""))
-        print("[Yn]?", end='')
+    if len(sysargs) < 2:
+        print('No dependencies were specified. Default to:')
         try:
-            inp = input()
-        except NameError:
-            pass
-        answer = inp.strip().upper()
-        if answer not in ["", "Y", "YES"]:
+            inp = raw_input('    go fetch --all [Yn?] ')    # NOQA Python 2
+        except:
+            inp = input('    go fetch --all [Yn?] ')        # Python 3
+        if inp not in ['', 'Y', 'YES', 'y', 'yes']:
             sys.exit(1)
+        options.all = True
     platform = options.platform or default_platform()
     linn_git_user = options.linn_git_user or getpass.getuser()
     try:
-        if options.nuget_sln and options.nuget:
-            raise Exception("can't use both nuget flags in the same call")
         dependencies.fetch_dependencies(
             dependency_names=None if options.all else args,
             platform=platform,
             env={'linn-git-user': linn_git_user,
                  'debugmode': options.debugmode,
                  'titlecase-debugmode': options.debugmode.title()},
-            nuget_packages='projectdata/packages.config' if options.nuget else None,
-            nuget_sln=options.nuget_sln,
             clean=options.clean and not args,
             fetch=(options.all or bool(args)) and not options.source,
             source=options.source,
@@ -90,15 +80,6 @@ def main():
         else:
             print(e)
         sys.exit(1)
-    '''
-    dependencies = read_json_dependencies_from_filename('projectdata/dependencies.json', env={
-        'linn-git-user':linn_git_user,
-        'platform':platform})
-    try:
-        dependencies.fetch(args or None)
-    except Exception as e:
-        print e
-    '''
 
 
 if __name__ == "__main__":
