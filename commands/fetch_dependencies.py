@@ -83,19 +83,6 @@ def main():
         else:
             print(e)
         sys.exit(1)
-    '''
-    dependencies = read_json_dependencies_from_filename('projectdata/dependencies.json', env={
-        'linn-git-user':linn_git_user,
-        'platform':platform})
-    try:
-        dependencies.fetch(args or None)
-    except Exception as e:
-        print e
-    '''
-
-
-if __name__ == "__main__":
-    main()
 
 
 if __name__ == "__main__":
