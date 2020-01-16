@@ -71,8 +71,6 @@ def main():
             env={'linn-git-user': linn_git_user,
                  'debugmode': options.debugmode,
                  'titlecase-debugmode': options.debugmode.title()},
-            nuget_packages='projectdata/packages.config' if options.nuget else None,
-            nuget_sln=options.nuget_sln,
             clean=options.clean and not args,
             fetch=(options.all or bool(args)) and not options.source,
             source=options.source,
