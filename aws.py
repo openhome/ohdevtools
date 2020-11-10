@@ -188,8 +188,11 @@ class __aws:
         fields = aUri.split('/')
         bucket = fields[2]
         prefix = '/'.join(fields[3:])
-        if prefix[-1] != '/':
-            prefix += '/'
+        if prefix:
+            if prefix[-1] != '/':
+                prefix += '/'
+        else:
+            prefix = ''     # top 'level' of bucket
         return self.client.list_objects_v2(Bucket=bucket, Delimiter='/', Prefix=prefix)
 
     def __sort(self, aItems, aSort):
@@ -233,8 +236,7 @@ move                 = aws._move
 
 
 if __name__ == "__main__":
-    import sys
-    args = sys.argv
-    if args[1] == "cp":
-        cp(args[2], args[3])
-        
+
+    items = ls('s3://linn-artifacts-private')
+    for item in items:
+        print(item)
