@@ -72,9 +72,9 @@ class __aws:
         elif 's3://' in aSrc:
             bucket = self.s3.Bucket(aSrc.split('/')[2] )
             obj = bucket.Object('/'.join( aSrc.split('/')[3:]))
-            outDir = os.path.dirname(aDst)
-            if not os.path.exists( outDir ):
-                os.makedirs( outDir )
+            # outDir = os.path.dirname(aDst)
+            # if not os.path.exists( outDir ):
+            #     os.makedirs( outDir )
             with open(aDst, 'wb') as data:
                 obj.download_fileobj(data)
         elif 's3://' in aDst:
