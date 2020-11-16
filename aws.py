@@ -47,10 +47,13 @@ else:
                 except:
                     pass
 
-
 # ------------------------------------------------------------------------------
 # 'Private' class to manage AWS using boto3 - public interface at end of file
 # ------------------------------------------------------------------------------
+class AwsError(Exception):
+    pass
+
+
 class __aws:
 
     def __init__(self):
@@ -67,6 +70,9 @@ class __aws:
         elif 's3://' in aSrc:
             bucket = self.s3.Bucket(aSrc.split('/')[2] )
             obj = bucket.Object('/'.join( aSrc.split('/')[3:]))
+            outDir = os.path.dirname(aDst)
+            if not os.path.exists( outDir ):
+                os.makedirs( outDir )
             with open(aDst, 'wb') as data:
                 obj.download_fileobj(data)
         elif 's3://' in aDst:
@@ -147,7 +153,7 @@ class __aws:
                 entries.append({'key': item['Prefix']})
         if 'Contents' in objects:
             for item in objects['Contents']:
-                timestamp = str(item['LastModified'])
+                timestamp = int(item['LastModified'].timestamp())
                 entries.append({'key': item['Key'], 'modified': timestamp, 'size': item['Size']})
         return entries
 
@@ -161,13 +167,57 @@ class __aws:
                 entries.extend(self._listDetailsRecursive(aUri + '/' + item['Prefix'].split('/')[-2]))
         if 'Contents' in objects:
             for item in objects['Contents']:
-                timestamp = str(item['LastModified'])
+                timestamp = int(item['LastModified'].timestamp())
                 entries.append({'key': item['Key'], 'modified': timestamp, 'size': item['Size']})
         return entries
 
     def _move(self, aSrc, aDst):
         self._copy(aSrc, aDst)
         self._delete(aSrc)
+
+    def _rsync(self, aSrc, aDst):
+        """Perform an rsync operation - mirror contents of aSrc to aDst, only
+           transferring files which have changed (in terms of timestamp)"""
+        if 's3://' in aSrc:
+            srcFiles = self.__s3FileList( aSrc )
+        else:
+            srcFiles = self.__fsFileList( aSrc )
+
+        if 's3://' in aDst:
+            dstFiles = self.__s3FileList(aDst)
+        else:
+            dstFiles = self.__fsFileList( aDst )
+
+        for src in srcFiles:    # copy in new or updated src files to dst
+            if 'size' in src:
+                doCopy = True
+                for dst in dstFiles:
+                    if dst['name'] == src['name']:
+                        if src['modified'] < dst['modified']:
+                            print('Skipping %s' % src['path'])
+                            doCopy = False
+                            break
+                if doCopy:
+                    dstPath = aDst + '/' + src['name']
+                    print('Copying %s -> %s' % (src['path'], dstPath))
+                    self._copy(src['path'], dstPath)
+
+        for dst in dstFiles:    # remove dst files not present in src list
+            doDel = True
+            for src in srcFiles:
+                if dst['name'] == src['name']:
+                    doDel = False
+                    break
+            if doDel:
+                print('Deleting %s' % dst['path'])
+                os.unlink(dst['path'])
+
+        if 's3://' not in aDst:
+            for root, dirs, files in os.walk(aDst):
+                for dir in dirs:
+                    path = os.path.join(root, dir)
+                    if not os.listdir(path):
+                        os.rmdir(path)
 
     # Helper methods ----------------------------------
 
@@ -188,8 +238,11 @@ class __aws:
         fields = aUri.split('/')
         bucket = fields[2]
         prefix = '/'.join(fields[3:])
-        if prefix[-1] != '/':
-            prefix += '/'
+        if prefix:
+            if prefix[-1] != '/':
+                prefix += '/'
+        else:
+            prefix = ''     # top 'level' of bucket
         return self.client.list_objects_v2(Bucket=bucket, Delimiter='/', Prefix=prefix)
 
     def __sort(self, aItems, aSort):
@@ -202,6 +255,31 @@ class __aws:
             sortedItems = sorted(aItems, key=aws.__cmpKey, reverse=True)
         return sortedItems
 
+    @staticmethod
+    def __listDiskFileDetailsRecursive(aSrc):
+        items = []
+        for root, dirs, files in os.walk(aSrc):
+            for name in files:
+                path = os.path.join(root, name)
+                stat = os.stat(path)
+                items.append({'dir': dir, 'key': path, 'modified': int( stat.st_mtime ), 'size': stat.st_size})
+        return items
+
+    def __s3FileList(self, aSrc):
+        bucket = aSrc.strip('s3://').split('/')[0]
+        srcFiles = self._listDetailsRecursive(aSrc)
+        for src in srcFiles:
+            src['path'] = 's3://' + bucket + '/' + src['key']
+            src['name'] = '/'.join(src['key'].split('/')[1:])
+        return srcFiles
+
+    def __fsFileList(self, aSrc):
+        srcFiles = self.__listDiskFileDetailsRecursive( aSrc )
+        prefixLen = len(aSrc) + 1
+        for src in srcFiles:
+            src['path'] = src['key']
+            src['name'] = src['key'][prefixLen:].replace('\\', '/')
+        return srcFiles
 
 # ------------------------------------------------------------------------------
 # Public interface to AWS (commands and aliases)
@@ -230,10 +308,9 @@ listDetailsRecursive = aws._listDetailsRecursive
 listItems            = aws._listItems
 listItemsRecursive   = aws._listItemsRecursive
 move                 = aws._move
+rsync                = aws._rsync
 
 
 if __name__ == "__main__":
-    import sys
-    args = sys.argv
-    if args[1] == "cp":
-        cp(args[2], args[3])
+
+    rsync( 's3://linn-artifacts-private/FuncionalTestData', 'c:\\work\\FunctionalTestData' )
