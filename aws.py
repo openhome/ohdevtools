@@ -312,6 +312,7 @@ rsync                = aws._rsync
 
 if __name__ == "__main__":
 
+    # Don't change this 'test harness' - something in Volkano2 build depends on it
     import sys
     args = sys.argv
     if args[1] == "cp":
