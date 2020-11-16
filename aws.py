@@ -1,10 +1,8 @@
 """ Interface to AWS S3 storage"""
-print('-->1')
 import json
 import os
 import requests
 import shutil
-print('-->2')
 
 kAwsBucketPrivate   = 'linn-artifacts-private'
 kAwsLinnCredsUri    = 'http://core.linn.co.uk/aws-credentials'
@@ -52,46 +50,29 @@ else:
 # ------------------------------------------------------------------------------
 # 'Private' class to manage AWS using boto3 - public interface at end of file
 # ------------------------------------------------------------------------------
-class AwsError(Exception):
-    pass
-
 
 class __aws:
 
     def __init__(self):
-        print('-->i1')
         self.s3 = boto3.resource('s3')
-        print('-->i2')
         self.client = boto3.client('s3')
-        print('-->i3')
 
     def _copy(self, aSrc, aDst):
-        print('-->a1')
         if 's3://' in aSrc and 's3://' in aDst:
-            print('-->a2')
             bucketSrc = aSrc.split('/')[2]
             keySrc = '/'.join(aSrc.split('/')[3:])
             bucketDst = aDst.split('/')[2]
             keyDst = '/'.join(aDst.split('/')[3:])
             self.client.copy_object(Bucket=bucketDst, Key=keyDst, CopySource="%s/%s" % (bucketSrc, keySrc))
         elif 's3://' in aSrc:
-            print('-->a3')
             bucket = self.s3.Bucket(aSrc.split('/')[2] )
-            print('-->a3-1')
             obj = bucket.Object('/'.join( aSrc.split('/')[3:]))
-            print('-->a3-2')
-            outDir = os.path.dirname(aDst)
-            print('-->a3-3')
-            if not os.path.exists( outDir ):
-                print('-->a4')
-                os.makedirs( outDir )
-                print('-->a-5')
+            # outDir = os.path.dirname(aDst)
+            # if not os.path.exists( outDir ):
+            #     os.makedirs( outDir )
             with open(aDst, 'wb') as data:
-                print('-->a3-6')
                 obj.download_fileobj(data)
-                print('-->a7')
         elif 's3://' in aDst:
-            print('-->a4')
             bucket = self.s3.Bucket(aDst.split('/')[2])
             with open(aSrc, 'rb') as data:
                 ext = aSrc.split(".")[-1]
@@ -169,7 +150,8 @@ class __aws:
                 entries.append({'key': item['Prefix']})
         if 'Contents' in objects:
             for item in objects['Contents']:
-                timestamp = int(item['LastModified'].timestamp())
+                # timestamp = int(item['LastModified'].timestamp())
+                timestamp = str(item['LastModified'].timestamp())
                 entries.append({'key': item['Key'], 'modified': timestamp, 'size': item['Size']})
         return entries
 
@@ -183,7 +165,8 @@ class __aws:
                 entries.extend(self._listDetailsRecursive(aUri + '/' + item['Prefix'].split('/')[-2]))
         if 'Contents' in objects:
             for item in objects['Contents']:
-                timestamp = int(item['LastModified'].timestamp())
+                # timestamp = int(item['LastModified'].timestamp())
+                timestamp = str(item['LastModified'].timestamp())
                 entries.append({'key': item['Key'], 'modified': timestamp, 'size': item['Size']})
         return entries
 
@@ -191,49 +174,49 @@ class __aws:
         self._copy(aSrc, aDst)
         self._delete(aSrc)
 
-    def _rsync(self, aSrc, aDst):
-        """Perform an rsync operation - mirror contents of aSrc to aDst, only
-           transferring files which have changed (in terms of timestamp)"""
-        if 's3://' in aSrc:
-            srcFiles = self.__s3FileList( aSrc )
-        else:
-            srcFiles = self.__fsFileList( aSrc )
-
-        if 's3://' in aDst:
-            dstFiles = self.__s3FileList(aDst)
-        else:
-            dstFiles = self.__fsFileList( aDst )
-
-        for src in srcFiles:    # copy in new or updated src files to dst
-            if 'size' in src:
-                doCopy = True
-                for dst in dstFiles:
-                    if dst['name'] == src['name']:
-                        if src['modified'] < dst['modified']:
-                            print('Skipping %s' % src['path'])
-                            doCopy = False
-                            break
-                if doCopy:
-                    dstPath = aDst + '/' + src['name']
-                    print('Copying %s -> %s' % (src['path'], dstPath))
-                    self._copy(src['path'], dstPath)
-
-        for dst in dstFiles:    # remove dst files not present in src list
-            doDel = True
-            for src in srcFiles:
-                if dst['name'] == src['name']:
-                    doDel = False
-                    break
-            if doDel:
-                print('Deleting %s' % dst['path'])
-                os.unlink(dst['path'])
-
-        if 's3://' not in aDst:
-            for root, dirs, files in os.walk(aDst):
-                for dir in dirs:
-                    path = os.path.join(root, dir)
-                    if not os.listdir(path):
-                        os.rmdir(path)
+    # def _rsync(self, aSrc, aDst):
+    #     """Perform an rsync operation - mirror contents of aSrc to aDst, only
+    #        transferring files which have changed (in terms of timestamp)"""
+    #     if 's3://' in aSrc:
+    #         srcFiles = self.__s3FileList( aSrc )
+    #     else:
+    #         srcFiles = self.__fsFileList( aSrc )
+    #
+    #     if 's3://' in aDst:
+    #         dstFiles = self.__s3FileList(aDst)
+    #     else:
+    #         dstFiles = self.__fsFileList( aDst )
+    #
+    #     for src in srcFiles:    # copy in new or updated src files to dst
+    #         if 'size' in src:
+    #             doCopy = True
+    #             for dst in dstFiles:
+    #                 if dst['name'] == src['name']:
+    #                     if src['modified'] < dst['modified']:
+    #                         print('Skipping %s' % src['path'])
+    #                         doCopy = False
+    #                         break
+    #             if doCopy:
+    #                 dstPath = aDst + '/' + src['name']
+    #                 print('Copying %s -> %s' % (src['path'], dstPath))
+    #                 self._copy(src['path'], dstPath)
+    #
+    #     for dst in dstFiles:    # remove dst files not present in src list
+    #         doDel = True
+    #         for src in srcFiles:
+    #             if dst['name'] == src['name']:
+    #                 doDel = False
+    #                 break
+    #         if doDel:
+    #             print('Deleting %s' % dst['path'])
+    #             os.unlink(dst['path'])
+    #
+    #     if 's3://' not in aDst:
+    #         for root, dirs, files in os.walk(aDst):
+    #             for dir in dirs:
+    #                 path = os.path.join(root, dir)
+    #                 if not os.listdir(path):
+    #                     os.rmdir(path)
 
     # Helper methods ----------------------------------
 
@@ -324,7 +307,7 @@ listDetailsRecursive = aws._listDetailsRecursive
 listItems            = aws._listItems
 listItemsRecursive   = aws._listItemsRecursive
 move                 = aws._move
-rsync                = aws._rsync
+# rsync                = aws._rsync
 
 
 if __name__ == "__main__":
