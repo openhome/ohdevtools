@@ -1,8 +1,10 @@
 """ Interface to AWS S3 storage"""
+print('-->1')
 import json
 import os
 import requests
 import shutil
+print('-->2')
 
 kAwsBucketPrivate   = 'linn-artifacts-private'
 kAwsLinnCredsUri    = 'http://core.linn.co.uk/aws-credentials'
@@ -57,25 +59,39 @@ class AwsError(Exception):
 class __aws:
 
     def __init__(self):
+        print('-->i1')
         self.s3 = boto3.resource('s3')
+        print('-->i2')
         self.client = boto3.client('s3')
+        print('-->i3')
 
     def _copy(self, aSrc, aDst):
+        print('-->a1')
         if 's3://' in aSrc and 's3://' in aDst:
+            print('-->a2')
             bucketSrc = aSrc.split('/')[2]
             keySrc = '/'.join(aSrc.split('/')[3:])
             bucketDst = aDst.split('/')[2]
             keyDst = '/'.join(aDst.split('/')[3:])
             self.client.copy_object(Bucket=bucketDst, Key=keyDst, CopySource="%s/%s" % (bucketSrc, keySrc))
         elif 's3://' in aSrc:
+            print('-->a3')
             bucket = self.s3.Bucket(aSrc.split('/')[2] )
+            print('-->a3-1')
             obj = bucket.Object('/'.join( aSrc.split('/')[3:]))
+            print('-->a3-2')
             outDir = os.path.dirname(aDst)
+            print('-->a3-3')
             if not os.path.exists( outDir ):
+                print('-->a4')
                 os.makedirs( outDir )
+                print('-->a-5')
             with open(aDst, 'wb') as data:
+                print('-->a3-6')
                 obj.download_fileobj(data)
+                print('-->a7')
         elif 's3://' in aDst:
+            print('-->a4')
             bucket = self.s3.Bucket(aDst.split('/')[2])
             with open(aSrc, 'rb') as data:
                 ext = aSrc.split(".")[-1]
