@@ -308,8 +308,3 @@ listItems            = aws._listItems
 listItemsRecursive   = aws._listItemsRecursive
 move                 = aws._move
 # rsync                = aws._rsync
-
-
-if __name__ == "__main__":
-
-    rsync( 's3://linn-artifacts-private/FuncionalTestData', 'c:\\work\\FunctionalTestData' )
