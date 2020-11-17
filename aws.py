@@ -150,8 +150,7 @@ class __aws:
                 entries.append({'key': item['Prefix']})
         if 'Contents' in objects:
             for item in objects['Contents']:
-                # timestamp = int(item['LastModified'].timestamp())
-                timestamp = str(item['LastModified'].timestamp())
+                timestamp = int(item['LastModified'].timestamp())
                 entries.append({'key': item['Key'], 'modified': timestamp, 'size': item['Size']})
         return entries
 
@@ -165,8 +164,7 @@ class __aws:
                 entries.extend(self._listDetailsRecursive(aUri + '/' + item['Prefix'].split('/')[-2]))
         if 'Contents' in objects:
             for item in objects['Contents']:
-                # timestamp = int(item['LastModified'].timestamp())
-                timestamp = str(item['LastModified'].timestamp())
+                timestamp = int(item['LastModified'].timestamp())
                 entries.append({'key': item['Key'], 'modified': timestamp, 'size': item['Size']})
         return entries
 
