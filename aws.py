@@ -67,9 +67,12 @@ class __aws:
         elif 's3://' in aSrc:
             bucket = self.s3.Bucket(aSrc.split('/')[2] )
             obj = bucket.Object('/'.join( aSrc.split('/')[3:]))
-            outDir = os.path.dirname(aDst)
-            if not os.path.exists( outDir ):
-                os.makedirs( outDir )
+            try:
+                outDir = os.path.dirname(aDst)
+                if not os.path.exists( outDir ):
+                    os.makedirs( outDir )
+            except:
+                pass
             with open(aDst, 'wb') as data:
                 obj.download_fileobj(data)
         elif 's3://' in aDst:
@@ -150,7 +153,11 @@ class __aws:
                 entries.append({'key': item['Prefix']})
         if 'Contents' in objects:
             for item in objects['Contents']:
-                timestamp = int(item['LastModified'].timestamp())
+                try:
+                    timestamp = int(item['LastModified'].timestamp())
+                except:
+                    # handle obsolete python versions (but rsync method below now unreliable)
+                    timestamp = str(item['LastModified'])
                 entries.append({'key': item['Key'], 'modified': timestamp, 'size': item['Size']})
         return entries
 
@@ -164,7 +171,11 @@ class __aws:
                 entries.extend(self._listDetailsRecursive(aUri + '/' + item['Prefix'].split('/')[-2]))
         if 'Contents' in objects:
             for item in objects['Contents']:
-                timestamp = int(item['LastModified'].timestamp())
+                try:
+                    timestamp = int(item['LastModified'].timestamp())
+                except:
+                    # handle obsolete python versions (but rsync method below now unreliable)
+                    timestamp = str(item['LastModified'])
                 entries.append({'key': item['Key'], 'modified': timestamp, 'size': item['Size']})
         return entries
 
