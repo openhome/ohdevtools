@@ -30,6 +30,7 @@ kReleaseUtilsRepo           = "ssh://git@core.linn.co.uk/home/git/releaseUtils.g
 kOhDevToolsRepo             = "ssh://git@core.linn.co.uk/home/git/ohdevtools.git"
 kProductInfoRepo            = "ssh://git@core.linn.co.uk/home/git/ProductInfo.git"
 kDsRepo                     = "ssh://git@core.linn.co.uk/home/git/ds.git"
+kOhMediaPlayerRepo          = "ssh://git@core.linn.co.uk/home/git/ohMediaPlayer.git"
 # Release feed details
 kDevMasterFeedFileName      = 'DevelopmentMasterFeed.json'
 kDevFeedFileName            = 'DevelopmentVersionInfoV2.json'
