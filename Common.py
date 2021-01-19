@@ -50,11 +50,11 @@ kElfFileFilter              = '*.elf'
 # Aws S3 - public
 kAwsBucketPublic            = 'linn-artifacts-public' # linn public, no customers
 kAwsBucketCustomer          = 'linn-artifacts-firmware' # customer access, core1 firmware only as of now
-kAwsNightlyBase             = 'VersionInfo/Downloads/NightlyBuilds/'    
+kAwsNightlyBase             = 'VersionInfo/Downloads/NightlyBuilds/'
 kAwsDevBase                 = 'VersionInfo/Downloads/Development/'
 kAwsBetaBase                = 'VersionInfo/Downloads/Beta/'
 kAwsReleaseBase             = 'VersionInfo/Downloads/Releases/'
-kAwsReleaseFeedBase         = 'VersionInfo/' 
+kAwsReleaseFeedBase         = 'VersionInfo/'
 kAwsProductWebViewBase      = 'product/'
 # Jenkins
 kJenkinsHardwareBuildDir    = 'install/AppBoard/release/bin'
@@ -89,7 +89,7 @@ def CreateJsonFile(aJsonObjs, aJsonFile, aSortKeys=True):
     f = open(aJsonFile, 'wt')
     f.write(data)
     f.close()
-    os.chmod(aJsonFile, 0664)  # NOQA  allow group to write this file as it may be manually updated occasionally
+    os.chmod(aJsonFile, 664)  # NOQA  allow group to write this file as it may be manually updated occasionally
 
 
 def ReadJson(aJsonFile):
@@ -262,9 +262,9 @@ def GetDependenciesJson( aRepo, aVersion ):
     depFile = os.path.join( clonePath, "projectdata", "dependencies.json")
     jsonObjs = GetJsonObjects( depFile )
     shutil.rmtree( clonePath )  # remove temp clone
-    print "Dependecies for " + aRepo + " @ " + aVersion
+    print( "Dependecies for " + aRepo + " @ " + aVersion )
     for obj in jsonObjs:
-        print "    " + obj['name'] + ": " + obj['version']
+        print( "    " + obj['name'] + ": " + obj['version'] )
     return jsonObjs
 
 def CopyFileWithPermissions(aSource, aDestination):
@@ -319,7 +319,7 @@ def CreateHtmlFile( aHtml, aHtmlFile, aPrintToScreen ):
             sys.exit(resp)
 
     if aPrintToScreen:
-        print aHtml
+        print( aHtml )
 
 
 def TitleToId( aTitle ):
@@ -354,7 +354,7 @@ def DeleteFromAws( aKey, aBucket=kAwsBucketPrivate, aDryRun=False ):
 def DeleteRecursiveFromAws( aDstDir, aBucket=kAwsBucketPrivate, aFileFilter=None, aDryRun=False ):
     filelist = aws.lsr( 's3://%s/%s' % (aBucket, aDstDir) )
     for f in filelist:
-        if aFileFilter == None or aFileFilter in f: 
+        if aFileFilter == None or aFileFilter in f:
             if not f.endswith("/"):
                 DeleteFromAws( f, aBucket, aDryRun)
 
@@ -522,7 +522,7 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
         os.makedirs( localDirTop )
 
     for et in kEmulatorTypes:
-        print "Emulator info: %s" % et
+        print( "Emulator info: %s" % et )
         localDirEt = os.path.join( localDirTop, '%s' % et["os"] )
         if not os.path.exists( localDirEt ):
             os.makedirs( localDirEt )
@@ -553,7 +553,7 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
             fail = True
 
         if fail:
-            print "\nERROR: %s" % errorMsg
+            print( "\nERROR: %s" % errorMsg )
             SendEmail( "WARNING: TestDs Emulator Cannot be Created (%s)" % aVersion, errorMsg, ['Simon.Chisholm@linn.co.uk'], aDryRun )
             shutil.rmtree( localDirTop )
             return
@@ -600,7 +600,7 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
             CreateFile( txtData, os.path.join( localDirEt, 'TestDs.bat' ) )
 
     if aCheckOnly:
-        print "TestDs Emulator check succeeded"
+        print( "TestDs Emulator check succeeded" )
         shutil.rmtree( localDirTop )
         return
 
@@ -615,7 +615,7 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
     shutil.rmtree( localDirTop )
 
     if aLocalOnly:
-        print "TestDs Emulator for %s available here: %s" % ( aVersion, os.path.abspath( tarOutputFile ) )
+        print( "TestDs Emulator for %s available here: %s" % ( aVersion, os.path.abspath( tarOutputFile ) ) )
         if aDryRun:
             os.remove( tarOutputFile )
     else:
