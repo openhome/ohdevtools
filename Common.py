@@ -29,6 +29,8 @@ kProductRepo                = "ssh://git@core.linn.co.uk/home/git/product.git"
 kReleaseUtilsRepo           = "ssh://git@core.linn.co.uk/home/git/releaseUtils.git"
 kOhDevToolsRepo             = "ssh://git@core.linn.co.uk/home/git/ohdevtools.git"
 kProductInfoRepo            = "ssh://git@core.linn.co.uk/home/git/ProductInfo.git"
+kDsRepo                     = "ssh://git@core.linn.co.uk/home/git/ds.git"
+kOhMediaPlayerRepo          = "ssh://git@core.linn.co.uk/home/git/ohMediaPlayer.git"
 # Release feed details
 kDevMasterFeedFileName      = 'DevelopmentMasterFeed.json'
 kDevFeedFileName            = 'DevelopmentVersionInfoV2.json'
@@ -624,7 +626,7 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
 
         os.remove( tarOutputFile )
 
-        to = [ 'Iain.Mcleod@linn.co.uk', 'Gareth.Griffiths@linn.co.uk', 'Simon.Chisholm@linn.co.uk' ]
+        to = [ 'Iain.Mcleod@linn.co.uk', 'Simon.Chisholm@linn.co.uk' ]
         subj = "TestDs Emulator for %s Now Available" % aVersion
         text = "Download here: https://s3-eu-west-1.amazonaws.com/linn-artifacts-private/%s" % uploadKey
         SendEmail( subj, text, to, aDryRun )
