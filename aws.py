@@ -221,7 +221,7 @@ class __aws:
                 os.unlink(dst['path'])
 
         if 's3://' not in aDst:
-            for root, dirs, files in os.walk(aDst):
+            for root, dirs, _files in os.walk(aDst):
                 for dir in dirs:
                     path = os.path.join(root, dir)
                     if not os.listdir(path):
@@ -266,7 +266,7 @@ class __aws:
     @staticmethod
     def __listDiskFileDetailsRecursive(aSrc):
         items = []
-        for root, dirs, files in os.walk(aSrc):
+        for root, _dirs, files in os.walk(aSrc):
             for name in files:
                 path = os.path.join(root, name)
                 stat = os.stat(path)

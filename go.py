@@ -39,7 +39,7 @@ class Command(object):
 
 
 def getcommandmodules():
-    dirpath, scriptname = os.path.split(os.path.abspath(__file__))
+    dirpath, _scriptname = os.path.split(os.path.abspath(__file__))
     filenames = os.listdir(os.path.join(dirpath, 'commands'))
     commands = [f[:-3] for f in filenames if f.endswith('.py')]
     commands = [c for c in commands if not c.startswith('_')]
@@ -115,7 +115,7 @@ def showhelp():
     commands = sorted(getcommands().items())
     maxlen = max(len(cmd) for (cmd, details) in commands)
     groups = {}
-    for cmd, details in commands:
+    for _cmd, details in commands:
         if details.hidden:
             continue
         groups.setdefault(details.group, []).append(details)
