@@ -2,6 +2,7 @@ import os
 import tarfile
 import zipfile
 import re
+import urllib
 import requests
 import platform
 import subprocess
@@ -9,6 +10,7 @@ import json
 import shutil
 import io
 import tempfile
+from glob import glob
 from default_platform import default_platform
 import deps_cross_checker
 import aws
@@ -46,25 +48,29 @@ import aws
 # fetched binaries.
 
 DEPENDENCY_TYPES = {
-    # Ignore dependencies
-    #   - ignored - effectively 'comments' out entire dependency
+    # Label a dependency with the 'ignore' type to prevent it being considered at all.
+    # Can be useful to include comments. (Json has no comment syntax.)
     'ignore': {
-        'ignore': True
+        'ignore': True     # This causes the entire dependency entry to be ignored. Useful for comments.
     },
 
-    # Openhome dependencies 
-    #   - (legacy name - basically means that they are publicly visible and available)
-    #   - generally have an associated git repo to allow us to fetch source code.
-    #   - stored on AWS in the linn-artifacts-public bucket
+    # Openhome dependencies generally have an associated git repo to allow us to
+    # fetch source code. They also have a different directory layout to accomodate
+    # the large number of versions created by CI builds.
     #
-    # At a minimum must define:
+    # An openhome dependency, at minimum, must define:
     #     name
     #     version
+    #
+    # Commonly overridden:
+    #     archive-suffix
+    #     platform-specific
+    #     configure-args
     'openhome': {
         'archive-extension': '.tar.gz',
         'archive-prefix': '',
         'archive-suffix': '',
-        'binary-repo': 's3://linn-artifacts-public/artifacts',
+        'binary-repo': 'http://builds.openhome.org/releases/artifacts',
         'archive-directory': '${binary-repo}/${name}/',
         'archive-filename': '${archive-prefix}${name}-${version}-${archive-platform}${archive-suffix}${archive-extension}',
         'remote-archive-path': '${archive-directory}${archive-filename}',
@@ -82,15 +88,19 @@ DEPENDENCY_TYPES = {
         'configure-args': []
     },
 
-    # Internal dependencies 
-    #   - ony visible and available inside Linn
-    #   - stored on AWS in the linn-artifacts-private bucket
+    # Internal dependencies are named and structured in a similar manner
+    # to those of type 'openhome', but are considered private, and held
+    # in a non-public location
     #
-    # At a minimum must define:
-    #     name
-    #     version
+    # Must define, at minimum:
+    #       name
+    #       version
+    #
+    # Commonly overridden:
+    #       archive-suffix
+
     'internal': {
-        'binary-repo': 's3://linn-artifacts-private',
+        'binary-repo': 'http://core.linn.co.uk/~artifacts/artifacts',
         'source-git': None,
         'any-platform': 'AnyPlatform',
         'platform-specific': True,
@@ -103,17 +113,18 @@ DEPENDENCY_TYPES = {
         'configure-args': []
     },
 
-    # External dependencies
-    # 
-    #   - publicly visible and available
-    #   - no git repo that conforms to 'openhome standard'
-    #   - stored on AWS in the linn-artifacts-public bucket
+    # External dependencies generally don't have a git repo, and even if they do,
+    # it won't conform to our conventions.
     #
-    # At a minimum must define:
+    # An external dependency, at minimum, must define:
     #     name
     #     archive-filename
+    #
+    # Commonly overriden:
+    #     platform-specific
+    #     configure-args
     'external': {
-        'binary-repo': 's3://linn-artifacts-public/artifacts',
+        'binary-repo': 'http://builds.openhome.org/releases/artifacts',
         'source-git': None,
         'any-platform': 'AnyPlatform',
         'platform-specific': True,
@@ -125,6 +136,11 @@ DEPENDENCY_TYPES = {
     },
 }
 
+AWS_BUCKET = {'private': 'linn-artifacts-private',
+              'public':  'linn-artifacts-public'}
+AWS_URL    = {'private': 's3-eu-west-1.amazonaws.com/linn-artifacts-private',
+              'public':  's3-eu-west-1.amazonaws.com/linn-artifacts-public'}
+
 
 class FileFetcher(object):
 
@@ -133,11 +149,21 @@ class FileFetcher(object):
 
     def fetch(self, path):
         if path.startswith("file:") or path.startswith("smb:"):
-            raise Exception("FETCH: File URLs deprecated")
+            return self.fetch_file_url(path)
         elif path.startswith("s3:"):
             return self.fetch_aws(path)
-        elif re.match(r"[^\W\d]{2,8}:", path):
-            raise Exception("FETCH: Legacy URLs no longer re-routed")
+        elif re.match("[^\W\d]{2,8}:", path):
+            urlpath = path
+            if DEPENDENCY_TYPES['internal']['binary-repo'] in path:
+                awspath = 's3://' + AWS_BUCKET['private'] + '/' + path.replace(DEPENDENCY_TYPES['internal']['binary-repo'] + '/', '')
+                urlpath = 'https://' + AWS_URL['private'] + '/' + path.replace(DEPENDENCY_TYPES['internal']['binary-repo'] + '/', '')
+            elif DEPENDENCY_TYPES['openhome']['binary-repo'] in path:
+                awspath = 's3://' + AWS_BUCKET['public'] + '/artifacts/' + path.replace(DEPENDENCY_TYPES['openhome']['binary-repo'] + '/', '')
+                urlpath = 'https://' + AWS_URL['public'] + '/artifacts/' + path.replace(DEPENDENCY_TYPES['openhome']['binary-repo'] + '/', '')
+            rc = self.fetch_aws(awspath)
+            if rc:
+                return rc
+            return self.fetch_url(urlpath)
         return self.fetch_local(path)
 
     @staticmethod
@@ -152,8 +178,63 @@ class FileFetcher(object):
 
     @staticmethod
     def fetch_local(path):
-        print( '  from LOCAL PATH %s' % path)
+        print( '  from %s' % path)
         return path
+
+    @staticmethod
+    def fetch_file_url(url):
+        print( '  from %s' % url)
+        smb = False
+        if url.startswith("smb://"):
+            url = url[6:]
+            smb = True
+        elif url.startswith("file://"):
+            url = url[7:]
+        path = urllib.url2pathname(url).replace(os.path.sep, "/")
+        if path[0] == '/':
+            if path[1] == '/':
+                # file:////hostname/path/file.ext
+                # Bad remote path.
+                remote = True
+                legacy = True
+                final_path = path.replace("/", os.path.sep)
+            else:
+                # file:///path/file.ext
+                # Good local path.
+                remote = False
+                legacy = False
+                if smb:
+                    raise Exception("Bad smb:// path")
+                final_path = path[1:].replace("/", os.path.sep)
+        else:
+            if path[0].isalpha() and path[1] == ':':
+                # file:///x:/foo/bar/baz
+                # Good absolute local path.
+                remote = False
+                legacy = False
+                final_path = path.replace('/', os.path.sep)
+            else:
+                # file://hostname/path/file.ext
+                # Good remote path.
+                remote = True
+                legacy = False
+                final_path = "\\\\" + path.replace("/", os.path.sep)
+        if smb and (legacy or not remote):
+            raise Exception("Bad smb:// path. Use 'smb://hostname/path/to/file.ext'")
+        if (smb or remote) and not platform.platform().startswith("Windows"):
+            raise Exception("SMB file access not supported on non-Windows platforms.")
+        return final_path
+
+    @staticmethod
+    def fetch_url(url):
+        print("  from '%s'" % url)
+        handle, temppath = tempfile.mkstemp(suffix='.tmp')
+        remotefile = requests.get(url=url, headers={'Accept-Encoding': 'identity'})
+        localfile = os.fdopen(handle, 'wb')
+        if remotefile.status_code == 200:
+            localfile.write(remotefile.content)
+        localfile.close()
+        return temppath
 
 
 class EnvironmentExpander(object):
@@ -554,11 +635,17 @@ def read_json_dependencies_from_filename(dependencies_filename, overrides_filena
         return DependencyCollection(env)
 
 
+def cli(args):
+    if platform.system() != "Windows":
+        args = ["mono", "--runtime=v4.0.30319"] + args
+    subprocess.check_call(args, shell=False)
+
+
 def clean_dirs(dir):
     """Remove the specified directory tree - don't remove anything if it would fail"""
     if os.path.isdir( dir ):
         locked = []
-        for dirName, _subdirList, fileList in os.walk(dir):
+        for dirName, subdirList, fileList in os.walk(dir):
             for fileName in fileList:
                 filePath = os.path.join(dirName, fileName)
                 try:
