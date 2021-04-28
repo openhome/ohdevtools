@@ -160,7 +160,7 @@ def SendEmail( aSubject, aText, aTo, aDryRun ):
     mail['From'] = sender
     mail['To'] = ', '.join( recipients )
     mail['Cc'] = ', '.join( ccList )
-    s = smtplib.SMTP( 'exchange.linn.co.uk' )
+    s = smtplib.SMTP( 'smarthost.linn.co.uk' )
     s.ehlo()
     # If we can encrypt this session, do it
     if s.has_extn('STARTTLS'):
