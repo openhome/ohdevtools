@@ -152,7 +152,7 @@ def SendEmail( aSubject, aText, aTo, aDryRun ):
     recipients = aTo
     ccList = []
     if aDryRun:
-        recipients = [sender]
+        recipients = [sender, 'IT_Infrastructure@linn.co.uk']
     else:
         ccList = ['josh.hahn@linn.co.uk', 'graham.douglas@linn.co.uk']
     mail = email.mime.text.MIMEText( aText )
