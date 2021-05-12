@@ -160,7 +160,7 @@ def SendEmail( aSubject, aText, aTo, aDryRun ):
     mail['From'] = sender
     mail['To'] = ', '.join( recipients )
     mail['Cc'] = ', '.join( ccList )
-    s = smtplib.SMTP( 'linn-co-uk.mail.protection.outlook.com' ) # smarthost.linn.co.uk not sending emails correctly yet, exchange.linn.co.uk being deprecated
+    s = smtplib.SMTP( 'ex2016.linn.co.uk' ) # smarthost.linn.co.uk not sending emails correctly yet, exchange.linn.co.uk being deprecated
     s.ehlo()
     # If we can encrypt this session, do it
     if s.has_extn('STARTTLS'):
