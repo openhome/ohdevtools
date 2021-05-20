@@ -148,6 +148,7 @@ class FileFetcher(object):
             aws.copy(awspath, temppath)
             return temppath
         except:
+            raise Exception("FETCH: Unable to retrieve %s from AWS" % awspath)
             return None
 
     @staticmethod
