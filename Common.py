@@ -152,7 +152,7 @@ def SendEmail( aSubject, aText, aTo, aDryRun ):
     recipients = aTo
     ccList = []
     if aDryRun:
-        recipients = [sender]
+        recipients = [sender] # , 'IT_Infrastructure@linn.co.uk'
     else:
         ccList = ['josh.hahn@linn.co.uk', 'graham.douglas@linn.co.uk']
     mail = email.mime.text.MIMEText( aText )
@@ -160,7 +160,7 @@ def SendEmail( aSubject, aText, aTo, aDryRun ):
     mail['From'] = sender
     mail['To'] = ', '.join( recipients )
     mail['Cc'] = ', '.join( ccList )
-    s = smtplib.SMTP( 'exchange.linn.co.uk' )
+    s = smtplib.SMTP( 'exchange.linn.co.uk' ) # mail.linn.co.uk, ex2016.linn.co.uk not sending emails correctly yet, exchange.linn.co.uk being deprecated
     s.ehlo()
     # If we can encrypt this session, do it
     if s.has_extn('STARTTLS'):
