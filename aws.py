@@ -27,6 +27,7 @@ else:
     if not awsSlave:
         # create AWS credentials file (if not already present)
         home = None
+        awsCreds = None
         if 'HOMEPATH' in os.environ and 'HOMEDRIVE' in os.environ:
             home = os.path.join(os.environ['HOMEDRIVE'], os.environ['HOMEPATH'])
         elif 'HOME' in os.environ:
@@ -46,6 +47,9 @@ else:
                             f.write(creds)
                 except:
                     pass
+        if not os.path.exists(awsCreds):
+            print('ERROR: No AWS credentials, and unable to fetch them (need connection to Linn HQ network)')
+
 
 # ------------------------------------------------------------------------------
 # 'Private' class to manage AWS using boto3 - public interface at end of file
@@ -65,12 +69,12 @@ class __aws:
             keyDst = '/'.join(aDst.split('/')[3:])
             self.client.copy_object(Bucket=bucketDst, Key=keyDst, CopySource="%s/%s" % (bucketSrc, keySrc))
         elif 's3://' in aSrc:
-            bucket = self.s3.Bucket(aSrc.split('/')[2] )
-            obj = bucket.Object('/'.join( aSrc.split('/')[3:]))
+            bucket = self.s3.Bucket(aSrc.split('/')[2])
+            obj = bucket.Object('/'.join(aSrc.split('/')[3:]))
             try:
                 outDir = os.path.dirname(aDst)
-                if not os.path.exists( outDir ):
-                    os.makedirs( outDir )
+                if not os.path.exists(outDir):
+                    os.makedirs(outDir)
             except:
                 pass
             with open(aDst, 'wb') as data:
@@ -97,7 +101,7 @@ class __aws:
                 # this allows a single file to be deleted or an entire directory, so be careful!
                 s3bucket.objects.filter(Prefix=key).delete()
         else:
-            os.unlink( aItem )
+            os.unlink(aItem)
 
     def _download(self, aKey, aDestinationFile, aBucket=kAwsBucketPrivate):
         print('Download from AWS s3://%s/%s to %s' % (aBucket, aKey.strip("/"), os.path.abspath(aDestinationFile)))
@@ -187,14 +191,14 @@ class __aws:
         """Perform an rsync operation - mirror contents of aSrc to aDst, only
            transferring files which have changed (in terms of timestamp)"""
         if 's3://' in aSrc:
-            srcFiles = self.__s3FileList( aSrc )
+            srcFiles = self.__s3FileList(aSrc)
         else:
-            srcFiles = self.__fsFileList( aSrc )
+            srcFiles = self.__fsFileList(aSrc)
 
         if 's3://' in aDst:
             dstFiles = self.__s3FileList(aDst)
         else:
-            dstFiles = self.__fsFileList( aDst )
+            dstFiles = self.__fsFileList(aDst)
 
         for src in srcFiles:    # copy in new or updated src files to dst
             if 'size' in src:
@@ -270,7 +274,7 @@ class __aws:
             for name in files:
                 path = os.path.join(root, name)
                 stat = os.stat(path)
-                items.append({'dir': dir, 'key': path, 'modified': int( stat.st_mtime ), 'size': stat.st_size})
+                items.append({'dir': dir, 'key': path, 'modified': int(stat.st_mtime), 'size': stat.st_size})
         return items
 
     def __s3FileList(self, aSrc):
@@ -282,7 +286,7 @@ class __aws:
         return srcFiles
 
     def __fsFileList(self, aSrc):
-        srcFiles = self.__listDiskFileDetailsRecursive( aSrc )
+        srcFiles = self.__listDiskFileDetailsRecursive(aSrc)
         prefixLen = len(aSrc) + 1
         for src in srcFiles:
             src['path'] = src['key']
