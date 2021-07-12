@@ -27,7 +27,7 @@ else:
     if not awsSlave:
         # create AWS credentials file (if not already present)
         home = None
-        awsCreds = None
+        awsCreds = ''
         if 'HOMEPATH' in os.environ and 'HOMEDRIVE' in os.environ:
             home = os.path.join(os.environ['HOMEDRIVE'], os.environ['HOMEPATH'])
         elif 'HOME' in os.environ:
