@@ -193,7 +193,7 @@ def SendPublishedEmail( aExecutable, aVersion, aPlatform, aReleaseNotes=None, aD
     if aReleaseNotes is not None:
         msg += "\n\nRelease Notes:\n"
         msg += aReleaseNotes
-    recipients = ['Test_Team@linn.co.uk']
+    recipients = ['Productisation_Email_Group@linn.co.uk']
     Info( "Sending published email to: %s" % recipients )
     Info( "SUBJECT: %s" % subject )
     Info( "MESSAGE: %s" % msg )
