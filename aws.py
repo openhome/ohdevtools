@@ -246,7 +246,7 @@ class __aws:
             pass
         return version
 
-    def __listObjs(self, aUri):
+    def __listObjs(self, aUri, aContents=[], aContinuationToken=None):
         fields = aUri.split('/')
         bucket = fields[2]
         prefix = '/'.join(fields[3:])
@@ -255,7 +255,17 @@ class __aws:
                 prefix += '/'
         else:
             prefix = ''     # top 'level' of bucket
-        return self.client.list_objects_v2(Bucket=bucket, Delimiter='/', Prefix=prefix)
+        kwArgs = {'Bucket': bucket, 'Delimiter': '/', 'Prefix': prefix}
+        if aContinuationToken:
+            kwArgs['ContinuationToken'] = aContinuationToken
+        resp = self.client.list_objects_v2(**kwArgs)
+
+        if 'Contents' in resp:
+            aContents.extend(resp['Contents'])
+        if 'IsTruncated' in resp and resp['IsTruncated']:
+            resp = self.__listObjs(aUri, aContents, resp['NextContinuationToken'])  # recursive !!!
+        resp['Contents'] = aContents
+        return resp
 
     def __sort(self, aItems, aSort):
         # NOTE that this wont work in python3 - need to use a 'key' function
