@@ -246,7 +246,11 @@ class __aws:
             pass
         return version
 
-    def __listObjs(self, aUri, aContents=[], aContinuationToken=None):
+    def __listObjs(self, aUri, aContents=None, aContinuationToken=None):
+        if aContents is None:
+            # python gotcha - default args are defined when method created, not when it
+            # is called - hence mutable default arguments WILL change between calls
+            aContents = []  
         fields = aUri.split('/')
         bucket = fields[2]
         prefix = '/'.join(fields[3:])
