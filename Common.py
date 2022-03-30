@@ -531,6 +531,8 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
         for obj in jsonObjs:
             if obj['name'] == 'ds':
                 dsVer = obj['version']  # earliest windows variant is 0.102.723 as we weren't publishing this by default
+                if dsVer == '1.33.263': # temporary hack to get Davaar 88 released with a working TestDs at Simon's request
+                    dsVer = '1.33.265'
                 dsFile = "ds-%s-%s-Release.tar.gz" % ( dsVer, et["os"] )
                 dsKey = "ds/%s" % dsFile
                 dsFile = os.path.join( localDirEt, dsFile )
