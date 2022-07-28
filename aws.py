@@ -1,11 +1,12 @@
 """ Interface to AWS S3 storage"""
 import json
 import os
+import sys
 import requests
 import shutil
 
 kAwsBucketPrivate   = 'linn-artifacts-private'
-kAwsLinnCredsUri    = 'http://core.linn.co.uk/aws-credentials'
+kAwsLinnCredsUri    = 'http://core.linn.co.uk/network/raw-attachment/wiki/WikiStart/credentials'
 kAwsMetadataService = 'http://169.254.169.254/latest/meta-data/iam/info'
 
 try:
@@ -49,6 +50,7 @@ else:
                     pass
         if not os.path.exists(awsCreds):
             print('ERROR: No AWS credentials, and unable to fetch them (need connection to Linn HQ network)')
+            sys.exit(-1)
 
 
 # ------------------------------------------------------------------------------
