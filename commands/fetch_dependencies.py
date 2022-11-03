@@ -11,10 +11,6 @@ import getpass
 import sys
 import traceback
 
-description = "Fetch ohWidget dependencies from the Internet."
-command_group = "Developer tools"
-command_synonyms = ["fetch", "fetch-dependencies"]
-command_name = "fetch-dependencies"
 usage = """
 usage: %prog [options] [dependency...]
 
@@ -48,15 +44,12 @@ def main():
     parser.add_option('--platform', default=None, help='Target platform.')
     parser.add_option('-l', '--list', action="store_true", default=False, help="Don't fetch anything, just list all dependencies.")
     parser.add_option('--no-overrides', action="store_true", default=False, help="Don't process ../dependency_overrides.json for local overrides.")
-    options, args = parser.parse_args()
+    options, args = parser.parse_args(sys.argv[2:])     # offset by 1 as routine called indirectly from 'go'
     if len(args) == 0 and not options.clean and not options.all and not options.source and not options.list:
         options.all = True
         print("No dependencies were specified. Default to:")
         print("    go fetch --all")
-        try:
-            inp = raw_input("[Yn]? ")
-        except NameError:
-            inp = input("[Yn]? ")
+        inp = input("[Yn]? ")
         answer = inp.strip().upper()
         if answer not in ['', 'Y', 'YES', 'y', 'yes']:
             sys.exit(1)
@@ -81,7 +74,3 @@ def main():
         else:
             print(e)
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    main()

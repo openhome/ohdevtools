@@ -159,20 +159,18 @@ class FileFetcher(object):
 
 class EnvironmentExpander(object):
     # template_regex matches
-    template_regex = re.compile(r"""
-        (?x)                                # Enable whitespace and comments
+    template_regex = re.compile(r"""(?x)    # Enable whitespace and comments
         (?P<dollar>\$\$)|                   # Match $$
         (?P<word>\$[a-zA-Z_][a-zA-Z_0-9]*)| # Match $word
         (?P<parens>\$\{[^}]*\})             # Match ${any-thing}
         """)
     # Matches foo[bar]
-    index_regex = re.compile(r"""
-        (?x)         # Enable whitespace and comments
-        ^            # Match only at start of string
-        ([^][]*)     # Match table name (no brackets allowed)
-        \[           # Match one open bracket: [
-        ([^][]*)     # Match key (no brackets allowed)
-        \]           # Match one close bracket: ]
+    index_regex = re.compile(r"""(?x)       # Enable whitespace and comments
+        ^                                   # Match only at start of string
+        ([^][]*)                            # Match table name (no brackets allowed)
+        \[                                  # Match one open bracket: [
+        ([^][]*)                            # Match key (no brackets allowed)
+        \]                                  # Match one close bracket: ]
         $
         """)
 
