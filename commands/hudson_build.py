@@ -15,8 +15,8 @@ import sys
 
 def hudson_build():
     buildname = "build"
-    if len(sys.argv) >= 2:
-        if not sys.argv[1].startswith("-"):
-            buildname = sys.argv[1]
-            sys.argv[1:] = sys.argv[2:]
-    run(buildname, sys.argv[1:])
+    if len(sys.argv) >= 3:
+        if not sys.argv[2].startswith("-"):
+            buildname = sys.argv[2]
+            sys.argv[2:] = sys.argv[3:]
+    run(buildname, sys.argv[2:])
