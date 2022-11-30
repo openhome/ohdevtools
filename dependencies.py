@@ -481,8 +481,8 @@ class DependencyCollection(object):
                     failed_dependencies.append(d.name)
                 else:
                     fetched_deps[lookup] = version
-        if filename:
-            self.save_fetched_deps(filename, fetched_deps)
+            if filename:
+                self.save_fetched_deps(filename, fetched_deps)
         if failed_dependencies:
             print("Failed to fetch some dependencies: " + ' '.join(failed_dependencies))
             return False
