@@ -11,7 +11,13 @@ import smtplib
 import tempfile
 import time
 import json
-import urllib2
+
+try:
+    # Python 3.
+    import urllib.request as urllib2
+except ImportError:
+    # Fall back to Python 2.
+    import urllib2
 
 # ------------------------------------------------------------------------------
 # Constants
@@ -160,7 +166,7 @@ def SendEmail( aSubject, aText, aTo, aDryRun ):
     mail['From'] = sender
     mail['To'] = ', '.join( recipients )
     mail['Cc'] = ', '.join( ccList )
-    s = smtplib.SMTP( 'mail.linn.co.uk' ) 
+    s = smtplib.SMTP( 'mail.linn.co.uk' )
     s.ehlo()
     # If we can encrypt this session, do it
     if s.has_extn('STARTTLS'):
@@ -287,6 +293,7 @@ def Md5Hash(aFile):
     retVal = p.wait()
     if retVal:
         raise ToolError(cmdLineMd5)
+    md5Hash = md5Hash.decode()
     return md5Hash
 
 
