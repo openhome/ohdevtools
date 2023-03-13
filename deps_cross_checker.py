@@ -44,10 +44,10 @@ class DepsCrossChecker:
                 version1 = self.artifacts[aProject1][dependency]
                 version2 = self.artifacts[aProject2][dependency]
                 if version1 == version2:
-                    print('      %-16s %6s        --> OK' % (dependency, version1))
+                    print('      %-16s %6s        --> OK' % (dependency.decode(), version1.decode()))
                 else:
                     self.failures += 1
-                    print('      %-16s %6s/%-6s --> FAILED' % (dependency, version1, version2))
+                    print('      %-16s %6s/%-6s --> FAILED' % (dependency.decode(), version1.decode(), version2.decode()))
 
     @staticmethod
     def parse_json( aPath ):
