@@ -468,6 +468,10 @@ class DependencyCollection(object):
                 name = d.expander.expand('name')
             if 'archive-path' in d.expander:
                 path = d.expander.expand('archive-path')
+                if 'latest' in path.lower():
+                    # substitute highest numbered number
+                    del(d.expander.cache['archive-path'])
+                    d.expander.env_dict['archive-path'] = self.substitute_latest(path)
             if 'dest' in d.expander:
                 dest = d.expander.expand('dest')
             lookup = dest.rstrip( '/' ) + '/' + name
@@ -487,7 +491,34 @@ class DependencyCollection(object):
             print("Failed to fetch some dependencies: " + ' '.join(failed_dependencies))
             return False
         return True
+    
+    @staticmethod
+    def substitute_latest(path):
 
+        def by_version(arg):
+            val = 0
+            try:
+                fields = arg.split('-')
+                for field in fields:
+                    if field[0] in '0123456789':
+                        break
+                ver = field.split('.')
+                val = 1e8 * int(ver[0]) + 1e4 * int(ver[1]) + int(ver[2])
+            except:
+                pass
+            return val
+
+        matches = []
+        dir, base = os.path.split(path)
+        pattern = base.replace('latest', '.*')
+        files = aws.ls(dir)
+        for f in files:
+            base_name = os.path.basename(f)
+            if re.fullmatch(pattern, base_name):
+                matches.append(base_name)
+        matches.sort(reverse=True, key=by_version)
+        return f'{dir}/{matches[0]}'
+    
     @staticmethod
     def fetched_deps_filename(deps):
         filename = None
