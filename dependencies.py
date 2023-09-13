@@ -517,7 +517,8 @@ class DependencyCollection(object):
             if re.fullmatch(pattern, base_name):
                 matches.append(base_name)
         matches.sort(reverse=True, key=by_version)
-        return f'{dir}/{matches[0]}'
+        # return f'{dir}/{matches[0]}'  not supported by Jenkins version of python
+        return dir + '/' + matches[0]
     
     @staticmethod
     def fetched_deps_filename(deps):
