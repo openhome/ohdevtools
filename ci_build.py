@@ -34,6 +34,7 @@ def get_vsvars_environment(architecture="x86"):
 
     for vcvars32 in [
         'C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\VC\\Auxiliary\\Build\\vcvars32.bat',      # VS2022 Pro
+        'C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat',         # VS2022 Community edition
         'C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Auxiliary\\Build\\vcvars32.bat',   # VS2019 Community edition
         'C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\BuildTools\\VC\\Auxiliary\\Build\\vcvars32.bat',  # Build Tools for VS2017
         'C:\\Program Files\\Microsoft Visual Studio\\2017\\Professional\\Common7\\Tools\\vcvars32.bat',            # VS2017 Pro
