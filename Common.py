@@ -37,11 +37,6 @@ kOhDevToolsRepo             = "ssh://git@core.linn.co.uk/home/git/ohdevtools.git
 kProductInfoRepo            = "ssh://git@core.linn.co.uk/home/git/ProductInfo.git"
 kDsRepo                     = "ssh://git@core.linn.co.uk/home/git/ds.git"
 kOhMediaPlayerRepo          = "ssh://git@core.linn.co.uk/home/git/ohMediaPlayer.git"
-# Release feed details
-kDevMasterFeedFileName      = 'DevelopmentMasterFeed.json'
-kDevFeedFileName            = 'DevelopmentVersionInfoV2.json'
-kBetaFeedFileName           = 'LatestVersionInfoV2.json'
-kReleaseUrlBase             = 'http://products.linn.co.uk/VersionInfo/'
 # Misc
 kDateAndTime                = time.strftime('%d %b %Y %H:%M:%S', time.localtime())  # returns: 25 Aug 2014 15:38:11
 kProductSuppressedString    = 'DISABLED'
@@ -57,12 +52,7 @@ kAwsElfBase                 = '/artifacts/builds/Volkano2'
 kElfFileFilter              = '*.elf'
 # Aws S3 - public
 kAwsBucketPublic            = 'linn-artifacts-public' # linn public, no customers
-kAwsBucketCustomer          = 'linn-artifacts-firmware' # customer access, core1 firmware only as of now
-kAwsNightlyBase             = 'VersionInfo/Downloads/NightlyBuilds/'
-kAwsDevBase                 = 'VersionInfo/Downloads/Development/'
-kAwsBetaBase                = 'VersionInfo/Downloads/Beta/'
-kAwsReleaseBase             = 'VersionInfo/Downloads/Releases/'
-kAwsReleaseFeedBase         = 'VersionInfo/'
+#kAwsBucketCustomer          = 'linn-artifacts-firmware' # customer access, old style core1 zip firmware up to and including Davaar 104
 kAwsProductWebViewBase      = 'product/'
 # Jenkins
 kJenkinsHardwareBuildDir    = 'install/AppBoard/release/bin'
