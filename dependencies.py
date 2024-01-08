@@ -337,7 +337,8 @@ class Dependency(object):
             # such that `tail -n +$payload_offset "$0" > sdk.zip` outputs a valid archive file containing the data (where $0 is the script file path)
             st = os.stat(fetched_path)
             os.chmod(fetched_path, st.st_mode | stat.S_IXUSR)
-            subprocess.check_call(f"{fetched_path} -y -d {local_path}", shell=True)
+            ## subprocess.check_call(f"{fetched_path} -y -d {local_path}", shell=True)     aaargh - Jenkins slave still using Py2.7         
+            subprocess.check_call("%s -y -d %s" % (fetched_path, local_path), shell=True)
         else:
             self.untar(fetched_path, local_path)
 
