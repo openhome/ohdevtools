@@ -335,7 +335,8 @@ class Dependency(object):
             # or seek to archive embedded within script file and extract that directly (e.g. raw archive binary is located after the string "\nMARKER:\n" in the script file).
             # shell command `payload_offset=$(($(grep -na -m1 "^MARKER:$" "$0"|cut -d':' -f1) + 1))` gives the line number pointint to the start of the binary data
             # such that `tail -n +$payload_offset "$0" > sdk.zip` outputs a valid archive file containing the data (where $0 is the script file path)
-            os.chmod(fetched_path, stat.S_IXUSR)
+            st = os.stat(fetched_path)
+            os.chmod(fetched_path, st.st_mode | stat.S_IXUSR)
             subprocess.check_call(f"{fetched_path} -y -d {local_path}", shell=True)
         else:
             self.untar(fetched_path, local_path)
