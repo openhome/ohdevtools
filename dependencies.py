@@ -338,7 +338,7 @@ class Dependency(object):
             st = os.stat(fetched_path)
             os.chmod(fetched_path, st.st_mode | stat.S_IXUSR)
             ## subprocess.check_call(f"{fetched_path} -y -d {local_path}", shell=True)     aaargh - Jenkins slave still using Py2.7         
-            subprocess.check_call("%s -y -d %s" % (fetched_path, local_path), shell=True)
+            subprocess.check_call("%s -y -d %s" % (fetched_path, os.path.join(local_path, self.name)), shell=True)
         else:
             self.untar(fetched_path, local_path)
 
