@@ -1,4 +1,4 @@
-from optparse import OptionParser
+from argparse import ArgumentParser
 from dependencies import read_json_dependencies_from_filename
 import dependencies
 import os
@@ -198,7 +198,8 @@ def callable_to_function(f):
 class Builder(object):
     def __init__(self):
         self._steps = []
-        self._optionParser = OptionParser()
+        self._argumentParser = ArgumentParser()
+        self._argumentParser.add_argument('args', nargs='*')
         self.add_bool_option("-v", "--verbose")
         self.add_bool_option("--no-overrides", help="When fetching dependencies, don't read from a local overrides file.")
         self.add_bool_option("--incremental-fetch", help="Force incremental fetch, over-riding clean flag.")
@@ -288,7 +289,8 @@ class Builder(object):
 
     def run(self, argv=None):
         self._context = BuildContext()
-        options, args = self._optionParser.parse_args(argv)
+        options = self._argumentParser.parse_args(argv)
+        args = options.args
         self._context.options = options
         self._context.args = args
         self._context.env = EnvironmentCopy(os.environ)
@@ -324,7 +326,7 @@ class Builder(object):
         self.add_option(*args, **kwargs)
 
     def add_option(self, *args, **kwargs):
-        self._optionParser.add_option(*args, **kwargs)
+        self._argumentParser.add_argument(*args, **kwargs)
 
     def _check_call(self, *args, **kwargs):
         # force unicode strings in env to str() as unicode env variables break on windows

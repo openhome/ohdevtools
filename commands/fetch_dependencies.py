@@ -5,7 +5,7 @@
 
 from __future__ import print_function
 from ci_build import default_platform
-from optparse import OptionParser
+from argparse import ArgumentParser
 import dependencies
 import getpass
 import sys
@@ -33,18 +33,21 @@ See 'ohDevTools/dependencies.py' for details.
 
 
 def main():
-    parser = OptionParser(usage=usage)
-    parser.add_option('--linn-git-user', default=None, help='Username to use when connecting to core.linn.co.uk.')
-    parser.add_option('--clean', action="store_true", default=False, help="Clean out the dependencies directory.")
-    parser.add_option('--all', action="store_true", default=False, help="Fetch all regular dependencies.")
-    parser.add_option('--source', action="store_true", default=False, help="Fetch source for listed dependencies.")
-    parser.add_option('--release', action="store_const", const="Release", dest="debugmode", default="Release", help="")
-    parser.add_option('--debug', action="store_const", const="Debug", dest="debugmode", default="Release", help="")
-    parser.add_option('-v', '--verbose', action="store_true", default=False, help="Report more information in errors and for --list.")
-    parser.add_option('--platform', default=None, help='Target platform.')
-    parser.add_option('-l', '--list', action="store_true", default=False, help="Don't fetch anything, just list all dependencies.")
-    parser.add_option('--no-overrides', action="store_true", default=False, help="Don't process ../dependency_overrides.json for local overrides.")
-    options, args = parser.parse_args(sys.argv[2:])     # offset by 1 as routine called indirectly from 'go'
+    parser = ArgumentParser(description=usage)
+    parser.add_argument('--linn-git-user', default=None, help='Username to use when connecting to core.linn.co.uk.')
+    parser.add_argument('--clean', action="store_true", default=False, help="Clean out the dependencies directory.")
+    parser.add_argument('--all', action="store_true", default=False, help="Fetch all regular dependencies.")
+    parser.add_argument('--source', action="store_true", default=False, help="Fetch source for listed dependencies.")
+    parser.add_argument('--release', action="store_const", const="Release", dest="debugmode", default="Release", help="")
+    parser.add_argument('--debug', action="store_const", const="Debug", dest="debugmode", default="Release", help="")
+    parser.add_argument('-v', '--verbose', action="store_true", default=False, help="Report more information in errors and for --list.")
+    parser.add_argument('--platform', default=None, help='Target platform.')
+    parser.add_argument('-l', '--list', action="store_true", default=False, help="Don't fetch anything, just list all dependencies.")
+    parser.add_argument('--no-overrides', action="store_true", default=False, help="Don't process ../dependency_overrides.json for local overrides.")
+    parser.add_argument('args', nargs='*')
+    options = parser.parse_args(sys.argv[2:])     # offset by 1 as routine called indirectly from 'go'
+    args = options.args
+
     if len(args) == 0 and not options.clean and not options.all and not options.source and not options.list:
         options.all = True
         print("No dependencies were specified. Default to:")
