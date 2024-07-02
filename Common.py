@@ -54,8 +54,6 @@ kElfFileFilter              = '*.elf'
 kAwsBucketPublic            = 'linn-artifacts-public' # linn public, no customers
 #kAwsBucketCustomer          = 'linn-artifacts-firmware' # customer access, old style core1 zip firmware up to and including Davaar 104
 kAwsProductWebViewBase      = 'product/'
-# Jenkins
-kJenkinsHardwareBuildDir    = 'install/AppBoard/release/bin'
 
 
 
