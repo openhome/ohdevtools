@@ -2,7 +2,6 @@ import os
 import tarfile
 import zipfile
 import re
-import requests
 import platform
 import subprocess
 import stat
