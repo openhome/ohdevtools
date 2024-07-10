@@ -48,7 +48,7 @@ class DepsCrossChecker:
                 else:
                     self.failures += 1
                     print('      %-16s %6s/%-6s --> FAILED' % (dependency.decode(), version1.decode(), version2.decode()))
-                    print(f'{version1} != {version2}')
+                    print('%s != %s' % (version1, version2))
 
     @staticmethod
     def parse_json( aPath ):
