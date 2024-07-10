@@ -24,8 +24,8 @@ class DepsCrossChecker:
             for name in files:
                 if name == kDepsFilename:
                     if self.targetPlatform in root or 'AnyPlatform' in root:
-                        self.artifacts[os.path.basename( root )] = self.parse_json( os.path.join( root, kDepsFilename ))
-        self.artifacts['projectdata'] = self.parse_json( os.path.join( kProjDataPath, kDepsFilename ))
+                        self.artifacts[os.path.basename( root )] = self.parse_json( os.path.join( root, kDepsFilename ), self.targetPlatform)
+        self.artifacts['projectdata'] = self.parse_json( os.path.join( kProjDataPath, kDepsFilename ), self.targetPlatform)
 
         projects = list( self.artifacts )
         while len(projects):
@@ -51,7 +51,7 @@ class DepsCrossChecker:
                     print('%s != %s' % (version1, version2))
 
     @staticmethod
-    def parse_json( aPath ):
+    def parse_json( aPath, aTargetPlatform ):
         """Read and parse the JSON dependencies file"""
         deps = {}
         if os.path.exists( aPath ):
@@ -65,8 +65,32 @@ class DepsCrossChecker:
                         xCheck = item['cross-check']
                     if xCheck:
                         name = item['name'].encode( 'ascii' )
-                        ver = '.' . join( item['version'].split( '.' )[:-1] ).encode( 'ascii' )
+                        vers =  item['version']
+                        if '${' in vers and '}' in vers:
+                            st = vers.index('${')
+                            end = vers.index('}', st)
+                            token = vers[(st+2):end]   
+                            if '[' in token:
+                                keystart = token.index('[')
+                                keyend = token.index(']', keystart)
+                                table = item[token[:keystart]]
+                                keyvar = token[keystart+2:keyend]
+                                if keyvar == 'platform':
+                                    key = aTargetPlatform
+                                else:               
+                                    key = item[keyvar]
+                                if key not in table and '*' in table:
+                                    val = table['*']
+                                else: 
+                                    val = table[key]
+                                vers = vers[:st] + val + vers[(end+1):]
+                            else:
+                                vers = vers[:st] + item[token] + vers[(end+1):]
+                       
+                        # TODO: maybe don't discard minor version here/make optional
+                        ver = '.' . join( vers.split( '.' )[:-1] ).encode( 'ascii' )
                         deps[name] = ver
-                except:
+                except Exception as e:
+                    print("Warning: %s(%s)" % (e.__class__.__name__, e))
                     pass
         return deps
