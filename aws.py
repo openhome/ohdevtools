@@ -11,6 +11,8 @@ kAwsMetadataService = 'http://169.254.169.254/latest/meta-data/iam/info'
 
 try:
     import boto3
+    from botocore import UNSIGNED
+    from botocore.config import Config
 except:
     print('\nAWS fetch requires boto3 module')
     print("Please install this using 'pip install boto3'\n")
@@ -50,7 +52,7 @@ else:
                     pass
         if not os.path.exists(awsCreds):
             print('ERROR: No AWS credentials, and unable to fetch them (need connection to Linn HQ network)')
-            sys.exit(-1)
+            #sys.exit(-1)
 
 
 # ------------------------------------------------------------------------------
@@ -60,8 +62,8 @@ else:
 class __aws:
 
     def __init__(self):
-        self.s3 = boto3.resource('s3')
-        self.client = boto3.client('s3')
+        self.s3 = boto3.resource('s3',config=Config(signature_version=UNSIGNED))
+        self.client = boto3.client('s3',config=Config(signature_version=UNSIGNED))
 
     def _copy(self, aSrc, aDst):
         if 's3://' in aSrc and 's3://' in aDst:
