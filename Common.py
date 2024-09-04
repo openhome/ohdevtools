@@ -52,8 +52,6 @@ kAwsElfBase                 = '/artifacts/builds/Volkano2'
 kElfFileFilter              = '*.elf'
 # Aws S3 - public
 kAwsBucketPublic            = 'linn-artifacts-public' # linn public, no customers
-#kAwsBucketCustomer          = 'linn-artifacts-firmware' # customer access, old style core1 zip firmware up to and including Davaar 104
-kAwsProductWebViewBase      = 'product/'
 
 
 
