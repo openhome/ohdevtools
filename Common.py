@@ -70,11 +70,16 @@ def Info( aMsg ):
     print( aMsg )
 
 
-def GetJsonObjects( aJsonFile ):
+def GetJsonObjects( aJsonFile, aRetainObjOrder=False ):
     f = open(aJsonFile, 'rt')
     data = f.read()
     f.close()
-    return json.loads(data)  # performs validation as well
+    if aRetainObjOrder:
+        from collections import OrderedDict
+        jsonObjs = json.loads(data, object_pairs_hook=OrderedDict ) # performs validation as well, retains object order on load
+    else:
+        jsonObjs = json.loads(data)  # performs validation as well
+    return jsonObjs
 
 
 def CreateJsonFile(aJsonObjs, aJsonFile, aSortKeys=True):
