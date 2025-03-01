@@ -34,7 +34,7 @@ kExaktRepo                  = "ssh://git@git.linn.co.uk/home/git/repos/exakt.git
 kProductRepo                = "ssh://git@git.linn.co.uk/home/git/repos/product.git"
 kReleaseUtilsRepo           = "ssh://git@git.linn.co.uk/home/git/repos/releaseUtils.git"
 kOhDevToolsRepo             = "ssh://git@git.linn.co.uk/home/git/repos/ohdevtools.git"
-kProductInfoRepo            = "ssh://git@git.linn.co.uk/home/git/repost/ProductInfo.git"
+kProductInfoRepo            = "ssh://git@git.linn.co.uk/home/git/repos/ProductInfo.git"
 kDsRepo                     = "ssh://git@git.linn.co.uk/home/git/repos/ds.git"
 kOhMediaPlayerRepo          = "ssh://git@git.linn.co.uk/home/git/repos/ohMediaPlayer.git"
 # Misc
