@@ -30,13 +30,13 @@ kLocalCloudFileName         = 'ExaktCloudDbV2.json'
 kLocalCloudTempFileName     = 'ExaktMinimalTemp.json'
 kLocalDevCloudTempFileName  = 'ExaktMinimalDevTemp.json'
 # Repo locations
-kExaktRepo                  = "ssh://git@core.linn.co.uk/home/git/exakt.git"
-kProductRepo                = "ssh://git@core.linn.co.uk/home/git/product.git"
-kReleaseUtilsRepo           = "ssh://git@core.linn.co.uk/home/git/releaseUtils.git"
-kOhDevToolsRepo             = "ssh://git@core.linn.co.uk/home/git/ohdevtools.git"
-kProductInfoRepo            = "ssh://git@core.linn.co.uk/home/git/ProductInfo.git"
-kDsRepo                     = "ssh://git@core.linn.co.uk/home/git/ds.git"
-kOhMediaPlayerRepo          = "ssh://git@core.linn.co.uk/home/git/ohMediaPlayer.git"
+kExaktRepo                  = "ssh://git@git.linn.co.uk/home/git/repos/exakt.git"
+kProductRepo                = "ssh://git@git.linn.co.uk/home/git/repos/product.git"
+kReleaseUtilsRepo           = "ssh://git@git.linn.co.uk/home/git/repos/releaseUtils.git"
+kOhDevToolsRepo             = "ssh://git@git.linn.co.uk/home/git/repos/ohdevtools.git"
+kProductInfoRepo            = "ssh://git@git.linn.co.uk/home/git/repost/ProductInfo.git"
+kDsRepo                     = "ssh://git@git.linn.co.uk/home/git/repos/ds.git"
+kOhMediaPlayerRepo          = "ssh://git@git.linn.co.uk/home/git/repos/ohMediaPlayer.git"
 # Misc
 kDateAndTime                = time.strftime('%d %b %Y %H:%M:%S', time.localtime())  # returns: 25 Aug 2014 15:38:11
 kProductSuppressedString    = 'DISABLED'
