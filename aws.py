@@ -6,7 +6,7 @@ import requests
 import shutil
 
 kAwsBucketPrivate   = 'linn-artifacts-private'
-kAwsLinnCredsUri    = 'http://core.linn.co.uk/network/raw-attachment/wiki/WikiStart/credentials'
+kAwsLinnCredsUri    = 'http://trac.linn.co.uk/software/raw-attachment/wiki/WikiStart/credentials'
 kAwsMetadataService = 'http://169.254.169.254/latest/meta-data/iam/info'
 
 try:

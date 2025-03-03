@@ -42,7 +42,7 @@ kDateAndTime                = time.strftime('%d %b %Y %H:%M:%S', time.localtime(
 kProductSuppressedString    = 'DISABLED'
 kExaktSuppressedString      = 'suppress'
 # crash report related
-kTicketUrlBase              = "http://core.linn.co.uk/network/ticket/"
+kTicketUrlBase              = "http://trac.linn.co.uk/software/ticket/"
 kReportUrlBase              = "http://products.linn.co.uk/restricted/site/device/exception/"
 # Aws S3 - private
 kAwsBucketPrivate           = 'linn-artifacts-private'
