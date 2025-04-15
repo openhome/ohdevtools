@@ -15,11 +15,14 @@ def default_platform():
                         info = f.read()
                     if 'Raspberry Pi' in info:
                         return 'Linux-rpi'
-                return 'Linux-armhf'
+                return 'Linux-armhf'      
             else:
                 return 'Linux-x86'
     if platform.system() == 'Linux' and platform.architecture()[0] == '64bit':
-        return 'Linux-x64'
+        if platform.machine() in ['armv8', 'aarch64']:
+            return 'Linux-aarch64'
+        else:
+            return 'Linux-x64'
     if platform.system() == 'Darwin':
         if platform.architecture()[0] == '32bit':
             return 'Mac-x86'
