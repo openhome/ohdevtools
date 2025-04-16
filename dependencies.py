@@ -651,7 +651,13 @@ def fetch_dependencies(dependency_names=None, platform=None, env=None, fetch=Tru
     if 'platform' not in env:
         platform = env['platform'] = default_platform()
     if '-' in platform:
-        env['system'], env['architecture'] = platform.split('-', 2)
+        components = platform.split('-')
+        if len(components) == 2:
+            env['system'], env['architecture'] = components
+        elif len(components) == 3:
+            env['architecture'], env['distro'], env['system'] = components
+        else:
+            print("Unexpected platform format '%s'" % platform)
     if platform is None:
         raise Exception('Platform not specified and unable to guess.')
 
