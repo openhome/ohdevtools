@@ -683,10 +683,15 @@ class OpenHomeBuilder(object):
         if '-' not in platform:
             fail('Platform should be a system and an architecture separated by a hyphen, e.g. Windows-x86.')
 
-        system, architecture = platform.split('-', 2)
+        target = platform.split('-')
+        if len(target) == 2:
+            system, architecture = target
+        elif len(target) == 3:
+            distro, architecture, system = target
         self.env['OH_PLATFORM'] = platform
         self.platform = platform
         self.system = system
+        self.distro = distro
         self.architecture = architecture
 
     def _process_configuration_options(self):
