@@ -686,6 +686,7 @@ class OpenHomeBuilder(object):
         target = platform.split('-')
         if len(target) == 2:
             system, architecture = target
+            distro = None
         elif len(target) == 3:
             distro, architecture, system = target
         self.env['OH_PLATFORM'] = platform
