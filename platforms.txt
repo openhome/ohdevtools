@@ -7,6 +7,7 @@ armhf-buildroot-linux
 armhf-kirkstone-linux
 armhf-raspbian-linux
 aarch64-kirkstone-linux
+aarch64-scarthgap-linux
 Linux-x64
 Linux-x86
 Mac-x64
