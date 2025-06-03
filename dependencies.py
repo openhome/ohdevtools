@@ -482,6 +482,7 @@ class DependencyCollection(object):
                     # substitute highest numbered number
                     del(d.expander.cache['archive-path'])
                     d.expander.env_dict['archive-path'] = self.substitute_latest(path)
+                    path = d.expander.expand('archive-path')
             if 'dest' in d.expander:
                 dest = d.expander.expand('dest')
             lookup = dest.rstrip( '/' ) + '/' + name
