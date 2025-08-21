@@ -6,6 +6,7 @@ import time
 import requests
 import shutil
 
+kAwsBucketPublic    = 'linn-artifacts-public'
 kAwsBucketPrivate   = 'linn-artifacts-private'
 kAwsLinnCredsUri    = 'http://trac.linn.co.uk/software/raw-attachment/wiki/WikiStart/credentials'
 kAwsMetadataService = 'http://169.254.169.254/latest/meta-data/iam/info'
