@@ -35,6 +35,7 @@ def awsCopy(src, dst):
 
 
 def setupEnv(target):
+    print(f'\nSetting up build environment')
     if 'Windows' in platform.system():
         print(f'\nSetting up VC using {kVcVars}')
         if os.path.isfile(kVcVars):
