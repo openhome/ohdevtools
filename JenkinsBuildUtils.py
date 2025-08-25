@@ -37,16 +37,21 @@ def awsCopy(src, dst):
 def setupEnv(target):
     print(f'\nSetting up build environment')
     if 'Windows' in platform.system():
-        print(f'\nSetting up VC using {kVcVars}')
+        print(f'Setting up VC using {kVcVars}')
         if os.path.isfile(kVcVars):
+            print('-->1')
             arch = 'x86' if 'x86' in target else 'x64'
+            print('-->2')
             process = subprocess.Popen(f'("{kVcVars}" {arch} > nul) && python -c "import os; print(os.environ)"', stdout=subprocess.PIPE, shell=True)
+            print('-->3')
             stdout, _ = process.communicate()
+            print('-->4')
             exitcode = process.wait()
+            print('-->5')
             if exitcode == 0:
-                print('\n\nEnvironment:')
+                print('Environment:')
                 envVars = eval(stdout.decode('utf8').strip('environ'))
                 for e in envVars:
                     print(f'    {e}: {envVars[e]}')
                     os.environ[e] = envVars[e]
-
+            print('-->6')
