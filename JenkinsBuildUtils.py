@@ -26,11 +26,11 @@ def waf(*args):
 
 def awsCopy(src, dst):
     if 's3://' in dst:
-        print(f'Upload {src} to AWS {dst}')
+        print(f'\nUpload {src} to AWS {dst}')
     elif 's3://' in src:
-        print(f'Download AWS {src} to {dst}')
+        print(f'\nDownload AWS {src} to {dst}')
     else:
-        print(f'Copy {src} to {dst}')
+        print(f'\nCopy {src} to {dst}')
     aws.copy(src, dst)        
 
 
