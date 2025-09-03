@@ -513,7 +513,7 @@ def CheckPublishTestDsEmulatorLocal( aVersion, aDryRun=False ):
 
 def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
     kEmulatorTypes = [ { "os": "Linux-x64",   "spotify": "spotify_embedded/lib/libspotify_embedded_shared.so" },
-                       { "os": "Windows-x86", "spotify": "spotify_embedded/lib/spotify_embedded_shared.dll" } ]  # Core-ppc32?
+                       { "os": "Windows-x86", "spotify": "spotify_embedded/lib/spotify_embedded_shared.dll" } ]
     jsonObjs = GetDependenciesJson( kProductRepo, aVersion )
     dsVer = spotifyVer = dsKey = spotifyKey = dsFile = spotifyFile = None
     versionId = aVersion.split('.')[1]
@@ -630,3 +630,6 @@ def CreateTestDsEmulator( aVersion, aCheckOnly, aLocalOnly, aDryRun ):
         subj = "TestDs Emulator for %s Now Available" % aVersion
         text = "Download here: https://s3-eu-west-1.amazonaws.com/linn-artifacts-private/%s" % uploadKey
         SendEmail( subj, text, to, aDryRun )
+
+
+CheckPublishTestDsEmulatorAws("4.0.2674", True)
