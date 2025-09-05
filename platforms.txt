@@ -11,6 +11,7 @@ aarch64-scarthgap-linux
 Linux-x64
 Linux-x86
 Mac-x64
+Mac-arm64
 Qnap-x19
 Qnap-x86
 Windows-x86
