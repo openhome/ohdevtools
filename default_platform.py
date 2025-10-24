@@ -24,8 +24,8 @@ def default_platform():
         else:
             return 'Linux-x64'
     if platform.system() == 'Darwin':
-        if platform.architecture()[0] == '32bit':
-            return 'Mac-x86'
-        if platform.architecture()[0] == '64bit':
+        if platform.machine() == 'arm64':
+            return 'Mac-arm64'
+        else:
             return 'Mac-x64'
     return None
