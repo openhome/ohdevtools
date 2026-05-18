@@ -15,11 +15,6 @@ Mac-arm64
 Qnap-x19
 Qnap-x86
 Windows-x86
-Windows10-arm
-Windows10-x64
-Windows10-x86
-Windows81-arm
-Windows81-x64
-Windows81-x86
+Windows-x64
 iOs-arm64
 iOs-x64
