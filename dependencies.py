@@ -514,7 +514,11 @@ class DependencyCollection(object):
                     if field[0] in '0123456789':
                         break
                 ver = field.split('.')
-                val = 1e8 * int(ver[0]) + 1e4 * int(ver[1]) + int(ver[2])
+                try:
+                    val = 1e8 * int(ver[0]) + 1e4 * int(ver[1]) + int(ver[2])
+                except:
+                    val = 1e4 * int(ver[0]) + int(ver[1])
+                print(f'{arg}  {ver}  {val}')
             except:
                 pass
             return val
