@@ -5,6 +5,7 @@ Linux-arm64
 Linux-rpi
 armhf-buildroot-linux
 armhf-kirkstone-linux
+armhf-scarthgap-linux
 armhf-raspbian-linux
 aarch64-kirkstone-linux
 aarch64-scarthgap-linux
