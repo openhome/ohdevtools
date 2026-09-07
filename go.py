@@ -16,12 +16,14 @@ def main(aArgs):
     if cmd in ('fetch', 'fetch-dependencies', 'fetch_dependencies'):
         fetch.main()
     elif cmd in ('build', 'ci-build', 'hudson_build'):
-        build.hudson_build()
+        print('')
+        print("'go build' is currently disabled.")
+        print('')
+        sys.exit(1)
     else:
         print('')
         print('Usage:')
         print('    go fetch: fetch dependencies specified by project')
-        print('    go build: perform automated build')
         print('    go <command> --help: display command specific help page')
         print('')
 
