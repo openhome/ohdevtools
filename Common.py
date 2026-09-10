@@ -49,7 +49,7 @@ kAwsBucketPrivate           = 'linn-artifacts-private'
 kAwsProductionBase          = 'Volkano2Products/'
 kAwsHardwareBase            = 'hardware/'
 kAwsElfBase                 = '/artifacts/builds/Volkano2'
-kAwsElfBaseNightly          = '/artifacts/builds/Volkano2/Nightly'
+kAwsElfBaseNightly          = '/artifacts/builds/Volkano2/nightly'
 kElfFileFilter              = '*.elf'
 # Aws S3 - public
 kAwsBucketPublic            = 'linn-artifacts-public' # linn public, no customers
