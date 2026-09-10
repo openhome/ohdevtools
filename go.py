@@ -16,11 +16,11 @@ def main(aArgs):
     if cmd in ('fetch', 'fetch-dependencies', 'fetch_dependencies'):
         fetch.main()
     elif cmd in ('build', 'ci-build', 'hudson_build'):
-        build.hudson_build()        
-        # print('')
-        # print("'go build' is currently disabled.")
-        # print('')
-        # sys.exit(1)
+        # build.hudson_build()        
+        print('')
+        print("'go build' is currently disabled.")
+        print('')
+        sys.exit(1)
     else:
         print('')
         print('Usage:')
